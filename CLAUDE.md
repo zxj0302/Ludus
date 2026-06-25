@@ -86,7 +86,7 @@ PM / 系统架构师 / 算法工程师 / 游戏引擎开发 / 教学内容设计
    - **Presentation 层**（跨平台）：渲染交互，内置统一 L1/L2/L3 渐进式揭示组件；含算法可视化能力。
 2. **统一游戏插件接口**（架构阶段定义并冻结）：至少含 `id/metadata`、`initialState/generateLevel(config)`、`legalMoves(state)`、`applyMove(state, move)`、`isSolved(state)`、`solve(state): Solution`、`getDifficulty(state)`、render hooks（含渲染后端声明）、`educationManifest`、`visualizationManifest`（算法可视化所需轨迹/数据声明）。
 3. **技术选型（见 DECISIONS.md ADR-009/010/011/012）**：
-   - **平台优先级**：**Web 为第一优先级**，直接部署为首要入口。架构须保证在**不重写**前提下扩展到**桌面端(Tauri，系统 WebView 套壳)**与**移动端(Capacitor，原生 WebView 套壳)**。**微信支持降级为"可选、非必要"**：以微信内 H5 覆盖最低获客需求；微信小程序列为未来独立任务，**不约束主架构**。已舍弃 Steam/桌面原生精品化路线。
+   - **平台优先级**：**Web 为第一优先级**，直接部署为首要入口。架构须保证在**不重写**前提下扩展到**桌面端(Tauri，系统 WebView 套壳)**与**移动端(Capacitor，原生 WebView 套壳)**。**微信支持为可选、非必要**：以微信内 H5 覆盖最低获客需求；微信小程序列为未来独立任务，**不约束主架构**。不走 Steam/桌面原生精品化路线。
    - **核心框架**：**React + TypeScript**，三端复用同一份 React 代码库。Core 层为框架无关的纯 TS。
    - **样式与动效**：**Tailwind CSS**（禁止 arbitrary values 任意值）+ **Framer Motion**。
    - **算法可视化层**（解释算法内部计算流程）：**React Flow**（节点图/搜索树/博弈树/自动机/电路/约束图）+ **D3.js**（高斯消元行变换、概率分布、信息熵演化等自定义可视化）。两者**按需懒加载**，不进首屏包。
@@ -102,7 +102,7 @@ PM / 系统架构师 / 算法工程师 / 游戏引擎开发 / 教学内容设计
 每游戏配套，标注 L2(一句话/一卡) 与 L3(完整推导/代码) 形态：
 
 1. **玩**（L1，最浅零负担）；2. **思考挑战**（抛"有无最优/能否必胜/难在哪"的钩子）；3. **揭示抽象**（形式化定义 + 复杂度归类 + LaTeX）；4. **求解器演示**（调 Core 层 Solver，用 React Flow/D3 可视化逐步演示，L3 可看实现/伪代码）；5. **出题**（调 Generator+DifficultyMetric，体验/动手生成可解、可控难度、唯一解、已知最优解的关卡）。
-   LaTeX 渲染方案待定（ADR-007，KaTeX/MathJax）；文字解释中英双份。
+   LaTeX 渲染方案已确定：KaTeX（ADR-007）；文字解释中英双份。
 
 ### B.6 开发流程（按序推进，每阶段产出工件后停下等确认）
 
@@ -111,7 +111,7 @@ PM / 系统架构师 / 算法工程师 / 游戏引擎开发 / 教学内容设计
 - **阶段 2 架构设计(Architect)**：分层架构图、模块依赖图、ADR(含平台×能力矩阵)、插件接口契约、数据 schema、跨平台构建策略(Web 首发 + Tauri/Capacitor 套壳路径)、monorepo 目录结构(建议 core / games / education / i18n / ui / viz / apps)。
 - **阶段 3 教学框架(Edu Designer)**：五段式统一模板与内容 schema(语言×深度)，1 个游戏做样板。
 - **阶段 4 垂直切片**：选 **Lights Out 点灯** 作首个端到端样板，打通"游戏+求解器(GF(2)高斯消元)+唯一解/最优生成器+五段式教学+算法可视化+可玩UI+测试"，并验证：(a)三层体验在同一实例切换；(b)跑通 **Web 全链路**，并验证可经 **Tauri/Capacitor 无重写套壳**（至少给出可行性验证或最小壳）；(c)中英双语切换在 UI 与教学内容均成立、默认中文；(d)重计算走 Web Worker 不阻塞 UI。
-- **阶段 5 增量游戏**：建议顺序 ①Lights Out ②数独(DLX/唯一解) ③Nim/Wythoff ④15-puzzle(A*) ⑤倒水(数论) ⑥Nonogram。
+- **阶段 5 增量游戏**：建议顺序 ①数独(DLX/唯一解) ②Nim/Wythoff(博弈论) ③15-puzzle(A*) ④倒水(数论) ⑤Nonogram。
 - **阶段 6 横切能力**：合集主界面/导航、进度与成就、关卡设计单元通用 UI、跨平台打包(Tauri/Capacitor)、CI/CD。
 - **阶段 7 测试/性能/发布**：基准、文档、贡献指南、首个 release。
 

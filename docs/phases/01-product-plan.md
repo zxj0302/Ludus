@@ -142,7 +142,7 @@ Feature: 算法可视化（React Flow + D3）
 | M2 | **Lights Out 求解器**：GF(2) 高斯消元，正确求解任意合法棋盘状态 | Epic 1 |
 | M3 | **Lights Out 关卡生成器**：生成可解关卡（含唯一解关卡），附难度度量 | Epic 1 |
 | M4 | **五段式教学 × 1 款**（Lights Out）：L2 知识卡片 + L3 完整教学（中/英） | Epic 1 |
-| M5 | **算法可视化 × 1 款**：Lights Out 高斯消元步骤可视化（React Flow 或 D3） | Epic 1 |
+| M5 | **算法可视化 × 1 款**：Lights Out 高斯消元步骤可视化（阶段 4 用 DOM+Framer Motion 基础版；React Flow/D3 完整版阶段 5+，见 ADR-022） | Epic 1 |
 | M6 | **统一渐进式揭示组件**：L1/L2/L3 切换，可复用接口 | Epic 2 |
 | M7 | **i18n 基础**：中英双语 UI 切换，默认中文，所有文本无硬编码 | Epic 2 |
 | M8 | **合集骨架**：首页游戏卡片（≥1 款可玩）+ 路由框架 | Epic 0 |
@@ -161,6 +161,7 @@ Feature: 算法可视化（React Flow + D3）
 | S5 | **Tauri 桌面壳验证**：至少 Lights Out 在 Tauri 壳中可跑 | Epic 1 |
 | S6 | **Capacitor 移动壳验证**：至少 Lights Out 在 Capacitor 壳中可跑 | Epic 1 |
 | S7 | **求解器 Web Worker 集成**：>500ms 求解异步执行 | Epic 1 |
+| S8 | **基础音效反馈**：操作/撤销/胜利音效，<20KB audio sprite（ADR-021 决定阶段 4 即做） | Epic 1 |
 
 ### 🟢 Could Have（锦上添花，资源允许时做）
 
@@ -168,9 +169,8 @@ Feature: 算法可视化（React Flow + D3）
 |----|------|-----------|
 | C1 | 第 4+ 款游戏（15-puzzle / 倒水 / Nonogram） | Epic 1 |
 | C2 | 游戏内成就系统（localStorage） | Epic 0 |
-| C3 | 音效（操作反馈 / 胜利提示） | Epic 1 |
-| C4 | 关卡导入导出（JSON 文件） | Epic 1 |
-| C5 | 移动端触控优化（手势、触觉反馈） | Epic 1 |
+| C3 | 关卡导入导出（JSON 文件） | Epic 1 |
+| C4 | 移动端触控优化（手势、触觉反馈） | Epic 1 |
 
 ### ⚪ Won't Have（明确不做，留作未来）
 
@@ -187,7 +187,7 @@ Feature: 算法可视化（React Flow + D3）
 ## 4. 粗粒度路线图（阶段 1–7）
 
 ```
-阶段 1: 产品规划 ← 你在当前位置
+阶段 1: 产品规划 ✅
 │  产出: 用户画像、故事地图、MoSCoW、路线图
 │  耗时: 1 次会话
 │
@@ -271,7 +271,6 @@ Feature: 算法可视化（React Flow + D3）
 - 多人联机
 - 微信小程序
 - 成就系统（Could Have）
-- 音效（Could Have）
 
 ---
 
@@ -279,10 +278,10 @@ Feature: 算法可视化（React Flow + D3）
 
 - 三层画像覆盖 L1 纯娱乐 → L2 玩中学 → L3 专业学习，各自动机/场景/痛点/目标明确。
 - 用户故事地图按 Epic 0（合集框架）、Epic 1（单款游戏体验）、Epic 2（横切能力）组织，覆盖完整用户旅程。
-- MoSCoW 矩阵：Must 11 项（MVP 最低交付门槛）、Should 7 项、Could 5 项、Won't 5 项。
+- MoSCoW 矩阵：Must 11 项（MVP 最低交付门槛）、Should 8 项、Could 4 项、Won't 5 项。
 - MVP 边界锁定 3 款游戏 + 合集骨架 + i18n + Worker + 双壳验证。
-- 路线图 7 阶段，当前处于阶段 1 末尾。
+- 路线图 7 阶段。
 
 ---
 
-*角色：PM | 产出：`docs/phases/01-product-plan.md` | 等待用户确认*
+*角色：PM | 产出：`docs/phases/01-product-plan.md` | ✅ 已确认*

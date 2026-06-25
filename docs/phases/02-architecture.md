@@ -2,7 +2,7 @@
 
 > 产出日期：2026-06-25
 > 状态：✅ 已确认
-> 关联决策：ADR-001/006/008/009/010/011/013/014/015
+> 关联决策：ADR-001(Core 纯 TS)、ADR-002(i18n)、ADR-003(渐进式揭示)、ADR-004(Lights Out)、ADR-006(pnpm)、ADR-008(schema)、ADR-009(平台优先级)、ADR-010(跨端)、ADR-011(渲染分层)、ADR-012(手感美术)、ADR-013(react-i18next)、ADR-014(Vitest)、ADR-015(MVP)
 
 ---
 
@@ -33,7 +33,7 @@
 │                    EDUCATION LAYER                           │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              packages/education                       │   │
-│  │  ContentSchema (zod)  ContentRenderer                 │   │
+│  │  ContentRenderer  (schema 实际定义在 core，见下)     │   │
 │  │  games/lights-out/{l2,l3}.{zh,en}.md                 │   │
 │  │  games/sudoku/{l2,l3}.{zh,en}.md                     │   │
 │  │  games/nim/{l2,l3}.{zh,en}.md                        │   │
@@ -134,7 +134,7 @@ packages:
 |------|------|------|------|
 | `@ludus/core` | `packages/core` | 类型定义(GamePlugin/Level/State/Solution)、搜索框架(BFS/DFS/A*/IDA*)、通用求解器(GF(2)/DLX/SAT)、关卡生成框架、难度度量、Worker 任务抽象 | 仅 zod |
 | `@ludus/games` | `packages/games` | 各游戏模块(每游戏一个子目录)、游戏注册表(registry) | `@ludus/core` |
-| `@ludus/education` | `packages/education` | 教学内容 schema(zod)、内容渲染器、Markdown/LaTeX 加载 | `@ludus/core` (类型) |
+| `@ludus/education` | `packages/education` | 教学内容文件（.md）、内容渲染器（ContentRenderer）、Markdown/LaTeX 加载；schema 由 core 提供 | `@ludus/core` (类型+schema) |
 | `@ludus/i18n` | `packages/i18n` | UI 字符串资源(zh-CN/en JSON)、react-i18next 配置、语言检测 | 无内部依赖 |
 | `@ludus/ui` | `packages/ui` | React 组件库：GameShell、ProgressiveDisclosure、GameCard、Layout、通用控件 | `@ludus/games`、`@ludus/i18n` |
 | `@ludus/viz` | `packages/viz` | React Flow / D3 可视化组件，懒加载 | `@ludus/core` (类型) |
@@ -530,6 +530,8 @@ export function migrateData<T>(
 
 ## 6. Monorepo 目录骨架
 
+> **图例**：`★` 已实现 / `☆` 阶段 4 实现 / `○` 阶段 5+ 实现。骨架中未标注的文件均待后续阶段创建。
+
 ```
 Ludus/
 ├── pnpm-workspace.yaml
@@ -547,88 +549,90 @@ Ludus/
 │       ├── 00-backlog.md
 │       ├── 00-alignment.md
 │       ├── 01-product-plan.md
-│       └── 02-architecture.md
+│       ├── 02-architecture.md
+│       ├── 03-education-framework.md
+│       └── 04-ui-design-system.md
 │
 ├── packages/
 │   ├── core/
 │   │   ├── package.json      # @ludus/core
 │   │   ├── tsconfig.json
 │   │   └── src/
-│   │       ├── index.ts      # barrel export
+│   │       ├── index.ts      # barrel export ★
 │   │       ├── types/
-│   │       │   ├── plugin.ts       # GamePlugin interface (§3)
-│   │       │   ├── level.ts        # Level, LevelConfig
-│   │       │   ├── state.ts        # GameState, Move
-│   │       │   └── solution.ts     # Solution, SolverTrace, SolutionStats
+│   │       │   ├── plugin.ts       # GamePlugin interface (§3) ★
+│   │       │   ├── level.ts        # LevelConfig；Level 类型由 schemas/level.ts zod 推导 ★
+│   │       │   ├── state.ts        # re-export GameState/Move (定义在 plugin.ts) ★
+│   │       │   └── solution.ts     # Solution, SolverTrace, SolutionStats ★
 │   │       ├── schemas/
-│   │       │   ├── level.ts        # LevelSchema (zod)
-│   │       │   ├── state.ts        # GameStateSnapshotSchema
-│   │       │   ├── education.ts    # EducationContentSchema
-│   │       │   └── migrator.ts     # SchemaMigrator, migrateData
+│   │       │   ├── level.ts        # LevelSchema (zod) ★
+│   │       │   ├── state.ts        # GameStateSnapshotSchema ★
+│   │       │   ├── education.ts    # EducationContentSchema ★
+│   │       │   └── migrator.ts     # SchemaMigrator, migrateData ★
 │   │       ├── solver/
-│   │       │   ├── types.ts        # Solver interface
-│   │       │   ├── bfs.ts
-│   │       │   ├── dfs.ts
-│   │       │   ├── astar.ts
-│   │       │   ├── idastar.ts
-│   │       │   ├── gf2.ts          # GF(2) 高斯消元
-│   │       │   ├── dlx.ts          # Dancing Links
-│   │       │   └── sat.ts          # SAT solver wrapper
+│   │       │   ├── types.ts        # Solver interface ☆
+│   │       │   ├── bfs.ts ○
+│   │       │   ├── dfs.ts ○
+│   │       │   ├── astar.ts ○
+│   │       │   ├── idastar.ts ○
+│   │       │   ├── gf2.ts          # GF(2) 高斯消元 ☆
+│   │       │   ├── dlx.ts          # Dancing Links ○
+│   │       │   └── sat.ts          # SAT solver wrapper ○
 │   │       ├── generator/
-│   │       │   ├── types.ts        # Generator interface
-│   │       │   ├── reverse.ts      # 反向生成
-│   │       │   ├── carve.ts        # 挖空+验证
-│   │       │   └── difficulty.ts   # 难度度量
+│   │       │   ├── types.ts        # Generator interface ☆
+│   │       │   ├── reverse.ts      # 反向生成 ☆
+│   │       │   ├── carve.ts        # 挖空+验证 ○
+│   │       │   └── difficulty.ts   # 难度度量 ☆
 │   │       └── worker/
-│   │           ├── pool.ts         # Worker pool
-│   │           └── task.ts         # Task definition
+│   │           ├── pool.ts         # Worker pool ○
+│   │           └── solver-task.ts  # Task definition ☆
 │   │
 │   ├── games/
 │   │   ├── package.json      # @ludus/games
 │   │   ├── tsconfig.json
 │   │   └── src/
-│   │       ├── index.ts      # barrel + registry
-│   │       ├── registry.ts   # GameRegistry: 注册/发现/列表
+│   │       ├── index.ts      # barrel + registry ☆
+│   │       ├── registry.ts   # GameRegistry: 注册/发现/列表 ☆
 │   │       ├── lights-out/
-│   │       │   ├── index.ts        # LightsOutPlugin implements GamePlugin
-│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, initialState
-│   │       │   ├── solver.ts       # GF(2) 求解器（调 @ludus/core 的 gf2.ts）
-│   │       │   ├── generator.ts    # 关卡生成器
-│   │       │   ├── render.ts       # React 组件 (DOM)
-│   │       │   └── manifest.ts     # educationManifest + visualizationManifest
-│   │       ├── sudoku/             # 同上结构
-│   │       └── nim/                # 同上结构
+│   │       │   ├── index.ts        # LightsOutPlugin implements GamePlugin ☆
+│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, initialState ☆
+│   │       │   ├── solver.ts       # GF(2) 求解器 ☆
+│   │       │   ├── generator.ts    # 关卡生成器 ☆
+│   │       │   ├── render.tsx      # React 组件 (DOM) ☆
+│   │       │   └── manifest.ts     # educationManifest + visualizationManifest ☆
+│   │       ├── sudoku/             # 同上结构 ○
+│   │       └── nim/                # 同上结构 ○
 │   │
 │   ├── education/
 │   │   ├── package.json      # @ludus/education
 │   │   ├── tsconfig.json
 │   │   └── src/
-│   │       ├── index.ts
-│   │       ├── ContentRenderer.tsx  # 渐进式揭示容器组件
-│   │       ├── ContentLoader.ts    # 加载 .md 文件
+│   │       ├── index.ts ★
+│   │       ├── ContentRenderer.tsx  # 渐进式揭示容器组件 ★
+│   │       ├── ContentLoader.ts    # 加载 .md 文件 ○
 │   │       └── content/
 │   │           ├── lights-out/
-│   │           │   ├── l2.zh-CN.md
-│   │           │   ├── l2.en.md
-│   │           │   ├── l3.zh-CN.md
-│   │           │   └── l3.en.md
-│   │           ├── sudoku/         # 同上
-│   │           └── nim/            # 同上
+│   │           │   ├── l2.zh-CN.md ★
+│   │           │   ├── l2.en.md ★
+│   │           │   ├── l3.zh-CN.md ★
+│   │           │   └── l3.en.md ★
+│   │           ├── sudoku/         # 同上 ○
+│   │           └── nim/            # 同上 ○
 │   │
-│   ├── i18n/
+│   ├── i18n/                          # ○ 阶段 4 不实现；阶段 4 在 apps/web/src/i18n/ 内（ADR-022）
 │   │   ├── package.json      # @ludus/i18n
 │   │   ├── tsconfig.json
-│   │   └── src/
+│   │   └── src/                       # ○ 阶段 5+ 提取
 │   │       ├── index.ts      # initI18n, useTranslation, I18nProvider
 │   │       ├── detect.ts     # 语言检测（浏览器 navigator.language）
 │   │       └── locales/
 │   │           ├── zh-CN.json # { "ui.play": "开始游戏", "ui.solve": "求解", ... }
 │   │           └── en.json    # { "ui.play": "Play", "ui.solve": "Solve", ... }
 │   │
-│   ├── ui/
+│   ├── ui/                            # ○ 阶段 4 不实现；阶段 4 组件放 apps/web/src/components/（ADR-022）
 │   │   ├── package.json      # @ludus/ui
 │   │   ├── tsconfig.json
-│   │   └── src/
+│   │   └── src/                       # ○ 阶段 5+ 提取（≥2 款游戏共享时）
 │   │       ├── index.ts
 │   │       ├── GameShell.tsx       # 游戏容器（撤销/重做/重置/胜利判定/Worker 集成）
 │   │       ├── GameCard.tsx        # 合集主页卡片
@@ -637,10 +641,10 @@ Ludus/
 │   │       ├── Controls.tsx        # 通用控件（Button, Select, Slider）
 │   │       └── KeyboardNav.tsx     # 键盘导航
 │   │
-│   └── viz/
+│   └── viz/                          # ○ 阶段 4 不实现；阶段 4 用 apps/web 内基础 MatrixViz 替代（ADR-022）
 │       ├── package.json      # @ludus/viz
 │       ├── tsconfig.json
-│       └── src/
+│       └── src/                       # ○ 阶段 5+ 实现
 │           ├── index.ts
 │           ├── ReactFlow/
 │           │   ├── SearchTree.tsx       # 搜索树可视化
@@ -667,7 +671,7 @@ Ludus/
 │   │       └── workers/
 │   │           └── solver.worker.ts  # 求解器 Web Worker 入口
 │   │
-│   ├── desktop/              # Tauri 壳（阶段 4 验证，阶段 6 完善）
+│   ├── desktop/              # Tauri 壳（○ 阶段 6 实现；ADR-022 不在阶段 4 验证）
 │   │   ├── package.json
 │   │   ├── src-tauri/
 │   │   │   ├── Cargo.toml
@@ -675,7 +679,7 @@ Ludus/
 │   │   │       └── main.rs
 │   │   └── index.html        # 引用 apps/web 构建产物
 │   │
-│   └── mobile/               # Capacitor 壳（阶段 4 验证，阶段 6 完善）
+│   └── mobile/               # Capacitor 壳（○ 阶段 6 实现；ADR-022 不在阶段 4 验证）
 │       ├── package.json
 │       ├── capacitor.config.ts
 │       └── index.html        # 引用 apps/web 构建产物
@@ -690,7 +694,7 @@ Ludus/
 
 ### 7.1 为何 GamePlugin 中 render 不是纯 Core 层概念？
 
-Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含 React 组件签名**。具体渲染由 `packages/games/<game>/render.ts` 实现，通过 `packages/ui/GameShell` 加载。这保持了 Core 零 UI 依赖，同时允许每个游戏选择渲染策略。
+Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含 React 组件签名**。具体渲染由 `packages/games/<game>/render.tsx` 实现，通过 `packages/ui/GameShell` 加载。这保持了 Core 零 UI 依赖，同时允许每个游戏选择渲染策略。
 
 ### 7.2 求解器与生成器为何在 Core 而非各游戏？
 
@@ -700,7 +704,7 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 
 - `packages/core/src/worker/` 定义 Worker task 抽象
 - `apps/web/src/workers/solver.worker.ts` 是 Web Worker 入口，import Core solver
-- `packages/ui/GameShell.tsx` 负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker
+- `packages/ui/GameShell.tsx`（目标路径）负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker。阶段 4 实际路径：`apps/web/src/components/GameShell.tsx`（见 ADR-022）
 
 ---
 
@@ -715,4 +719,4 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 
 ---
 
-*角色：系统架构师 | 产出：`docs/phases/02-architecture.md` | 等待用户确认*
+*角色：系统架构师 | 产出：`docs/phases/02-architecture.md` | ✅ 已确认*

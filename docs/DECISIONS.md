@@ -14,40 +14,33 @@
 
 ## 一、平台与跨端
 
-### ADR-000 平台收敛
-
-- **状态**：⚠️ SUPERSEDED（被 ADR-009 取代）
-- **原决策**：Web + 微信小程序(硬约束) + 移动 App；微信运行时作为最严格约束反向约束架构。
-- **取代原因**：需求变动，微信小程序由"硬约束"降级为"可选、非必要"，解除其对架构的强约束。
-
-### ADR-009 平台优先级重排（取代 ADR-000）
+### ADR-009 平台优先级
 
 - **状态**：✅ ACCEPTED
-- **决策**：Web 为第一优先级。架构须保证在"不重写"前提下扩展到桌面端(Tauri)与移动端(Capacitor)。微信支持降级为"可选、非必要"：以微信内 H5 覆盖最低获客需求；微信小程序列为未来独立任务，不约束主架构。
-- **理由**：解除微信小程序封闭运行时对架构的强约束，换取更干净的"标准 Web + 壳封装"路线；同时仍保留进微信传播的能力。
-- **影响**：Taro/uni-app 不再是必选项（见 ADR-005 关闭）；Core 层不再被微信运行时限制，但纯 TS 原则因其他理由保留（见 ADR-001）。
+- **决策**：Web 为第一优先级，直接部署为首要入口。架构须保证在"不重写"前提下扩展到桌面端(Tauri，系统 WebView 套壳)与移动端(Capacitor，原生 WebView 套壳)。微信支持为可选、非必要：以微信内 H5 覆盖最低获客需求；微信小程序列为未来独立任务，不约束主架构。不走 Steam/桌面原生精品化路线。
+- **理由**：「标准 Web + 壳封装」路线最干净，三端复用同一份代码；微信内 H5 保留传播能力但不让封闭运行时约束架构。
 - **风险**：微信内 H5 在性能/分享体验上弱于原生小程序；若未来小程序转为重点需另起适配任务。
 
-### ADR-010 跨端方案确定为 React + Tauri + Capacitor（取代 ADR-005）
+### ADR-010 跨端方案：React + Tauri + Capacitor
 
 - **状态**：✅ ACCEPTED
 - **决策**：三端复用同一 React 代码库。Web 直接部署为首要入口；桌面端用 Tauri 套壳（系统 WebView，体积小，优于 Electron）；移动端用 Capacitor 套壳（原生 WebView 复用网页）。
 - **理由**：Capacitor/Tauri 均为"复用同一份 Web 代码、外层套壳"，天然满足"不重写"诉求；区别于 React Native 需用原生组件重写 UI。
-- **影响**：放弃 Steam/桌面原生精品化路线；桌面以 Tauri 轻封装覆盖。
+- **影响**：不走 Steam/桌面原生精品化路线；桌面以 Tauri 轻封装覆盖。
 - **风险**：Capacitor 基于 WebView，高帧率连续动画弱于原生；本品类多为回合/步进式，影响可控。
 
 ---
 
 ## 二、核心逻辑与渲染
 
-### ADR-001 核心逻辑层语言 TypeScript（维持，理由调整）
+### ADR-001 核心逻辑层语言 TypeScript
 
 - **状态**：✅ ACCEPTED
 - **决策**：Core Logic 层用 TypeScript，且**框架无关**（不依赖 React、不依赖 DOM、不依赖 Node-only API）。游戏规则、求解器、关卡生成器均置于此层。
-- **理由（已更新）**：原"为微信端复用"调整为——可单元测试、可放入 Web Worker 跑重计算以避免阻塞 UI、未来可移植（换渲染框架或重启小程序适配时逻辑零改动）。
+- **理由**：可单元测试、可放入 Web Worker 跑重计算以避免阻塞 UI、未来可移植（换渲染框架或小程序适配时逻辑零改动）。
 - **影响**：重型求解器优先纯 TS 实现；Web/移动可选 WASM 加速，但**始终保留纯 TS 回退路径**。
 
-### ADR-011 可视化与渲染分层（新增）
+### ADR-011 可视化与渲染分层
 
 - **状态**：✅ ACCEPTED
 - **决策**：
@@ -57,7 +50,7 @@
 - **理由**：分离"游戏渲染"与"算法解释渲染"两类不同需求；为大网格/高频动画预留性能出口。
 - **影响**：游戏单元接口须声明其渲染后端（DOM / Canvas）。
 
-### ADR-012 美术与手感投入定位（新增）
+### ADR-012 美术与手感投入定位
 
 - **状态**：✅ ACCEPTED
 - **决策**：技术栈（Framer Motion + Tailwind）确保不拖累美观与趣味，但承认可玩性/趣味/美观主要由设计投入决定（动效曲线、配色、音效、关卡节奏）。每个游戏 DoD 须包含"手感反馈"与"基础美术打磨"项。
@@ -65,7 +58,7 @@
 
 ---
 
-## 三、产品方向（维持）
+## 三、产品方向
 
 ### ADR-002 国际化为第一公民
 
@@ -90,7 +83,7 @@
 
 ### ADR-005 跨端框架选型（Taro vs uni-app）
 
-- **状态**：⚠️ SUPERSEDED（被 ADR-010 取代，关闭）
+- **状态**：❌ NOT ADOPTED（未采用；选定 React + Tauri + Capacitor，见 ADR-010）
 
 ### ADR-006 Monorepo 工具链
 
@@ -143,13 +136,87 @@
 - **决策**：文件导入导出为主 + localStorage 缓存最近进度。IndexedDB 留作将来大量用户生成内容时的升级路径。
 - **确认日期**：2026-06-25（阶段 0 确认，对应 Q6）。
 
+### ADR-018 UI 设计系统：Playful Bento
+
+- **状态**：✅ ACCEPTED
+- **决策**：采用 Bento Box 风格适配版（"Playful Bento"）。Hub 层纯 Bento 网格；Game Shell 层保留 Bento 视觉语言但棋盘区全出血；教育层 Bento 知识卡。颜色体系 Warm Stone + Logic Indigo + Game Amber + Clarity Teal。圆角分层（6–24px）。玻璃效果仅 Hub 层。
+- **理由**：Bento Box 的模块卡片网格天然映射到游戏合集浏览 + 渐进式揭示的空间隐喻；适配改造解决了纯 Apple Bento"卡框约束游戏手感"的缺陷。
+- **影响**：`packages/ui` 组件库按此设计系统实现（阶段 4 先在 `apps/web/src/components/` 内实现，阶段 5+ 提取到 `packages/ui`）；每游戏入口卡可声明专属强调色；动效与间距按统一规范。
+- **确认日期**：2026-06-26。
+- **详细文档**：`docs/phases/04-ui-design-system.md`
+
+### ADR-019 状态管理：Zustand
+
+- **状态**：✅ ACCEPTED
+- **决策**：React 层状态管理使用 **Zustand**。Core 层保持框架无关的纯 TS 状态对象；Zustand store 包裹 Core 状态并通过 actions 委托到 Core 纯函数。
+- **理由**：
+  - 体积极小（~2KB gzip），零 boilerplate，不需要 Provider 包裹
+  - 天然支持 subscribe/selector 模式，适合高频更新的游戏棋盘
+  - middleware 生态成熟：immer（不可变更新）、persist（localStorage 进度）、devtools
+  - 与 Core 层边界清晰：`store.gameState` 持有 Core 的 `GameState` 实例，`store.applyMove()` 调用 Core 的 `applyMove()` 后更新引用
+- **对比淘汰**：
+  - React Context + useReducer：模板代码多、性能需手动 memo/selector、跨组件树传递麻烦
+  - Jotai：原子化粒度对游戏状态过细（一个棋盘状态是整体，不需要每个单元格一个 atom）
+  - Redux Toolkit：体量过大、对游戏类应用过度设计
+- **Store 设计原则**：
+  1. 每个游戏实例一个 store（或全局单 store 按 `gameId` 分区）
+  2. Store 字段：`gameState`（Core 类型）、`history: GameState[]`、`historyIndex`、`disclosureLevel: 1|2|3`、`language`
+  3. Actions 全部委托 Core 纯函数，store 只做状态引用切换
+  4. 求解器调用走 Web Worker，store 持有 `solverStatus: 'idle' | 'running' | 'done'`
+- **确认日期**：2026-06-26。
+
+### ADR-020 路由：React Router v6
+
+- **状态**：✅ ACCEPTED
+- **决策**：使用 **React Router v6**（`createBrowserRouter`）。路由结构：
+  - `/` — Hub 首页（游戏合集）
+  - `/game/:gameId` — 游戏视图（关卡选择 + 游戏棋盘）
+  - `/game/:gameId/level/:levelId` — 指定关卡直链（可选，用于分享）
+  - 未来：`/stats`、`/settings`
+- **理由**：
+  - 生态最成熟、文档最全、社区问题最少
+  - Tauri（WebView）和 Capacitor（WebView）均无兼容问题
+  - v6 的 `createBrowserRouter` + `loader` 模式足够，不需要 v7 的 Remix 式 SSR（我们是纯 CSR SPA）
+  - TanStack Router 类型安全更好但生态太新、学习成本高，对游戏应用的收益有限
+- **影响**：`apps/web/src/router.tsx` 定义路由树；GameShell 通过 `useParams()` 获取 `gameId`，动态加载对应游戏模块
+- **确认日期**：2026-06-26。
+
+### ADR-021 音效策略：Howler.js + 阶段 4 做基础音效
+
+- **状态**：✅ ACCEPTED
+- **决策**：
+  1. 音效库选 **Howler.js**（~7KB gzip，Web Audio API 封装，audio sprite 支持，移动端兼容好）
+  2. **阶段 4 即加入基础音效**，不推迟。这是手感反馈的必要组成部分（见 DoD 与 ADR-012），不是可选装饰
+- **阶段 4 音效范围（最小集）**：
+  - UI 音效：按钮点击（~2KB）、错误提示（~2KB）
+  - 游戏音效：操作走子（每个游戏可自定义，~3KB）、撤销（~2KB）、胜利（~5KB）
+  - 总计 < 20KB，用 audio sprite 合并为单文件减少请求
+- **理由**：静默的交互会严重拉低"可玩"的体感质量，即使视觉到位。Claude Code 的 DoD 明确要求"基础手感反馈与美术打磨"。先用最小集验证手感，后续游戏递增时再扩展音效库
+- **影响**：`apps/web/src/hooks/useSound.ts` 封装 Howler；每个游戏模块可声明 `soundManifest`
+- **确认日期**：2026-06-26。
+
+### ADR-022 阶段 4 启动边界：最小包启动
+
+- **状态**：✅ ACCEPTED
+- **决策**：阶段 4 只创建和实现 **3 个必需包**，而非一次性搭建全部 9 个包：
+  - `packages/core` — 已有类型/schema，追加 GF(2) 求解器 + 生成器 + Worker 抽象
+  - `packages/games` — Lights Out 插件（rules/solver/generator/manifest/render）
+  - `apps/web` — Vite + React + Router + i18n 骨架 + 路由 `/game/lights-out`
+- **暂不创建**（等阶段 5/6 需要时再建）：
+  - `packages/ui` — 阶段 4 的 GameShell/Button 等组件先放在 `apps/web/src/components/`，等 ≥2 款游戏共享时提取
+  - `packages/viz` — 算法可视化在阶段 5 才需要
+  - `packages/education` — 阶段 3 已有 ContentRenderer 骨架与 Lights Out 教学内容文件，阶段 4 不再扩展此包；apps/web 用静态 import 直接消费其内容文件
+  - `packages/i18n` — 阶段 4 的语言资源放在 `apps/web/src/i18n/`，等规模到需独立管理时再提取
+  - `apps/desktop` / `apps/mobile` — 阶段 6
+- **理由**：垂直切片的目的是**最快验证全链路**，不是搭建完整 monorepo。一次性创建全部包会分散注意力且大量包长时间为空。等模式在 ≥2 款游戏中验证后提取共享代码，反而能设计出更准确的接口
+- **提取判断标准**：同一个模块被 ≥2 个 package import → 提取到对应共享包
+- **确认日期**：2026-06-26。
+
 ---
 
 ## 📝 决策日志
 
-- [初始] ADR-000~004 录入（来自 MASTER PROMPT 约束）。
-- [本次变动] ADR-000 → SUPERSEDED；新增 ADR-009 平台优先级重排（Web 优先、微信可选）。
-- [本次变动] ADR-005 → SUPERSEDED；新增 ADR-010 跨端方案 React+Tauri+Capacitor。
-- [本次变动] ADR-001 理由调整（纯 TS 原则保留，理由改为可测试/Worker/可移植）。
-- [本次变动] 新增 ADR-011 可视化与渲染分层；新增 ADR-012 美术与手感投入定位。
+- ADR-001/002/003/004/009/010/011/012 录入（项目立项阶段）。
 - [2026-06-25] 阶段 0 确认：ADR-006(pnpm) / ADR-007(KaTeX) / ADR-008(zod+semver) / ADR-013(react-i18next) / ADR-014(Vitest) / ADR-015(MVP 3 款) / ADR-016(MIT) / ADR-017(文件+localStorage) → ACCEPTED。
+- [2026-06-26] ADR-018 (Playful Bento UI 设计系统) → ACCEPTED。详见 `docs/phases/04-ui-design-system.md`。
+- [2026-06-26] ADR-019 (Zustand 状态管理) / ADR-020 (React Router v6) / ADR-021 (Howler.js 音效 + 阶段 4 即做) / ADR-022 (阶段 4 最小包启动) → ACCEPTED。
