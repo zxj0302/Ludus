@@ -86,7 +86,7 @@
 
 ---
 
-## 四、待决策
+## 四、已决策（工具链 / 技术选型）
 
 ### ADR-005 跨端框架选型（Taro vs uni-app）
 
@@ -94,17 +94,54 @@
 
 ### ADR-006 Monorepo 工具链
 
-- **状态**：🔶 PROPOSED（待阶段 2）
-- **待定**：pnpm workspaces / Turborepo / Nx；包划分建议 core / games / education / i18n / ui / viz / apps。
+- **状态**：✅ ACCEPTED
+- **决策**：pnpm workspaces（轻量、快、Lockfile 稳定）。包划分：`packages/core` / `packages/games` / `packages/education` / `packages/i18n` / `packages/ui` / `packages/viz` / `apps/web` / `apps/desktop`(Tauri) / `apps/mobile`(Capacitor)。
+- **理由**：团队规模小、包边界清晰，尚不需要 Turborepo/Nx 的分布式缓存。若未来性能瓶颈出现可迁移到 Turborepo（同为 pnpm 生态，迁移成本低）。
+- **确认日期**：2026-06-25（阶段 0 确认）。
 
 ### ADR-007 数学公式渲染方案（KaTeX vs MathJax）
 
-- **状态**：🔶 PROPOSED（待阶段 3/4）
-- **备注**：微信端可行性约束已随 ADR-009 放宽，主要按 Web 端体积与渲染质量权衡。
+- **状态**：✅ ACCEPTED
+- **决策**：KaTeX（快、体积小 ~280KB、子集支持）。若后续某个游戏超出 KaTeX 能力，可针对那一个模块引入 MathJax 按需加载。
+- **理由**：Web 首屏体积敏感，Ludus 教学内容主要是行内公式和简单块公式（复杂度类、递推式、矩阵等），KaTeX 子集已足够。MathJax 完整能力溢出需求。
+- **确认日期**：2026-06-25（阶段 0 确认）。
 
 ### ADR-008 状态/关卡/教学内容的序列化 schema 与版本化策略
 
-- **状态**：🔶 PROPOSED（待阶段 2）
+- **状态**：✅ ACCEPTED
+- **决策**：TypeScript 类型 + zod 运行时校验 + semver 版本号。数据 `version` 字段声明版本，Core 层提供 migrator（version N → N+1）。
+- **理由**：全栈 TS，JSON 自然序列化格式，无跨语言需求；zod 同时提供 TS 类型推导和运行时校验；关卡文件小巧，JSON 可读性好利于调试和导入导出。Protobuf/Avro 对当前规模过度设计。
+- **确认日期**：2026-06-25（阶段 0 确认）。
+
+### ADR-013 i18n 库选型
+
+- **状态**：✅ ACCEPTED
+- **决策**：react-i18next。ICU MessageFormat 支持（复数/性别/选择），生态最成熟、文档最好。
+- **确认日期**：2026-06-25（阶段 0 确认，对应 Q4）。
+
+### ADR-014 测试框架
+
+- **状态**：✅ ACCEPTED
+- **决策**：Vitest（快、Vite 原生、Jest 兼容 API、原生 ESM）。
+- **确认日期**：2026-06-25（阶段 0 确认，对应 Q5）。
+
+### ADR-015 MVP 范围
+
+- **状态**：✅ ACCEPTED
+- **决策**：标准 MVP = 3 款游戏：① Lights Out 点灯（线性代数 GF(2)）② 数独（CSP/SAT，DLX）③ Nim/Wythoff（组合博弈论）。分别覆盖三个不同领域，充分暴露插件接口缺陷。
+- **确认日期**：2026-06-25（阶段 0 确认，对应 Q7）。
+
+### ADR-016 开源许可证
+
+- **状态**：✅ ACCEPTED
+- **决策**：MIT（宽松许可证，最大化传播与复用）。
+- **确认日期**：2026-06-25（阶段 0 确认，对应 Q8）。
+
+### ADR-017 关卡数据存储
+
+- **状态**：✅ ACCEPTED
+- **决策**：文件导入导出为主 + localStorage 缓存最近进度。IndexedDB 留作将来大量用户生成内容时的升级路径。
+- **确认日期**：2026-06-25（阶段 0 确认，对应 Q6）。
 
 ---
 
@@ -115,3 +152,4 @@
 - [本次变动] ADR-005 → SUPERSEDED；新增 ADR-010 跨端方案 React+Tauri+Capacitor。
 - [本次变动] ADR-001 理由调整（纯 TS 原则保留，理由改为可测试/Worker/可移植）。
 - [本次变动] 新增 ADR-011 可视化与渲染分层；新增 ADR-012 美术与手感投入定位。
+- [2026-06-25] 阶段 0 确认：ADR-006(pnpm) / ADR-007(KaTeX) / ADR-008(zod+semver) / ADR-013(react-i18next) / ADR-014(Vitest) / ADR-015(MVP 3 款) / ADR-016(MIT) / ADR-017(文件+localStorage) → ACCEPTED。

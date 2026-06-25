@@ -1,0 +1,23 @@
+{
+  "name": "ludus",
+  "private": true,
+  "description": "寓教于乐的大型小游戏合集 — 把算法/数学包装成好玩的游戏",
+  "license": "MIT",
+  "scripts": {
+    "dev": "pnpm --filter ludus-web dev",
+    "build": "pnpm -r build",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint packages apps --ext .ts,.tsx",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^20.14.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "ludus-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ludus Web 应用 — Vite + React SPA，静态部署入口",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@ludus/core": "workspace:*",
+    "@ludus/games": "workspace:*",
+    "@ludus/education": "workspace:*",
+    "@ludus/i18n": "workspace:*",
+    "@ludus/ui": "workspace:*",
+    "@ludus/viz": "workspace:*",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-router-dom": "^6.24.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.4.0"
+  }
+}
