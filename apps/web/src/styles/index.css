@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --warm-stone-50: #fafaf9;
+  --warm-stone-100: #f5f0eb;
+  --warm-stone-200: #e7e0d8;
+  --warm-stone-300: #d4cbc2;
+  --warm-stone-500: #9c8b7d;
+  --warm-stone-700: #655850;
+  --warm-stone-800: #544944;
+  --warm-stone-900: #433c38;
+
+  --logic-indigo-50: #f0f2ff;
+  --logic-indigo-100: #dde2ff;
+  --logic-indigo-600: #3b3fd4;
+  --logic-indigo-700: #2f33ad;
+
+  --game-amber-100: #fff3c4;
+  --game-amber-400: #ffb41e;
+  --game-amber-700: #b64d07;
+  --game-amber-800: #933c0d;
+
+  --clarity-teal-light: #ccfbef;
+  --clarity-teal-dark: #14b897;
+}
+
+@layer base {
+  body {
+    @apply bg-warm-stone-50 text-warm-stone-800 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  code, pre, kbd {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+@layer components {
+  .bento-card {
+    @apply bg-white rounded-card shadow-card border border-warm-stone-200/60;
+    @apply transition-shadow duration-200;
+  }
+
+  .bento-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  }
+
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-xl rounded-hub shadow-glass border border-white/60;
+  }
+
+  .knowledge-card {
+    @apply bg-logic-indigo-50/60 border border-logic-indigo-200/60 rounded-card p-4;
+  }
+}

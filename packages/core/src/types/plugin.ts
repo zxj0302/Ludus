@@ -31,8 +31,10 @@ export interface GameMetadata {
   nameKey: string;
   /** 一句话描述（i18n key，如 "game.lights-out.description"） */
   descriptionKey: string;
-  /** 所属领域 */
+  /** 所属领域（i18n key） */
   category: string;
+  /** 游戏图标（emoji），用于 Hub 卡片展示 */
+  icon?: string;
   /** 搜索标签 */
   tags: string[];
   /** 渲染后端 */
