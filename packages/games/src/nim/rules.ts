@@ -14,7 +14,6 @@ export function createInitialState(): NimState {
 }
 
 export function legalMoves(state: NimState): NimMove[] {
-  if (state.currentPlayer !== 0) return [];
   const moves: NimMove[] = [];
   for (let i = 0; i < state.piles.length; i++) {
     const count = state.piles[i]!;
@@ -26,19 +25,17 @@ export function legalMoves(state: NimState): NimMove[] {
 }
 
 export function applyMove(state: NimState, move: NimMove): NimState {
-  const { piles, currentPlayer } = state;
+  const { piles } = state;
   const idx = move.pileIndex;
   if (idx < 0 || idx >= piles.length) return state;
   if (move.removeCount < 1 || move.removeCount > piles[idx]!) return state;
-  // In human vs AI mode, player is always 0 when calling applyMove
-  if (currentPlayer !== 0) return state;
 
   const newPiles = [...piles];
   newPiles[idx]! -= move.removeCount;
 
   return {
     piles: newPiles,
-    currentPlayer: 1, // switch to AI
+    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
     initialPiles: state.initialPiles,
   };
 }

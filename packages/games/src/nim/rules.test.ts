@@ -33,9 +33,9 @@ describe('legalMoves', () => {
     expect(legalMoves(s)).toEqual([]);
   });
 
-  it('returns empty when it is AI turn', () => {
+  it('returns moves regardless of currentPlayer', () => {
     const s: NimState = { piles: [3, 4, 5], currentPlayer: 1, initialPiles: [3, 4, 5] };
-    expect(legalMoves(s)).toEqual([]);
+    expect(legalMoves(s).length).toBe(12);
   });
 });
 
@@ -66,9 +66,12 @@ describe('applyMove', () => {
     expect(applyMove(s, { pileIndex: 0, removeCount: 99 })).toBe(s);
   });
 
-  it('ignores move during AI turn', () => {
+  it('applies move during AI turn and toggles currentPlayer', () => {
     const s: NimState = { piles: [3, 1], currentPlayer: 1, initialPiles: [3, 4] };
-    expect(applyMove(s, { pileIndex: 0, removeCount: 1 })).toBe(s);
+    const next = applyMove(s, { pileIndex: 0, removeCount: 1 });
+    expect(next).not.toBe(s);
+    expect(next.piles[0]).toBe(2);
+    expect(next.currentPlayer).toBe(0);
   });
 });
 

@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）进行中— 数独 (Sudoku) 已完整实现**。下一步：下一款游戏或 Sokoban 生成器升级
-- **MVP 范围**：3 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅）。
+- **当前阶段**：**阶段 5（增量游戏）进行中— Nim 已完整实现**。下一步：下一款游戏（Wythoff 或 15-puzzle）或 Sokoban 生成器升级
+- **MVP 范围**：4 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），~80+ 个源文件，108 个测试（全过），Vite 构建成功，React Flow 懒加载。
-- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 = **108 测试全过**。
+- **代码库状态**：3 包 monorepo（core / games / web），90+ 个源文件，152 个测试（全过），Vite 构建成功，React Flow + Dagre + React Flow 懒加载。
+- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 / Nim 求解器 15 测 + 规则 16 测 + 生成器 6 测 + 难度 5 测 = **152 测试全过**。
 
 ## ✅ DONE
 
@@ -71,6 +71,17 @@
   - i18n: 中英翻译 key (Sudoku 名称/描述/面板/矩阵)
   - 教学: 四份 markdown (L2/L3 × zh/en)，五段式结构
   - 测试: DLX 求解器 16 测 + 生成器 5 测 + 规则 14 测 + 难度 4 测 = 39 新测试
+- **阶段 5c — Nim (Nim-sum / Bouton 1901)** ✅:
+  - Core: Nim 状态类型 + computeNimSum / findWinningMove / solveNim (O(n) XOR) + isPPosition + P-distance walk 生成器 + 难度公式
+  - Core: Nim-solver 15 测 + Nim-generator 6 测 (P-distance/P-position/N-position 全覆盖) + Nim-difficulty 5 测
+  - Game: 完整插件 (rules/manifest/index/render) + NimBoard 渲染 (DOM + Framer Motion, 石子动画 + 移除数量选择器 + 提示高亮)
+  - Web: GameShell 动态 Board 选择 (niState 分支) + EducationPanel 状态卡片 (Piles/Nim-sum) + NimTreeViz 懒加载 (React Flow + Dagre)
+  - AI: 游戏 Store 内建 AI 自动对弈 (setTimeout 600ms + findWinningMove + P-position fallback)，两步区分玩家/AI
+  - i18n: 中英翻译 key (nim.* 完整覆盖)
+  - 教学: 四份 markdown (L2/L3 × zh/en)，五段式结构
+  - 测试: Nim 规则 16 测 + 求解器 15 测 + 生成器 6 测 + 难度 5 测 = 42 新测试, **152 全过**
+  - 构建: v1.0 成功, NimTreeViz 懒加载分包 (~268KB gzip ~90KB)
+  - 新增 ~11 个文件, 修改 8 个文件 (规则改为双人对弈, 支持 AI 通过 applyMove 走子)
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
@@ -89,13 +100,17 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-下一款游戏: Nim/Wythoff (博弈论) 或继续 Sokoban 生成器升级。
+下一款游戏：Wythoff (博弈论姐妹篇) 或 15-puzzle (A*) 或 Sokoban 生成器升级。
 
-### 选项 A：Nim/Wythoff（博弈论）
+### 选项 A：Wythoff（博弈论姐妹篇）
 
-继续增量游戏——见 `docs/phases/00-backlog.md` §4 博弈论单元。可实现 Nim 完整求解（Sprague-Grundy）+ Wythoff 游戏 + 教学。
+见 `docs/phases/00-backlog.md` §4 博弈论单元。Wythoff 与 Nim 共享 NimState 基础 —— 扩展 applyMove 支持"两堆等量移除"走法，继承 NimBoard 视觉 + NimTreeViz 游戏树。
 
-### 选项 B：Sokoban 生成器升级
+### 选项 B：15-puzzle (A*)
+
+滑动拼图——见 backlog §9 搜索/启发式。需实现 A* + 曼哈顿距离/线性冲突启发式 + 反向随机游走生成器。
+
+### 选项 C：Sokoban 生成器升级
 
 参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器。
 
@@ -200,3 +215,12 @@
   12. `sokoban-generator.test.ts` 测试描述 "5 levels" → "3 builtin levels"
   13. PROGRESS.md 测试数 65 → 69；移除 SearchTreeViz 已交付描述；合并重复 Worker KNOWN ISSUES
   14. `sokoban-levels.ts` 注释"只在整个块之外"误导 → 改为"XSB 格式以 ; 开头"
+- [2026-06-26] **阶段 5c — Nim 完整实现**：
+  - Core 层：Nim 状态类型 + XOR 求解器 (computeNimSum/findWinningMove/solveNim) + isPPosition + P-distance walk 生成器 + 难度公式
+  - Game 层：完整插件 + NimBoard 渲染 (DOM + Framer Motion, 石子动画 + 移除选择器 + 提示高亮)
+  - Web 层：GameShell 集成 (niState 分支) + EducationPanel 状态卡片 + NimTreeViz 懒加载 (React Flow + Dagre)
+  - AI 自动对弈：Store applyMove 内建 setTimeout + findWinningMove + P-position fallback, 600ms 延迟, 两步区分玩家/AI
+  - Nim 规则改为支持双人对弈 (applyMove 移除 currentPlayer 检查, toggle 双方走子), legalMoves 移除 player 过滤
+  - i18n: nim.* 中英完整覆盖; 教学: L2/L3 × zh/en 四份
+  - 测试: 152 全过 (原有 108 + Nim 42 新增), typecheck 全绿, vite build 成功
+  - NimTreeViz 懒加载分包 ~268KB (gzip ~90KB)

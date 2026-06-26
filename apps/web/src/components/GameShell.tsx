@@ -2,8 +2,8 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { Move } from '@ludus/core';
-import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard } from '@ludus/games';
-import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove } from '@ludus/games';
+import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard } from '@ludus/games';
+import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
@@ -49,6 +49,7 @@ export function GameShell({ gameId }: Props) {
   const loState = gameState as unknown as LightsOutState | null;
   const soState = gameState as unknown as SokobanState | null;
   const suState = gameState as unknown as SudokuState | null;
+  const niState = gameState as unknown as NimState | null;
   const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
@@ -77,7 +78,7 @@ export function GameShell({ gameId }: Props) {
     return () => clearInterval(timer);
   }, [solvePlayback, nextPlaybackStep, playStep]);
 
-  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove) => {
+  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove | NimMove) => {
     if (isWin || solvePlayback) return;
     applyMove(move);
     playToggle(); vibrate(5);
@@ -101,7 +102,8 @@ export function GameShell({ gameId }: Props) {
   const stateMatchesPlugin =
     (gameId === 'lights-out' && loState?.grid != null) ||
     (gameId === 'sokoban' && soState?.walls != null) ||
-    (gameId === 'sudoku' && suState?.grid != null && suState.n === 9);
+    (gameId === 'sudoku' && suState?.grid != null && suState.n === 9) ||
+    (gameId === 'nim' && niState?.piles != null);
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -179,6 +181,10 @@ export function GameShell({ gameId }: Props) {
     if (gameId === 'sudoku') {
       const m = move as SudokuMove;
       if (m.row != null && m.col != null) return { row: m.row, col: m.col, value: m.value };
+    }
+    if (gameId === 'nim') {
+      const m = move as NimMove;
+      if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
     }
     return null;
   };
@@ -269,6 +275,13 @@ export function GameShell({ gameId }: Props) {
                 <LightsOutBoard
                   state={loState} onMove={handleMove}
                   disabled={isWin || solvePlayback} highlightCell={highlightCell}
+                />
+              ) : gameId === 'nim' && niState?.piles ? (
+                <NimBoard
+                  state={niState}
+                  onMove={handleMove}
+                  disabled={isWin || solvePlayback}
+                  highlightCell={highlightCell}
                 />
               ) : (
                 <p className="text-warm-stone-400 text-sm">{t('game.loading')}</p>

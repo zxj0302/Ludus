@@ -2,15 +2,17 @@ import { useRef, useCallback, useEffect, useMemo, useState, lazy, Suspense } fro
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState } from '@ludus/core';
+import { computeNimSum } from '@ludus/core';
 import { MatrixViz } from './MatrixViz';
 import { KnowledgeCard } from './KnowledgeCard';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '../stores/gameStore';
-import type { LightsOutState, SokobanState, SudokuState } from '@ludus/games';
+import type { LightsOutState, SokobanState, SudokuState, NimState } from '@ludus/games';
 
 const BFSTreeViz = lazy(() => import('./BFSTreeViz'));
 const DLXMatrixViz = lazy(() => import('./DLXMatrixViz').then(m => ({ default: m.DLXMatrixViz })));
+const NimTreeViz = lazy(() => import('./NimTreeViz').then(m => ({ default: m.NimTreeViz })));
 
 import l2zhLO from '@ludus/education/src/content/lights-out/l2.zh-CN.md?raw';
 import l2enLO from '@ludus/education/src/content/lights-out/l2.en.md?raw';
@@ -132,6 +134,7 @@ export function EducationPanel({
   // Stats — must be computed before any conditional return (hooks rule)
   const loState = gameState as LightsOutState | null;
   const suState = gameState as SudokuState | null;
+  const niState = gameState as NimState | null;
   const onCount = loState?.grid?.filter(c => c === 1).length ?? 0;
   const totalCells = loState ? loState.n * loState.n : 0;
 
@@ -147,6 +150,7 @@ export function EducationPanel({
   const isLO = gameId === 'lights-out';
   const isSK = gameId === 'sokoban';
   const isSU = gameId === 'sudoku';
+  const isNI = gameId === 'nim';
 
   if (!open && !hasBeenOpened) return null;
 
@@ -269,6 +273,21 @@ export function EducationPanel({
                 </>
               )}
             </div>
+            {isNI && niState?.piles && (
+              <div className="space-y-2 mt-2">
+                <h4 className="text-xs font-semibold text-warm-stone-600 uppercase tracking-wide">Nim</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-warm-stone-50 rounded-lg p-2">
+                    <div className="text-warm-stone-500 text-xs">Piles</div>
+                    <div className="font-mono font-semibold">{niState.piles.join(', ')}</div>
+                  </div>
+                  <div className="bg-warm-stone-50 rounded-lg p-2">
+                    <div className="text-warm-stone-500 text-xs">Nim-sum</div>
+                    <div className="font-mono font-semibold">{computeNimSum(niState.piles)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </KnowledgeCard>
         )}
 
@@ -295,6 +314,13 @@ export function EducationPanel({
         {solution?.trace?.type === 'constraint-propagation' && (
           <Suspense fallback={<div className="h-40 rounded-card bg-warm-stone-100 animate-pulse" />}>
             <DLXMatrixViz solution={solution} activeStep={solveStepIndex} />
+          </Suspense>
+        )}
+
+        {/* Nim：XOR 游戏树可视化 */}
+        {solution?.trace?.type === 'nim-xor' && niState && (
+          <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
+            <NimTreeViz trace={solution.trace} state={niState} />
           </Suspense>
         )}
 

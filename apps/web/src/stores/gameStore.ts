@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GamePlugin, GameState, Move, Solution } from '@ludus/core';
 import { getGame } from '@ludus/games';
+import { findWinningMove } from '@ludus/core';
 import i18n from '../i18n';
 
 export type DisclosureLevel = 1 | 2 | 3;
@@ -176,6 +177,32 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       currentOptimalSteps: null,
       solution,
     });
+
+    // Nim AI auto-response
+    if (plugin.metadata.id === 'nim' && !solvePlayback) {
+      const nimState = newState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
+      if (nimState.currentPlayer === 1 && !nimState.piles.every((v: number) => v === 0)) {
+        // AI plays after a short delay
+        setTimeout(() => {
+          const s = get();
+          if (s.plugin && s.gameState) {
+            const ns = s.gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
+            if (ns.currentPlayer !== 1) return; // player already moved again
+            const wm = findWinningMove(ns.piles);
+            if (wm) {
+              const aiMove = { pileIndex: wm.pileIndex, removeCount: wm.removeCount };
+              s.applyMove(aiMove as Move);
+            } else {
+              // P-position: take 1 from first non-empty pile
+              const firstNonEmpty = ns.piles.findIndex((v: number) => v > 0);
+              if (firstNonEmpty >= 0) {
+                s.applyMove({ pileIndex: firstNonEmpty, removeCount: 1 } as Move);
+              }
+            }
+          }
+        }, 600);
+      }
+    }
   },
 
   undo: () => {

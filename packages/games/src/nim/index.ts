@@ -10,6 +10,7 @@ import {
 } from './rules';
 import type { NimState, NimMove } from './rules';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
+export { NimBoard } from './render';
 
 const metadata = {
   id: 'nim',
