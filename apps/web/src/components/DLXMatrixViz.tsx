@@ -39,31 +39,31 @@ export function DLXMatrixViz({ solution, activeStep = -1 }: Props) {
   return (
     <div className="rounded-card border border-warm-stone-200 bg-white p-4 space-y-3">
       <h3 className="text-sm font-bold text-warm-stone-800">
-        DLX Exact Cover Matrix
+        {t('sudoku.matrix.title')}
       </h3>
 
       {/* Matrix description */}
       <div className="text-xs text-warm-stone-500 space-y-1">
         <p>{matrixDesc.matrixDesc ?? `${matrixDesc.totalRows ?? 729} rows x ${matrixDesc.totalCols ?? 324} columns`}</p>
-        <p>4 constraints: cell (81) + row-digit (81) + col-digit (81) + box-digit (81)</p>
+        <p>{t('sudoku.matrix.description')}</p>
       </div>
 
       {/* Search statistics */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-warm-stone-50 rounded-btn p-2">
-          <div className="text-[10px] text-warm-stone-500">Nodes</div>
+          <div className="text-[10px] text-warm-stone-500">{t('sudoku.matrix.nodes')}</div>
           <div className="text-lg font-bold text-logic-indigo-700">{stats.nodesExplored}</div>
         </div>
         <div className="bg-warm-stone-50 rounded-btn p-2">
-          <div className="text-[10px] text-warm-stone-500">Time</div>
+          <div className="text-[10px] text-warm-stone-500">{t('sudoku.matrix.time')}</div>
           <div className="text-lg font-bold text-clarity-teal-dark">{stats.timeMs}ms</div>
         </div>
         <div className="bg-warm-stone-50 rounded-btn p-2">
-          <div className="text-[10px] text-warm-stone-500">Backtracks</div>
+          <div className="text-[10px] text-warm-stone-500">{t('sudoku.matrix.backtracks')}</div>
           <div className="text-lg font-bold text-game-amber-700">{actionCounts.backtrack}</div>
         </div>
         <div className="bg-warm-stone-50 rounded-btn p-2">
-          <div className="text-[10px] text-warm-stone-500">Choices</div>
+          <div className="text-[10px] text-warm-stone-500">{t('sudoku.matrix.choices')}</div>
           <div className="text-lg font-bold text-logic-indigo-700">{actionCounts.choose}</div>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function DLXMatrixViz({ solution, activeStep = -1 }: Props) {
       {currentStep && (
         <div className="bg-logic-indigo-50 rounded-btn p-3 text-xs">
           <div className="font-semibold text-logic-indigo-800">
-            Step {activeStep + 1}/{stepsLength}
+            {t('sudoku.matrix.currentStep', { current: activeStep + 1, total: stepsLength })}
           </div>
           <div className="text-logic-indigo-600 mt-1 font-mono">
             {currentStep.description}
@@ -87,9 +87,9 @@ export function DLXMatrixViz({ solution, activeStep = -1 }: Props) {
 
       {/* Legend */}
       <div className="flex gap-3 text-[10px] text-warm-stone-500">
-        <span>Choose column (min size)</span>
-        <span>Try row</span>
-        <span>Backtrack</span>
+        {t('sudoku.matrix.legend').split(' | ').map((item, i) => (
+          <span key={i}>{item}</span>
+        ))}
       </div>
     </div>
   );

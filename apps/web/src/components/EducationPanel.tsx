@@ -251,19 +251,19 @@ export function EducationPanel({
               {isSU && (
                 <>
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                    <div className="text-[10px] text-warm-stone-500">Empty Cells</div>
+                    <div className="text-[10px] text-warm-stone-500">{t('education.sudokuEmpty')}</div>
                     <div className="text-lg font-bold text-game-amber-700">
                       {suState?.grid?.filter(v => v === 0).length ?? 0}
                     </div>
                   </div>
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                    <div className="text-[10px] text-warm-stone-500">Givens</div>
+                    <div className="text-[10px] text-warm-stone-500">{t('education.sudokuGivens')}</div>
                     <div className="text-lg font-bold text-clarity-teal-dark">
                       {suState?.givenMask?.filter(Boolean).length ?? 0}
                     </div>
                   </div>
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                    <div className="text-[10px] text-warm-stone-500">Solver</div>
+                    <div className="text-[10px] text-warm-stone-500">{t('education.sudokuSolver')}</div>
                     <div className="text-lg font-bold text-logic-indigo-700">DLX</div>
                   </div>
                 </>

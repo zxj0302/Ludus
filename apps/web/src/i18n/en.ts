@@ -17,13 +17,18 @@ const en = {
 
     'category.constraint-satisfaction': 'Constraint Satisfaction',
 
-    'sudoku.board.erase': 'Erase',
-    'sudoku.board.numberPad': 'Number Pad',
+    'education.sudokuEmpty': 'Empty Cells',
+    'education.sudokuGivens': 'Givens',
+    'education.sudokuSolver': 'Solver',
     'sudoku.matrix.title': 'DLX Exact Cover Matrix',
     'sudoku.matrix.constraints': 'Constraints',
     'sudoku.matrix.backtracks': 'Backtracks',
     'sudoku.matrix.choices': 'Choices',
-    'sudoku.matrix.currentStep': 'Current Step',
+    'sudoku.matrix.nodes': 'Nodes',
+    'sudoku.matrix.time': 'Time',
+    'sudoku.matrix.legend': 'Choose column (min size) | Try row | Backtrack',
+    'sudoku.matrix.description': '4 constraints: cell (81) + row-digit (81) + col-digit (81) + box-digit (81)',
+    'sudoku.matrix.currentStep': 'Step {{current}}/{{total}}',
 
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 

@@ -17,13 +17,18 @@ const zhCN = {
 
     'category.constraint-satisfaction': '约束满足',
 
-    'sudoku.board.erase': '擦除',
-    'sudoku.board.numberPad': '数字面板',
+    'education.sudokuEmpty': '空格数',
+    'education.sudokuGivens': '给定数',
+    'education.sudokuSolver': '求解器',
     'sudoku.matrix.title': 'DLX 精确覆盖矩阵',
     'sudoku.matrix.constraints': '约束',
     'sudoku.matrix.backtracks': '回溯',
     'sudoku.matrix.choices': '选择',
-    'sudoku.matrix.currentStep': '当前步骤',
+    'sudoku.matrix.nodes': '节点',
+    'sudoku.matrix.time': '用时',
+    'sudoku.matrix.legend': '选列（最小规模） | 试行 | 回溯',
+    'sudoku.matrix.description': '4 约束：格 (81) + 行-数字 (81) + 列-数字 (81) + 宫-数字 (81)',
+    'sudoku.matrix.currentStep': '步骤 {{current}}/{{total}}',
 
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 
