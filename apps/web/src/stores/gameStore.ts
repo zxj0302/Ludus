@@ -61,6 +61,25 @@ interface GameStore {
   pauseTimer: () => void;
 }
 
+function scheduleBackgroundSolve(
+  get: () => GameStore,
+  set: (partial: Partial<GameStore>) => void,
+  savedState: GameState,
+) {
+  setTimeout(() => {
+    const { plugin: p, gameState: s } = get();
+    if (!p || s !== savedState) return;
+    const bgSol = p.solve(s);
+    if (bgSol.solvable && bgSol.moves.length > 0) {
+      set({
+        solution: bgSol,
+        initialOptimalSteps: bgSol.stats.solutionLength,
+        currentOptimalSteps: bgSol.stats.solutionLength,
+      });
+    }
+  }, 500);
+}
+
 function generatePlayableState(plugin: GamePlugin): GameState {
   try {
     const level = plugin.generateLevel({
@@ -101,7 +120,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!plugin) return;
     const state = generatePlayableState(plugin);
 
-    const isFastGame = plugin.metadata.id === 'lights-out';
+    const isFastGame = plugin.metadata.isFastSolver;
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable ? sol.stats.solutionLength : null;
 
@@ -125,22 +144,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       educationOpen: false,
     });
 
-    // Sokoban 等慢求解器：延迟后台求解，避免切换时抢帧
-    if (!isFastGame) {
-      const savedState = state;
-      setTimeout(() => {
-        const { plugin: p, gameState: s } = get();
-        if (!p || s !== savedState) return;
-        const bgSol = p.solve(s);
-        if (bgSol.solvable && bgSol.moves.length > 0) {
-          set({
-            solution: bgSol,
-            initialOptimalSteps: bgSol.stats.solutionLength,
-            currentOptimalSteps: bgSol.stats.solutionLength,
-          });
-        }
-      }, 500);
-    }
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
   },
 
   applyMove: (move) => {
@@ -160,7 +164,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     // Lights Out 的 GF(2) 求解 < 1ms，每一步都重新求解以保持可视化同步
     // Sokoban 的 BFS 可能很慢，保留旧解，不阻塞 UI
     let solution = keepExistingSolution ? get().solution! : get().solution;
-    if (!keepExistingSolution && plugin.metadata.id === 'lights-out') {
+    if (!keepExistingSolution && plugin.metadata.isFastSolver) {
       solution = plugin.solve(newState);
     }
 
@@ -181,7 +185,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       const newState = history[newIdx]!;
       // Lights Out 的 GF(2) 求解 < 1ms，撤销后同步刷新可视化
       let solution = get().solution;
-      if (!solvePlayback && plugin?.metadata.id === 'lights-out') {
+      if (!solvePlayback && plugin?.metadata.isFastSolver) {
         solution = plugin.solve(newState);
       }
       set({
@@ -200,7 +204,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       const newIdx = historyIndex + 1;
       const newState = history[newIdx]!;
       let solution = get().solution;
-      if (!solvePlayback && plugin?.metadata.id === 'lights-out') {
+      if (!solvePlayback && plugin?.metadata.isFastSolver) {
         solution = plugin.solve(newState);
       }
       set({
@@ -217,7 +221,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { history, plugin, solution: prevSol } = get();
     if (history.length === 0) return;
     const initial = history[0]!;
-    const isFastGame = plugin?.metadata.id === 'lights-out';
+    const isFastGame = plugin?.metadata.isFastSolver;
     // 重置回初始状态，旧解如果存在就是针对这个状态的，保留它
     const sol = isFastGame ? plugin?.solve(initial) ?? null : prevSol;
     set({
@@ -241,7 +245,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { plugin } = get();
     if (!plugin) return;
     const state = generatePlayableState(plugin);
-    const isFastGame = plugin.metadata.id === 'lights-out';
+    const isFastGame = plugin.metadata.isFastSolver;
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable ? sol.stats.solutionLength : null;
     set({
@@ -261,27 +265,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       elapsed: 0,
     });
 
-    // Sokoban 等慢求解器：延迟后台求解
-    if (!isFastGame) {
-      const savedState = state;
-      setTimeout(() => {
-        const { plugin: p, gameState: s } = get();
-        if (!p || s !== savedState) return;
-        const bgSol = p.solve(s);
-        if (bgSol.solvable && bgSol.moves.length > 0) {
-          set({
-            solution: bgSol,
-            initialOptimalSteps: bgSol.stats.solutionLength,
-            currentOptimalSteps: bgSol.stats.solutionLength,
-          });
-        }
-      }, 500);
-    }
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
   },
 
   loadCustomState: (state: GameState) => {
     const { plugin, solution: prevSol } = get();
-    const isFastGame = plugin?.metadata.id === 'lights-out';
+    const isFastGame = plugin?.metadata.isFastSolver;
     // Lights Out 瞬时求解；Sokoban 保留旧解避免卡片消失，后台更新
     const sol = isFastGame ? plugin?.solve(state) ?? null : prevSol;
     const opt = sol?.solvable ? sol.stats.solutionLength : null;
@@ -302,22 +291,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       elapsed: 0,
     });
 
-    // Sokoban 等慢求解器：延迟 500ms 后台求解，减少切换关卡时的抢帧
-    if (!isFastGame && plugin) {
-      const savedState = state;
-      setTimeout(() => {
-        const { plugin: p, gameState: s } = get();
-        if (!p || s !== savedState) return;
-        const bgSol = p.solve(s);
-        if (bgSol.solvable && bgSol.moves.length > 0) {
-          set({
-            solution: bgSol,
-            initialOptimalSteps: bgSol.stats.solutionLength,
-            currentOptimalSteps: bgSol.stats.solutionLength,
-          });
-        }
-      }, 500);
-    }
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
   },
 
   requestSolve: () => {
@@ -418,7 +392,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     // 播放期间不覆盖 solution
     if (level >= 2 && plugin && gameState && !solvePlayback) {
       // Lights Out GF(2) 瞬时求解；Sokoban BFS 可能很慢，保留旧解避免阻塞 UI
-      const isFastGame = plugin.metadata.id === 'lights-out';
+      const isFastGame = plugin.metadata.isFastSolver;
       const sol = isFastGame ? plugin.solve(gameState) : prevSol;
       set({
         disclosureLevel: level,

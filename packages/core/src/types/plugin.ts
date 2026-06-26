@@ -35,6 +35,8 @@ export interface GameMetadata {
   category: string;
   /** 游戏图标（emoji），用于 Hub 卡片展示 */
   icon?: string;
+  /** 求解器是否瞬时（<1ms），用于 store/UI 决策同步/异步求解策略 */
+  isFastSolver?: boolean;
   /** 搜索标签 */
   tags: string[];
   /** 渲染后端 */

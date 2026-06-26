@@ -17,6 +17,7 @@ const metadata = {
   descriptionKey: 'game.lights-out.description',
   category: 'category.linear-algebra',
   icon: '💡',
+  isFastSolver: true,
   tags: ['GF(2)', '高斯消元', '矩阵', '逻辑', 'puzzle'],
   renderBackend: 'dom' as const,
   platformSupport: [

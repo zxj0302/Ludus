@@ -144,9 +144,10 @@ function reconstructPath(
   let current = visited.get(goalHash)!;
 
   while (current.parentHash != null) {
-    moves.unshift(current.move!);
+    moves.push(current.move!);
     current = visited.get(current.parentHash)!;
   }
+  moves.reverse();
 
   return moves;
 }

@@ -10,7 +10,7 @@ export interface SokobanState extends GameState {
   walls: boolean[][];
   /** 目标点列表 */
   goals: { row: number; col: number }[];
-  /** 箱子位置列表（无序，BFS 哈希时排序） */
+  /** 箱子位置列表（applyMove 保序，按关卡初始行优先） */
   boxes: { row: number; col: number }[];
 }
 

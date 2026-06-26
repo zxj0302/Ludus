@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）进行中— Sokoban 原型已完成**。下一步：高质量生成器，或开始下一款游戏。
-- **MVP 范围**：3 款游戏（Lights Out ✅ + Sokoban ✅ + 待定）。
+- **当前阶段**：**阶段 5（增量游戏）进行中— 数独 (Sudoku) 已完整实现**。下一步：下一款游戏或 Sokoban 生成器升级
+- **MVP 范围**：3 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），~70 个源文件，69 个测试（全过），Vite 构建成功，React Flow 懒加载。
-- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 / 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 = **69 测试全过**。
+- **代码库状态**：3 包 monorepo（core / games / web），~80+ 个源文件，108 个测试（全过），Vite 构建成功，React Flow 懒加载。
+- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 = **108 测试全过**。
 
 ## ✅ DONE
 
@@ -19,14 +19,17 @@
 - **阶段 0**：`docs/phases/00-alignment.md` ✅
 - **阶段 1**：`docs/phases/01-product-plan.md` ✅
 - **阶段 2**：`docs/phases/02-architecture.md` ✅
+
   - 四层架构 + 9 包 monorepo + GamePlugin v1.0 + 3 zod schema + migrator + 平台矩阵
   - 15 个代码文件：根配置 + Core 层类型/schema
 - **阶段 3**：`docs/phases/03-education-framework.md` ✅
+
   - 五段式模板 + 创作指南 + **Lights Out 完整教学内容 (L2/L3 × zh-CN/en，4 个 .md 文件)**
   - ContentRenderer 组件接口定义 + 骨架
   - **§5 已按四种保证机制重写**（可解性/唯一解/最优解/难度可控 + 策略对比表）
   - **Markdown 格式修复**：全 11 个 .md 文件扫描，修复嵌套代码块高亮冲突、LaTeX 转义、占位符、裸 `<`、中文引号等 8 处问题
 - **UI 设计系统**：`docs/phases/04-ui-design-system.md` ✅
+
   - "Playful Bento"设计哲学与 Bento Box 适配论证
   - 完整 Design Tokens（颜色 Warm Stone/Logic Indigo/Game Amber/Clarity Teal、字体 Inter+JetBrains Mono、间距 4px 基准、分层圆角 6–24px、阴影/玻璃）
   - 布局系统：6 列 Bento 网格 + 8 种卡片预设 + Hub/GameShell/Education 三套页面模板
@@ -37,17 +40,20 @@
   - Tailwind 配置扩展 + CSS 变量 tokens + 实施顺序
 - ADR-018 (Playful Bento UI 设计系统) 录入 `docs/DECISIONS.md` ✅
 - **阶段 4 前置决策** ✅：
+
   - ADR-019 状态管理：Zustand（~2KB，零 boilerplate，Core 层保持纯 TS）
   - ADR-020 路由：React Router v6（`/` Hub + `/game/:gameId`）
   - ADR-021 音效：Howler.js + 阶段 4 即做基础音效（<20KB audio sprite）
   - ADR-022 启动边界：仅开发 `packages/core` + `packages/games` + `apps/web` 三个包
 - **竞品分析与 Backlog 扩充** ✅：
+
   - 竞品调研 8 平台（Brilliant/CodinGame/Zachtronics/VisuAlgo/Euclidea/AlgoQuest/Sokoban/AlgoViz）
   - 4 参考平台游戏清单集成（Simon Tatham 40 / GamesCrafters 62+11 / cut-the-knot / Red Blob Games）
   - `docs/phases/00-backlog.md`：74 → 162 款（+88 款），16 个领域全覆盖
   - 新增"优先采用权威实现"政策 + 🔗 权威/参考实现索引
 - **四轮全项目审计** ✅：全 8 个阶段/决策文件逐行审查，修复 36 处一致性与准确性问题
 - **阶段 5a — Sokoban 推箱子原型** ✅：
+
   - Core: Sokoban 状态类型 + 规则引擎（rules/legalMoves/applyMove/isSolved/deadlock）+ BFS 求解器（状态去重 + 死锁剪枝 + search-tree trace）
   - Core: Microban 经典关卡集 15 关（David W. Skinner，公域）+ 解析器 + 生成器（按难度范围选关）
   - Game: 完整插件（rules/manifest/index）+ SokobanBoard 渲染（DOM+CSS Grid，墙壁/箱子/目标/玩家四层渲染，Framer Motion layout 动画，键盘+滑动操控）
@@ -58,8 +64,15 @@
   - 测试: Sokoban 规则+求解器 16 测 + 生成器 7 测 + 难度 3 测 = **26 新测试，69 全过**
   - 构建: v1.0 成功，React Flow 懒加载分包（+178KB gzip 58KB）
   - 新增 17 个文件，修改 10 个文件
-
+- **阶段 5b — 数独 (Sudoku)** ✅:
+  - Core: DLX 精确覆盖求解器 (solveSudoku/countSudokuSolutions/validateSudoku) + 线索数难度公式 (17-36 clues → 0-100) + dig-with-DLX 生成器
+  - Game: 完整插件 (rules/manifest/index/render) + SudokuBoard 渲染 (CSS Grid 9×9 + 数字面板 + 冲突高亮)
+  - Web: GameShell 动态 Board 选择 + EducationPanel 状态卡片 + DLXMatrixViz 懒加载
+  - i18n: 中英翻译 key (Sudoku 名称/描述/面板/矩阵)
+  - 教学: 四份 markdown (L2/L3 × zh/en)，五段式结构
+  - 测试: DLX 求解器 16 测 + 生成器 5 测 + 规则 14 测 + 难度 4 测 = 39 新测试
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
+
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
   - **Game 层**：Lights Out 完整插件（rules/solver/generator/manifest/render/plugin） + 游戏注册表
   - **Web 层**：`apps/web/` 全栈骨架（Vite + React 18 + Tailwind + Framer Motion + React Router v6 + Zustand + react-i18next + Howler.js）
@@ -76,15 +89,15 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-Sokoban 原型已完成（BFS 求解器 + Microban 关卡 + 渲染 + 教学 + 搜索树可视化）。下一步二选一：
+下一款游戏: Nim/Wythoff (博弈论) 或继续 Sokoban 生成器升级。
 
-### 选项 A：Sokoban 生成器升级
+### 选项 A：Nim/Wythoff（博弈论）
+
+继续增量游戏——见 `docs/phases/00-backlog.md` §4 博弈论单元。可实现 Nim 完整求解（Sprague-Grundy）+ Wythoff 游戏 + 教学。
+
+### 选项 B：Sokoban 生成器升级
+
 参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器。
-
-### 选项 B：下一款游戏
-继续增量游戏——数独（DLX）或 Nim/Wythoff（博弈论），见 `docs/phases/00-backlog.md` §2、§4。
-
-**建议**：先完成选项 A（Sokoban 高质量生成器），让 Sokoban 达到完整 DoD，再开新游戏。
 
 ## 🐛 KNOWN ISSUES
 
@@ -133,7 +146,7 @@ Sokoban 原型已完成（BFS 求解器 + Microban 关卡 + 渲染 + 教学 + �
     7. Hub 卡片 💡 硬编码 → game.metadata.icon 字段（可选）
     8. l3.zh-CN.md 伪代码 "Eliminate below" → "消除所有其他行（RREF）"
     9. 额外修复：PROGRESS.md 清理重复的 KNOWN ISSUES/OPEN QUESTIONS/SESSION LOG 节
-    39 测试全过，typecheck 通过。
+       39 测试全过，typecheck 通过。
   - [2026-06-26] 侧边栏动画性能优化：去除 CSS `transition-all` on width（触发布局重算），改用 Framer Motion `translateX` + `opacity`（GPU 合成）；EducationPanel 首次打开后保持挂载（避免动画中 mount/unmount）；移动端使用全屏 overlay + translateX 滑入。
   - [2026-06-26] 编写 `docs/lessons-learned.md`：从 Lights Out 开发中总结 9 大类经验（架构/i18n/性能/常见 Bug/测试/Worker/难度系统/开发流程/新游戏检查清单），供后续游戏开发参考。
 - [2026-06-26] **阶段 5a — Sokoban 推箱子原型**：
@@ -171,6 +184,7 @@ Sokoban 原型已完成（BFS 求解器 + Microban 关卡 + 渲染 + 教学 + �
   18. 后台 BFS 不卡 UI：延迟从 100ms → 500ms + state 引用检查防 stale
   19. LevelSelector popover 误关闭：backdrop div → document `mousedown` + `ref.contains()`
   20. 测试 65/65 全过，typecheck + vite build 通过
+- [2026-06-26] **阶段 5b — 数独完整实现（DLX + 生成器 + 渲染 + 教学 + 39 测试）**
 - [2026-06-26] **Sokoban 第三轮审查 + 修复**：
   1. `bfs-sokoban.ts` 队列耗尽 case 缺 `trace` → 三路返回都带 trace
   2. `SolutionStats` 加 `terminated: 'solved'|'timeout'|'exhausted'` 显式信号，替换 `timeMs >= 7000` 启发式（store + BFSTreeViz 同步更新）
@@ -186,4 +200,3 @@ Sokoban 原型已完成（BFS 求解器 + Microban 关卡 + 渲染 + 教学 + �
   12. `sokoban-generator.test.ts` 测试描述 "5 levels" → "3 builtin levels"
   13. PROGRESS.md 测试数 65 → 69；移除 SearchTreeViz 已交付描述；合并重复 Worker KNOWN ISSUES
   14. `sokoban-levels.ts` 注释"只在整个块之外"误导 → 改为"XSB 格式以 ; 开头"
-

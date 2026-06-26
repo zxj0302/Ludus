@@ -60,12 +60,13 @@ export function applyMove(state: SokobanState, move: SokobanMove): SokobanState 
     if (isWall(state, br, bc) || isBox(state, br, bc)) return state;
   }
 
-  // 合法移动：不可变地生成新状态
-  const newBoxes = isBox(state, nr, nc)
+  // 合法移动：不可变地生成新状态。纯走子不碰箱子，直接浅拷贝引用即可
+  const pushing = isBox(state, nr, nc);
+  const newBoxes = pushing
     ? state.boxes.map(b =>
         b.row === nr && b.col === nc ? { row: nr + dr, col: nc + dc } : { ...b }
       )
-    : state.boxes.map(b => ({ ...b }));
+    : [...state.boxes];
 
   return {
     ...state,
@@ -150,40 +151,24 @@ export interface ExpandedChild {
 
 /**
  * 展开一层：返回当前状态的所有合法子节点及元数据。
- * 仅计算一层（最多 4 个子节点），O(1) 即时返回，不阻塞 UI。
+ * 复用 legalMoves 的合法性检查，仅计算一层（最多 4 个子节点）。
  */
 export function expandState(state: SokobanState): ExpandedChild[] {
   const result: ExpandedChild[] = [];
-  for (const dir of ['up', 'down', 'left', 'right'] as const) {
-    const { dr, dc } = DIRECTION_DELTA[dir];
+  const moves = legalMoves(state);
+  for (const move of moves) {
+    const { dr, dc } = DIRECTION_DELTA[move.direction];
     const nr = state.player.row + dr;
     const nc = state.player.col + dc;
-
-    if (isWall(state, nr, nc)) continue;
-
-    if (isBox(state, nr, nc)) {
-      const br = nr + dr;
-      const bc = nc + dc;
-      if (isWall(state, br, bc) || isBox(state, br, bc)) continue;
-
-      const next = applyMove(state, { direction: dir });
-      result.push({
-        direction: dir,
-        state: next,
-        isPush: true,
-        isDeadlock: isDeadlock(next),
-        isSolved: isSolved(next),
-      });
-    } else {
-      const next = applyMove(state, { direction: dir });
-      result.push({
-        direction: dir,
-        state: next,
-        isPush: false,
-        isDeadlock: false, // 纯走子不会死锁
-        isSolved: false,   // 纯走子不会解决
-      });
-    }
+    const isPush = isBox(state, nr, nc);
+    const next = applyMove(state, move);
+    result.push({
+      direction: move.direction,
+      state: next,
+      isPush,
+      isDeadlock: isPush ? isDeadlock(next) : false,
+      isSolved: isPush ? isSolved(next) : false,
+    });
   }
   return result;
 }
@@ -192,12 +177,14 @@ export function expandState(state: SokobanState): ExpandedChild[] {
 // 状态序列化（用于 BFS 去重哈希）
 // ═══════════════════════════════════════════════════════════════
 
-/** 生成紧凑的状态哈希字符串 */
+/**
+ * 生成紧凑的状态哈希字符串。
+ * 箱子顺序由 applyMove 保持（map 保序），无需排序。
+ */
 export function stateHash(state: SokobanState): string {
   const player = `${state.player.row},${state.player.col}`;
   const boxes = state.boxes
     .map(b => `${b.row},${b.col}`)
-    .sort()
     .join('|');
   return `${player}|${boxes}`;
 }
