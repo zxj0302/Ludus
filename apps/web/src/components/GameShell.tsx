@@ -160,10 +160,10 @@ export function GameShell({ gameId }: Props) {
     }
   }, [currentLevels, loadCustomState]);
 
-  let highlightCell: { row: number; col: number } | null = null;
+  let highlightCell: { row: number; col: number; value?: number } | null = null;
 
   // 从 move 提取高亮坐标（不同游戏的 move 结构不同）
-  const moveToCell = (move: Move): { row: number; col: number } | null => {
+  const moveToCell = (move: Move): { row: number; col: number; value?: number } | null => {
     if (gameId === 'lights-out') {
       const m = move as LightsOutMove;
       if (m.row != null && m.col != null) return { row: m.row, col: m.col };
@@ -178,7 +178,7 @@ export function GameShell({ gameId }: Props) {
     }
     if (gameId === 'sudoku') {
       const m = move as SudokuMove;
-      if (m.row != null && m.col != null) return { row: m.row, col: m.col };
+      if (m.row != null && m.col != null) return { row: m.row, col: m.col, value: m.value };
     }
     return null;
   };

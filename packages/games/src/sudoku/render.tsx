@@ -7,7 +7,7 @@ interface Props {
   state: SudokuState;
   onMove: (move: SudokuMove) => void;
   disabled?: boolean;
-  highlightCell?: { row: number; col: number } | null;
+  highlightCell?: { row: number; col: number; value?: number } | null;
 }
 
 export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
@@ -123,9 +123,9 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
                 ${isGiven ? 'bg-warm-stone-100' : ''}
                 transition-colors
               `}
-              aria-label={`Row ${r + 1}, Column ${c + 1}${v !== 0 ? `, ${v}` : ', empty'}${isGiven ? ', given' : ''}`}
+              aria-label={`Row ${r + 1}, Column ${c + 1}${v !== 0 ? `, ${v}` : isHL && highlightCell?.value ? `, hint ${highlightCell.value}` : ', empty'}${isGiven ? ', given' : ''}`}
             >
-              {v !== 0 ? v : ''}
+              {v !== 0 ? v : (isHL && highlightCell?.value != null ? <span className="text-warm-stone-300">{highlightCell.value}</span> : '')}
             </motion.button>
           );
         })}
