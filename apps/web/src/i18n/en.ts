@@ -15,7 +15,11 @@ const en = {
     'game.sudoku.name': 'Sudoku',
     'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 — solved with DLX exact cover algorithm, generated with unique solutions',
 
+    'game.nim.name': 'Nim',
+    'game.nim.description': 'Classic combinatorial game — remove stones using XOR strategy. Can you find the winning move?',
+
     'category.constraint-satisfaction': 'Constraint Satisfaction',
+    'category.combinatorial-game-theory': 'Combinatorial Game Theory',
 
     'education.sudokuEmpty': 'Empty Cells',
     'education.sudokuGivens': 'Givens',
@@ -31,6 +35,29 @@ const en = {
     'sudoku.matrix.currentStep': 'Step {{current}}/{{total}}',
 
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
+
+    'nim.pile': 'Pile {{index}}',
+    'nim.yourTurn': 'Your turn',
+    'nim.aiThinking': 'AI thinking...',
+    'nim.aiTurn': "AI's turn",
+    'nim.remove': 'Remove',
+    'nim.removeAll': 'Remove All ({{count}})',
+    'nim.removeCount': 'Remove {{count}}',
+    'nim.selectPile': 'Select a pile',
+    'nim.chooseHand': 'Choose who goes first',
+    'nim.playFirst': 'I go first',
+    'nim.aiFirst': 'AI goes first',
+    'nim.firstHand': 'You go first',
+    'nim.aiHand': 'AI goes first',
+    'nim.youWin': 'You win!',
+    'nim.aiWins': 'AI wins',
+    'nim.nPosition': 'N-position (winning)',
+    'nim.pPosition': 'P-position (losing)',
+    'nim.nimSum': 'Nim-sum',
+    'nim.winningMove': 'Winning move',
+    'nim.gameTree': 'Game tree',
+    'education.nimPileCell': 'Pile {{index}}: {{count}} stones',
+    'education.nimMove': 'Remove {{count}} from pile {{pile}}',
 
     'game.loading': 'Loading game…',
     'game.noGame': 'No game specified',

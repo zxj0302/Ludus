@@ -15,7 +15,11 @@ const zhCN = {
     'game.sudoku.name': '数独',
     'game.sudoku.description': '在 9×9 网格中填入 1-9，利用 DLX 精确覆盖算法求解与生成唯一解关卡',
 
+    'game.nim.name': 'Nim 取石子',
+    'game.nim.description': '经典博弈论游戏——XOR 取石子，你能找出必胜策略吗？',
+
     'category.constraint-satisfaction': '约束满足',
+    'category.combinatorial-game-theory': '组合博弈论',
 
     'education.sudokuEmpty': '空格数',
     'education.sudokuGivens': '给定数',
@@ -31,6 +35,29 @@ const zhCN = {
     'sudoku.matrix.currentStep': '步骤 {{current}}/{{total}}',
 
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
+
+    'nim.pile': '堆 {{index}}',
+    'nim.yourTurn': '轮到你了',
+    'nim.aiThinking': 'AI 思考中...',
+    'nim.aiTurn': 'AI 回合',
+    'nim.remove': '取子',
+    'nim.removeAll': '取走全部({{count}}颗)',
+    'nim.removeCount': '取 {{count}} 颗',
+    'nim.selectPile': '选择一堆',
+    'nim.chooseHand': '选择先后手',
+    'nim.playFirst': '我先走',
+    'nim.aiFirst': 'AI 先走',
+    'nim.firstHand': '你先走',
+    'nim.aiHand': 'AI 先走',
+    'nim.youWin': '你赢了！',
+    'nim.aiWins': 'AI 赢了',
+    'nim.nPosition': 'N 位置（必胜）',
+    'nim.pPosition': 'P 位置（必输）',
+    'nim.nimSum': 'Nim-sum',
+    'nim.winningMove': '必胜走法',
+    'nim.gameTree': '博弈树',
+    'education.nimPileCell': '堆 {{index}}: {{count}} 颗',
+    'education.nimMove': '取堆{{pile}} {{count}}颗',
 
     'game.loading': '加载中…',
     'game.noGame': '未指定游戏',
