@@ -33,16 +33,17 @@ function generatePPosition(pileCount: number, maxStone: number): number[] {
     }
     // runningXor is 0 or > maxStone — retry with different random values
   }
-  // Fallback: simple symmetric P-position [1,1,2,2,...]
+  // Fallback: guaranteed P-position using pairs
   const fallback: number[] = [];
   for (let i = 0; i < pileCount; i++) {
-    fallback.push((i % 2) + 1);
+    // Pair up: [1,1,2,2,3,3,...] — each pair XORs to 0
+    fallback.push(Math.floor(i / 2) + 1);
   }
-  // XOR-pair to force 0 if odd count
+  // If odd count, make last pile XOR of all others (guarantees nim-sum = 0)
   if (pileCount % 2 === 1) {
-    let x = 0;
-    for (let i = 0; i < pileCount - 1; i++) x ^= fallback[i]!;
-    fallback[pileCount - 1] = x > 0 && x <= maxStone ? x : 1;
+    let xor = 0;
+    for (let i = 0; i < pileCount - 1; i++) xor ^= fallback[i]!;
+    fallback[pileCount - 1] = xor > 0 ? xor : 1;
   }
   return fallback;
 }
@@ -72,7 +73,7 @@ export function generateNimLevel(config: LevelConfig): Level {
       initialPiles: [...piles],
     } as unknown as Record<string, unknown>,
     difficulty,
-    optimalSteps: 1,
+    optimalSteps: null,
     uniqueSolution: false,
     generatedBy: 'p-distance-walk',
     createdAt: new Date().toISOString(),
