@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateNimLevel } from './nim-generator';
-import { computeNimSum } from '../solver/nim-solver';
+import { computeNimSum, findWinningMove } from '../solver/nim-solver';
 
 describe('generateNimLevel', () => {
   it('generates a valid level with required fields', () => {
@@ -32,9 +32,19 @@ describe('generateNimLevel', () => {
     expect(state.piles.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('all pile values are positive', () => {
+  it('all pile values are non-negative (walk may zero a pile)', () => {
     const level = generateNimLevel({ difficultyRange: [30, 70] });
     const state = level.initialState as unknown as { piles: number[] };
-    expect(state.piles.every((v: number) => v > 0)).toBe(true);
+    expect(state.piles.every((v: number) => v >= 0)).toBe(true);
+  });
+
+  it('generated position is N-position with a winning move', () => {
+    for (let i = 0; i < 20; i++) {
+      const level = generateNimLevel({ difficultyRange: [20, 80] });
+      const state = level.initialState as unknown as { piles: number[] };
+      const nimSum = computeNimSum(state.piles);
+      expect(nimSum).not.toBe(0);
+      expect(findWinningMove(state.piles)).not.toBeNull();
+    }
   });
 });

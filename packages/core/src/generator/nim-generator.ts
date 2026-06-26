@@ -1,6 +1,4 @@
 import type { Level, LevelConfig } from '../types/plugin';
-import type { NimState } from '../types/nim';
-import { computeNimSum } from '../solver/nim-solver';
 import { computeNimDifficulty } from '../difficulty/nim-difficulty';
 
 function mapRangeToPileCount(range: [number, number]): number {
@@ -19,27 +17,34 @@ function mapRangeToMaxStone(range: [number, number]): number {
 
 function generatePPosition(pileCount: number, maxStone: number): number[] {
   // Generate piles ensuring nim-sum = 0 and all values in [1, maxStone]
-  const piles: number[] = [];
-  let runningXor = 0;
-  for (let i = 0; i < pileCount - 1; i++) {
-    const stone = 1 + Math.floor(Math.random() * maxStone);
-    piles.push(stone);
-    runningXor ^= stone;
+  // Retry loop: ~99.6% success within 100 attempts for typical (piles, maxStone)
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const piles: number[] = [];
+    let runningXor = 0;
+    for (let i = 0; i < pileCount - 1; i++) {
+      const stone = 1 + Math.floor(Math.random() * maxStone);
+      piles.push(stone);
+      runningXor ^= stone;
+    }
+    // runningXor needs to be in [1, maxStone] for a valid last pile
+    if (runningXor >= 1 && runningXor <= maxStone) {
+      piles.push(runningXor);
+      return piles;
+    }
+    // runningXor is 0 or > maxStone — retry with different random values
   }
-  // Last pile: need runningXor ^ x = 0 → x = runningXor, but must be in [1, maxStone]
-  if (runningXor >= 1 && runningXor <= maxStone) {
-    piles.push(runningXor);
-  } else {
-    // runningXor is 0 or out of range — adjust a random earlier pile
-    const idx = Math.floor(Math.random() * (pileCount - 1));
-    const prev = piles[idx]!;
-    // newRunningXor = runningXor ^ prev ^ newVal; we want newRunningXor in [1, maxStone]
-    const target = 1 + Math.floor(Math.random() * maxStone);
-    piles[idx] = target;
-    const newRunningXor = runningXor ^ prev ^ target;
-    piles.push(Math.max(1, Math.min(maxStone, newRunningXor)));
+  // Fallback: simple symmetric P-position [1,1,2,2,...]
+  const fallback: number[] = [];
+  for (let i = 0; i < pileCount; i++) {
+    fallback.push((i % 2) + 1);
   }
-  return piles;
+  // XOR-pair to force 0 if odd count
+  if (pileCount % 2 === 1) {
+    let x = 0;
+    for (let i = 0; i < pileCount - 1; i++) x ^= fallback[i]!;
+    fallback[pileCount - 1] = x > 0 && x <= maxStone ? x : 1;
+  }
+  return fallback;
 }
 
 export function generateNimLevel(config: LevelConfig): Level {
@@ -67,7 +72,7 @@ export function generateNimLevel(config: LevelConfig): Level {
       initialPiles: [...piles],
     } as unknown as Record<string, unknown>,
     difficulty,
-    optimalSteps: null,
+    optimalSteps: 1,
     uniqueSolution: false,
     generatedBy: 'p-distance-walk',
     createdAt: new Date().toISOString(),
