@@ -12,6 +12,21 @@ const zhCN = {
     'game.sokoban.name': '推箱子',
     'game.sokoban.description': '把箱子推到目标点上——用 BFS 搜索在 PSPACE 状态空间中寻找最短路径',
 
+    'game.sudoku.name': '数独',
+    'game.sudoku.description': '在 9×9 网格中填入 1-9，利用 DLX 精确覆盖算法求解与生成唯一解关卡',
+
+    'category.constraint-satisfaction': '约束满足',
+
+    'sudoku.board.erase': '擦除',
+    'sudoku.board.numberPad': '数字面板',
+    'sudoku.matrix.title': 'DLX 精确覆盖矩阵',
+    'sudoku.matrix.constraints': '约束',
+    'sudoku.matrix.backtracks': '回溯',
+    'sudoku.matrix.choices': '选择',
+    'sudoku.matrix.currentStep': '当前步骤',
+
+    'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
+
     'game.loading': '加载中…',
     'game.noGame': '未指定游戏',
 

@@ -315,7 +315,7 @@ export function EducationPanel({
                   moveLabel = t('education.pressCell', { row: move.row + 1, col: move.col + 1 });
                 } else if (isSU) {
                   const move = m as { row: number; col: number; value: number };
-                  moveLabel = `(${move.row + 1}, ${move.col + 1}) = ${move.value}`;
+                  moveLabel = t('education.sudokuCell', { row: move.row + 1, col: move.col + 1, value: move.value });
                 } else {
                   const move = m as { direction: string };
                   moveLabel = t(`education.move.${move.direction}`, move.direction);

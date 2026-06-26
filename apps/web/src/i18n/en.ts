@@ -12,6 +12,21 @@ const en = {
     'game.sokoban.name': 'Sokoban',
     'game.sokoban.description': 'Push boxes to goal tiles — BFS search for the shortest path in a PSPACE state space',
 
+    'game.sudoku.name': 'Sudoku',
+    'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 — solved with DLX exact cover algorithm, generated with unique solutions',
+
+    'category.constraint-satisfaction': 'Constraint Satisfaction',
+
+    'sudoku.board.erase': 'Erase',
+    'sudoku.board.numberPad': 'Number Pad',
+    'sudoku.matrix.title': 'DLX Exact Cover Matrix',
+    'sudoku.matrix.constraints': 'Constraints',
+    'sudoku.matrix.backtracks': 'Backtracks',
+    'sudoku.matrix.choices': 'Choices',
+    'sudoku.matrix.currentStep': 'Current Step',
+
+    'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
+
     'game.loading': 'Loading game…',
     'game.noGame': 'No game specified',
 
