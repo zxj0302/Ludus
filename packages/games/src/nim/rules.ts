@@ -41,8 +41,8 @@ export function applyMove(state: NimState, move: NimMove): NimState {
 }
 
 export function isSolved(state: NimState): boolean {
-  // Player wins: all piles empty and it's AI's turn (player took last stone)
-  return state.piles.every(v => v === 0) && state.currentPlayer === 1;
+  // Game over: all piles empty regardless of who took last stone
+  return state.piles.every(v => v === 0);
 }
 
 export function getDifficulty(state: NimState): Difficulty {

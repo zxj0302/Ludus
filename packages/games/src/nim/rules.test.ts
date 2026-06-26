@@ -85,9 +85,9 @@ describe('isSolved', () => {
     expect(isSolved(createInitialState())).toBe(false);
   });
 
-  it('false when piles empty but still player turn', () => {
+  it('true when all piles empty regardless of player turn', () => {
     const s: NimState = { piles: [0, 0, 0], currentPlayer: 0, initialPiles: [3, 4, 5] };
-    expect(isSolved(s)).toBe(false);
+    expect(isSolved(s)).toBe(true);
   });
 });
 

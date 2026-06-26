@@ -37,6 +37,7 @@ const zhCN = {
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 
     'nim.pile': '堆 {{index}}',
+    'nim.piles': '堆数',
     'nim.yourTurn': '轮到你了',
     'nim.aiThinking': 'AI 思考中...',
     'nim.aiTurn': 'AI 回合',

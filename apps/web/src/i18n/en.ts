@@ -37,6 +37,7 @@ const en = {
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 
     'nim.pile': 'Pile {{index}}',
+    'nim.piles': 'Piles',
     'nim.yourTurn': 'Your turn',
     'nim.aiThinking': 'AI thinking...',
     'nim.aiTurn': "AI's turn",

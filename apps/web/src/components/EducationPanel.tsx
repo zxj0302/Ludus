@@ -28,6 +28,11 @@ import l2enSU from '@ludus/education/src/content/sudoku/l2.en.md?raw';
 import l3zhSU from '@ludus/education/src/content/sudoku/l3.zh-CN.md?raw';
 import l3enSU from '@ludus/education/src/content/sudoku/l3.en.md?raw';
 
+import l2zhNI from '@ludus/education/src/content/nim/l2.zh-CN.md?raw';
+import l2enNI from '@ludus/education/src/content/nim/l2.en.md?raw';
+import l3zhNI from '@ludus/education/src/content/nim/l3.zh-CN.md?raw';
+import l3enNI from '@ludus/education/src/content/nim/l3.en.md?raw';
+
 const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   'lights-out': {
     'zh-CN': { L2: l2zhLO, L3: l3zhLO },
@@ -40,6 +45,10 @@ const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   sudoku: {
     'zh-CN': { L2: l2zhSU, L3: l3zhSU },
     en: { L2: l2enSU, L3: l3enSU },
+  },
+  nim: {
+    'zh-CN': { L2: l2zhNI, L3: l3zhNI },
+    en: { L2: l2enNI, L3: l3enNI },
   },
 };
 
@@ -275,14 +284,14 @@ export function EducationPanel({
             </div>
             {isNI && niState?.piles && (
               <div className="space-y-2 mt-2">
-                <h4 className="text-xs font-semibold text-warm-stone-600 uppercase tracking-wide">Nim</h4>
+                <h4 className="text-xs font-semibold text-warm-stone-600 uppercase tracking-wide">{t('game.nim.name')}</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="bg-warm-stone-50 rounded-lg p-2">
-                    <div className="text-warm-stone-500 text-xs">Piles</div>
+                    <div className="text-warm-stone-500 text-xs">{t('nim.piles')}</div>
                     <div className="font-mono font-semibold">{niState.piles.join(', ')}</div>
                   </div>
                   <div className="bg-warm-stone-50 rounded-lg p-2">
-                    <div className="text-warm-stone-500 text-xs">Nim-sum</div>
+                    <div className="text-warm-stone-500 text-xs">{t('nim.nimSum')}</div>
                     <div className="font-mono font-semibold">{computeNimSum(niState.piles)}</div>
                   </div>
                 </div>
