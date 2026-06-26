@@ -33,7 +33,6 @@ class DLXColumn extends DLXNode {
 
 const N = 9;
 const BOX = 3;
-const NUM_ROWS = N * N * N;        // 729: each cell-digit combo
 const NUM_COLS = N * N * 4;        // 324: cell + row-val + col-val + box-val
 
 function getBox(r: number, c: number): number {
@@ -141,9 +140,6 @@ function uncover(col: DLXColumn): void {
   col.left.right = col as unknown as DLXNode;
 }
 
-// ── Sudoku-specific helpers ───────────────────────────
-
-
 // ── Output types ──────────────────────────────────────
 
 export interface SudokuSolution {
@@ -172,8 +168,9 @@ function search(
   chosenRows: number[],
   limit: number,
   solutions: number[][] | null, // null = find first only; array = collect all
+  initialGrid: number[],
 ): boolean {
-  const { header, columns } = matrix;
+  const { header } = matrix;
 
   if (state.timeLimitMs > 0 && performance.now() - state.startTime > state.timeLimitMs) {
     return solutions ? solutions.length >= limit : false;
@@ -181,7 +178,7 @@ function search(
 
   // All columns covered → solution found
   if (header.right === header) {
-    const solved = buildGridFromRows(chosenRows);
+    const solved = buildGridFromRows(chosenRows, initialGrid);
     if (solutions) {
       solutions.push(solved);
       return solutions.length >= limit;
@@ -239,7 +236,7 @@ function search(
       cover(j.column);
     }
 
-    const found = search(matrix, state, depth + 1, chosenRows, limit, solutions);
+    const found = search(matrix, state, depth + 1, chosenRows, limit, solutions, initialGrid);
 
     // Uncover all columns in this row (reverse order)
     for (let j = r.left; j !== r; j = j.left) {
@@ -263,8 +260,8 @@ function search(
   return false;
 }
 
-function buildGridFromRows(rows: number[]): number[] {
-  const grid = new Array(81).fill(0);
+function buildGridFromRows(rows: number[], initialGrid?: number[]): number[] {
+  const grid = initialGrid ? [...initialGrid] : new Array(81).fill(0);
   for (const ri of rows) {
     // rowIdx = r*81 + c*9 + v-1
     const r = Math.floor(ri / 81);
@@ -297,7 +294,7 @@ export function solveSudoku(grid: number[]): SudokuSolution {
   };
 
   const chosenRows: number[] = [];
-  search(matrix, state, 0, chosenRows, 1, null);
+  search(matrix, state, 0, chosenRows, 1, null, grid);
 
   const timeMs = Math.round(performance.now() - startTime);
   const solvable = state.solution !== null;
@@ -345,7 +342,7 @@ export function countSudokuSolutions(grid: number[], limit: number = 2): number 
 
   const chosenRows: number[] = [];
   const solutions: number[][] = [];
-  search(matrix, state, 0, chosenRows, limit, solutions);
+  search(matrix, state, 0, chosenRows, limit, solutions, grid);
   return solutions.length;
 }
 
