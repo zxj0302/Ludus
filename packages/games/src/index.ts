@@ -7,4 +7,4 @@ export { SokobanBoard } from './sokoban/render';
 export type { LightsOutState, LightsOutMove } from './lights-out/rules';
 export type { SokobanState, SokobanMove } from './sokoban/rules';
 export type { SudokuState, SudokuMove } from './sudoku/rules';
-// export { SudokuBoard } from './sudoku/render';  // after Task 10
+export { SudokuBoard } from './sudoku/render';

@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState, lazy, Suspense } from 'react';
+import { useRef, useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState } from '@ludus/core';
@@ -7,9 +7,10 @@ import { KnowledgeCard } from './KnowledgeCard';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '../stores/gameStore';
-import type { LightsOutState, SokobanState } from '@ludus/games';
+import type { LightsOutState, SokobanState, SudokuState } from '@ludus/games';
 
 const BFSTreeViz = lazy(() => import('./BFSTreeViz'));
+const DLXMatrixViz = lazy(() => import('./DLXMatrixViz').then(m => ({ default: m.DLXMatrixViz })));
 
 import l2zhLO from '@ludus/education/src/content/lights-out/l2.zh-CN.md?raw';
 import l2enLO from '@ludus/education/src/content/lights-out/l2.en.md?raw';
@@ -20,6 +21,13 @@ import l2enSK from '@ludus/education/src/content/sokoban/l2.en.md?raw';
 import l3zhSK from '@ludus/education/src/content/sokoban/l3.zh-CN.md?raw';
 import l3enSK from '@ludus/education/src/content/sokoban/l3.en.md?raw';
 
+// TODO: uncomment when edu content files created in Task 14
+// import l2zhSU from '@ludus/education/src/content/sudoku/l2.zh-CN.md?raw';
+// import l2enSU from '@ludus/education/src/content/sudoku/l2.en.md?raw';
+// import l3zhSU from '@ludus/education/src/content/sudoku/l3.zh-CN.md?raw';
+// import l3enSU from '@ludus/education/src/content/sudoku/l3.en.md?raw';
+const l2zhSU = ''; const l2enSU = ''; const l3zhSU = ''; const l3enSU = '';
+
 const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   'lights-out': {
     'zh-CN': { L2: l2zhLO, L3: l3zhLO },
@@ -28,6 +36,10 @@ const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   sokoban: {
     'zh-CN': { L2: l2zhSK, L3: l3zhSK },
     en: { L2: l2enSK, L3: l3enSK },
+  },
+  sudoku: {
+    'zh-CN': { L2: l2zhSU, L3: l3zhSU },
+    en: { L2: l2enSU, L3: l3enSU },
   },
 };
 
@@ -87,7 +99,7 @@ export function EducationPanel({
   const depth = disclosureLevel >= 3 ? 'L3' : 'L2';
   const gameContent = CONTENT_MAPS[gameId] ?? CONTENT_MAPS['lights-out']!;
   const rawMd = gameContent[language]?.[depth] ?? gameContent['zh-CN']?.[depth] ?? '';
-  const bodyMd = extractBody(rawMd);
+  const bodyMd = useMemo(() => extractBody(rawMd), [rawMd]);
 
   const getSectionId = (english: string) =>
     'section-' + english.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 32);
@@ -119,22 +131,25 @@ export function EducationPanel({
     if (info) scrollToSection(info.english);
   }, [scrollToSection]);
 
-  if (!open && !hasBeenOpened) return null;
-
-  // Lights Out specific stats
+  // Stats — must be computed before any conditional return (hooks rule)
   const loState = gameState as LightsOutState | null;
   const onCount = loState?.grid?.filter(c => c === 1).length ?? 0;
   const totalCells = loState ? loState.n * loState.n : 0;
 
-  // Sokoban specific stats
   const soState = gameState as Record<string, unknown> | null;
-  const boxesOnGoals = (soState?.boxes as Array<{ row: number; col: number }> | undefined)?.filter(
-    b => (soState?.goals as Array<{ row: number; col: number }> | undefined)?.some(g => g.row === b.row && g.col === b.col)
-  ).length ?? 0;
+  const boxesOnGoals = useMemo(() =>
+    (soState?.boxes as Array<{ row: number; col: number }> | undefined)?.filter(
+      b => (soState?.goals as Array<{ row: number; col: number }> | undefined)?.some(g => g.row === b.row && g.col === b.col)
+    ).length ?? 0,
+    [soState?.boxes, soState?.goals],
+  );
   const totalBoxes = (soState?.boxes as Array<unknown> | undefined)?.length ?? 0;
 
   const isLO = gameId === 'lights-out';
   const isSK = gameId === 'sokoban';
+  const isSU = gameId === 'sudoku';
+
+  if (!open && !hasBeenOpened) return null;
 
   return (
     <motion.div
@@ -234,6 +249,26 @@ export function EducationPanel({
                   </div>
                 </>
               )}
+              {isSU && (
+                <>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">Empty Cells</div>
+                    <div className="text-lg font-bold text-game-amber-700">
+                      {(gameState as SudokuState).grid.filter(v => v === 0).length}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">Givens</div>
+                    <div className="text-lg font-bold text-clarity-teal-dark">
+                      {(gameState as SudokuState).givenMask.filter(Boolean).length}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">Solver</div>
+                    <div className="text-lg font-bold text-logic-indigo-700">DLX</div>
+                  </div>
+                </>
+              )}
             </div>
           </KnowledgeCard>
         )}
@@ -257,6 +292,13 @@ export function EducationPanel({
           />
         )}
 
+        {/* Sudoku：DLX 约束传播可视化 */}
+        {solution?.trace?.type === 'constraint-propagation' && (
+          <Suspense fallback={<div className="h-40 rounded-card bg-warm-stone-100 animate-pulse" />}>
+            <DLXMatrixViz solution={solution} activeStep={solveStepIndex} />
+          </Suspense>
+        )}
+
         {/* 最优解步骤列表 */}
         {solution?.solvable && solution.moves.length > 0 && (
           <KnowledgeCard title={t('education.optimalSolution', { count: solution.moves.length })} icon="👆">
@@ -270,6 +312,9 @@ export function EducationPanel({
                 if (isLO) {
                   const move = m as { row: number; col: number };
                   moveLabel = t('education.pressCell', { row: move.row + 1, col: move.col + 1 });
+                } else if (isSU) {
+                  const move = m as { row: number; col: number; value: number };
+                  moveLabel = `(${move.row + 1}, ${move.col + 1}) = ${move.value}`;
                 } else {
                   const move = m as { direction: string };
                   moveLabel = t(`education.move.${move.direction}`, move.direction);

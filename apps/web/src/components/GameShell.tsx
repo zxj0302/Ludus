@@ -2,8 +2,9 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { Move } from '@ludus/core';
-import { getGame, LightsOutBoard, SokobanBoard } from '@ludus/games';
-import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove } from '@ludus/games';
+import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard } from '@ludus/games';
+import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove } from '@ludus/games';
+import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
 import { GameToolbar } from './GameToolbar';
@@ -11,7 +12,7 @@ import { GameStatusBar } from './GameStatusBar';
 import { EducationPanel } from './EducationPanel';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LevelSelector } from './LevelSelector';
-import { stateHash } from '@ludus/core';
+import { stateHash, DIRECTION_DELTA } from '@ludus/core';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }
@@ -21,7 +22,7 @@ export function GameShell({ gameId }: Props) {
   const { playToggle, playWin, playSolve, playError, playStep, vibrate } = useSound();
 
   const plugin = getGame(gameId);
-  const store = useGameStore(s => ({
+  const store = useGameStore(useShallow(s => ({
     gameState: s.gameState,
     applyMove: s.applyMove, undo: s.undo, redo: s.redo, reset: s.reset, newLevel: s.newLevel,
     requestSolve: s.requestSolve, requestHint: s.requestHint,
@@ -33,7 +34,7 @@ export function GameShell({ gameId }: Props) {
     educationOpen: s.educationOpen, setEducationOpen: s.setEducationOpen,
     historyIndex: s.historyIndex, history: s.history,
     startTime: s.startTime, elapsed: s.elapsed, tick: s.tick, pauseTimer: s.pauseTimer,
-  }));
+  })));
 
   // 解构引用（从单一 selector 读取，避免多次订阅）
   const {
@@ -47,6 +48,7 @@ export function GameShell({ gameId }: Props) {
 
   const loState = gameState as unknown as LightsOutState | null;
   const soState = gameState as unknown as SokobanState | null;
+  const suState = gameState as unknown as SudokuState | null;
   const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
@@ -75,7 +77,7 @@ export function GameShell({ gameId }: Props) {
     return () => clearInterval(timer);
   }, [solvePlayback, nextPlaybackStep, playStep]);
 
-  const handleMove = useCallback((move: LightsOutMove | SokobanMove) => {
+  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove) => {
     if (isWin || solvePlayback) return;
     applyMove(move);
     playToggle(); vibrate(5);
@@ -98,7 +100,8 @@ export function GameShell({ gameId }: Props) {
   // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
   const stateMatchesPlugin =
     (gameId === 'lights-out' && loState?.grid != null) ||
-    (gameId === 'sokoban' && soState?.walls != null);
+    (gameId === 'sokoban' && soState?.walls != null) ||
+    (gameId === 'sudoku' && suState?.grid != null && suState.n === 9);
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -169,13 +172,13 @@ export function GameShell({ gameId }: Props) {
       const m = move as SokobanMove;
       // Sokoban 提示：高亮玩家前进方向的格子
       if (m.direction && soState) {
-        const delta: Record<string, { dr: number; dc: number }> = {
-          up: { dr: -1, dc: 0 }, down: { dr: 1, dc: 0 },
-          left: { dr: 0, dc: -1 }, right: { dr: 0, dc: 1 },
-        };
-        const d = delta[m.direction];
+        const d = DIRECTION_DELTA[m.direction];
         if (d) return { row: soState.player.row + d.dr, col: soState.player.col + d.dc };
       }
+    }
+    if (gameId === 'sudoku') {
+      const m = move as SudokuMove;
+      if (m.row != null && m.col != null) return { row: m.row, col: m.col };
     }
     return null;
   };
@@ -257,6 +260,11 @@ export function GameShell({ gameId }: Props) {
                   state={soState} onMove={handleMove}
                   disabled={isWin || solvePlayback} highlightCell={highlightCell}
                 />
+              ) : gameId === 'sudoku' && suState?.grid ? (
+                <SudokuBoard
+                  state={suState} onMove={handleMove}
+                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
+                />
               ) : loState?.grid ? (
                 <LightsOutBoard
                   state={loState} onMove={handleMove}
@@ -269,11 +277,15 @@ export function GameShell({ gameId }: Props) {
           </div>
         </div>
 
-        {/* 桌面端侧边栏 */}
+        {/* 桌面端侧边栏 — 收起时 height:0 防止内容撑高 flex 容器 */}
         <div
           className={`hidden lg:block shrink-0 overflow-hidden
             ${educationOpen ? 'w-[40%]' : 'w-0'}`}
-          style={educationOpen && leftColumnHeight != null ? { height: leftColumnHeight } : undefined}
+          style={{
+            height: !educationOpen ? 0 :
+              leftColumnHeight != null ? leftColumnHeight :
+              undefined,
+          }}
         >
           <motion.div
             initial={false}
