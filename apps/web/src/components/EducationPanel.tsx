@@ -133,6 +133,7 @@ export function EducationPanel({
 
   // Stats — must be computed before any conditional return (hooks rule)
   const loState = gameState as LightsOutState | null;
+  const suState = gameState as SudokuState | null;
   const onCount = loState?.grid?.filter(c => c === 1).length ?? 0;
   const totalCells = loState ? loState.n * loState.n : 0;
 
@@ -254,13 +255,13 @@ export function EducationPanel({
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
                     <div className="text-[10px] text-warm-stone-500">Empty Cells</div>
                     <div className="text-lg font-bold text-game-amber-700">
-                      {(gameState as SudokuState).grid.filter(v => v === 0).length}
+                      {suState?.grid?.filter(v => v === 0).length ?? 0}
                     </div>
                   </div>
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
                     <div className="text-[10px] text-warm-stone-500">Givens</div>
                     <div className="text-lg font-bold text-clarity-teal-dark">
-                      {(gameState as SudokuState).givenMask.filter(Boolean).length}
+                      {suState?.givenMask?.filter(Boolean).length ?? 0}
                     </div>
                   </div>
                   <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
