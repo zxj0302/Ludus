@@ -349,6 +349,9 @@ export function EducationPanel({
                 } else if (isSU) {
                   const move = m as { row: number; col: number; value: number };
                   moveLabel = t('education.sudokuCell', { row: move.row + 1, col: move.col + 1, value: move.value });
+                } else if (isNI) {
+                  const move = m as { pileIndex: number; removeCount: number };
+                  moveLabel = t('education.nimMove', { pile: move.pileIndex + 1, count: move.removeCount });
                 } else {
                   const move = m as { direction: string };
                   moveLabel = t(`education.move.${move.direction}`, move.direction);
