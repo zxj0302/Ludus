@@ -21,12 +21,10 @@ import l2enSK from '@ludus/education/src/content/sokoban/l2.en.md?raw';
 import l3zhSK from '@ludus/education/src/content/sokoban/l3.zh-CN.md?raw';
 import l3enSK from '@ludus/education/src/content/sokoban/l3.en.md?raw';
 
-// TODO: uncomment when edu content files created in Task 14
-// import l2zhSU from '@ludus/education/src/content/sudoku/l2.zh-CN.md?raw';
-// import l2enSU from '@ludus/education/src/content/sudoku/l2.en.md?raw';
-// import l3zhSU from '@ludus/education/src/content/sudoku/l3.zh-CN.md?raw';
-// import l3enSU from '@ludus/education/src/content/sudoku/l3.en.md?raw';
-const l2zhSU = ''; const l2enSU = ''; const l3zhSU = ''; const l3enSU = '';
+import l2zhSU from '@ludus/education/src/content/sudoku/l2.zh-CN.md?raw';
+import l2enSU from '@ludus/education/src/content/sudoku/l2.en.md?raw';
+import l3zhSU from '@ludus/education/src/content/sudoku/l3.zh-CN.md?raw';
+import l3enSU from '@ludus/education/src/content/sudoku/l3.en.md?raw';
 
 const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   'lights-out': {
