@@ -1,4 +1,4 @@
-import type { Solution, SolverTrace, TraceStep, SolutionStats } from '../types/plugin';
+import type { SolverTrace, TraceStep, SolutionStats } from '../types/plugin';
 
 // ── DLX Node ──────────────────────────────────────────
 
@@ -62,7 +62,7 @@ interface DLXMatrix {
   rows: DLXNode[];
 }
 
-function buildMatrix(givens: boolean[][]): DLXMatrix {
+function buildMatrix(): DLXMatrix {
   const header = new DLXNode();
   const columns: DLXColumn[] = [];
   const rows: DLXNode[] = [];
@@ -85,8 +85,6 @@ function buildMatrix(givens: boolean[][]): DLXMatrix {
         const idx = rowIdx(r, c, v);
         const cols = colIndices(r, c, v);
 
-        // Skip if this placement conflicts with givens
-        // (given cells have only one valid row)
         const rowNode = new DLXNode(undefined, idx);
         rows.push(rowNode);
 
@@ -145,33 +143,6 @@ function uncover(col: DLXColumn): void {
 
 // ── Sudoku-specific helpers ───────────────────────────
 
-function gridToGivens(grid: number[]): boolean[][] {
-  const givens: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      givens[r]![c] = grid[r * N + c]! !== 0;
-    }
-  }
-  return givens;
-}
-
-function applyGivens(matrix: DLXMatrix, grid: number[]): void {
-  // For each filled cell, cover its row and all conflicting rows
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const val = grid[r * N + c]!;
-      if (val === 0) continue;
-      const ri = rowIdx(r, c, val);
-      const cols = colIndices(r, c, val);
-      // Cover all columns for this placement
-      for (const colIdx of cols) {
-        if (matrix.columns[colIdx]!.size >= 0) {
-          cover(matrix.columns[colIdx]!);
-        }
-      }
-    }
-  }
-}
 
 // ── Output types ──────────────────────────────────────
 
@@ -304,13 +275,6 @@ function buildGridFromRows(rows: number[]): number[] {
   return grid;
 }
 
-function rowToCell(ri: number): { r: number; c: number; v: number } {
-  const r = Math.floor(ri / 81);
-  const c = Math.floor((ri % 81) / 9);
-  const v = (ri % 9) + 1;
-  return { r, c, v };
-}
-
 // ── Public API ────────────────────────────────────────
 
 /**
@@ -320,9 +284,7 @@ function rowToCell(ri: number): { r: number; c: number; v: number } {
  */
 export function solveSudoku(grid: number[]): SudokuSolution {
   const startTime = performance.now();
-  const matrix = buildMatrix(gridToGivens(grid));
-  applyGivens(matrix, grid);
-  // Also cover columns for pre-filled cells' implications
+  const matrix = buildMatrix();
   applyPreFilledRows(matrix, grid);
 
   const state: SearchState = {
@@ -369,8 +331,7 @@ export function solveSudoku(grid: number[]): SudokuSolution {
  * @returns number of solutions found (capped at limit)
  */
 export function countSudokuSolutions(grid: number[], limit: number = 2): number {
-  const matrix = buildMatrix(gridToGivens(grid));
-  applyGivens(matrix, grid);
+  const matrix = buildMatrix();
   applyPreFilledRows(matrix, grid);
 
   const state: SearchState = {
