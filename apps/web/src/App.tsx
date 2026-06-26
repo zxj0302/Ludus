@@ -1,11 +1,13 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from './stores/gameStore';
+import { useSokobanLevels } from './hooks/useSokobanLevels';
 
 export function App() {
   const { t } = useTranslation();
   const location = useLocation();
   const isHub = location.pathname === '/';
+  useSokobanLevels(); // 启动时加载外部关卡
 
   return (
     <div className="min-h-screen flex flex-col">

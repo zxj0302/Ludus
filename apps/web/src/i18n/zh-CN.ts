@@ -9,6 +9,9 @@ const zhCN = {
     'game.lights-out.name': '点灯',
     'game.lights-out.description': '轻点格子翻转灯与相邻灯——用 GF(2) 线性代数的眼光，把全部灯熄灭',
 
+    'game.sokoban.name': '推箱子',
+    'game.sokoban.description': '把箱子推到目标点上——用 BFS 搜索在 PSPACE 状态空间中寻找最短路径',
+
     'game.loading': '加载中…',
     'game.noGame': '未指定游戏',
 
@@ -36,6 +39,7 @@ const zhCN = {
     'game.status.remainingLabel': '剩余',
     'game.status.timeLabel': '用时',
     'game.status.demo': '▶ 演示',
+    'game.status.timedOut': '求解超时——关卡可能仍可解',
 
     'game.board.cellOn': '亮',
     'game.board.cellOff': '灭',
@@ -60,6 +64,12 @@ const zhCN = {
     'education.litRatio': '点亮率',
     'education.optimalSolution': '最优解（{{count}} 步）',
     'education.pressCell': '按 ({{row}}, {{col}})',
+    'education.boxesPlaced': '箱子到位',
+    'education.nodesExplored': '搜索节点',
+    'education.move.up': '↑ 上',
+    'education.move.down': '↓ 下',
+    'education.move.left': '← 左',
+    'education.move.right': '→ 右',
 
     'solver.play': '播放',
     'solver.pause': '暂停',
@@ -109,6 +119,27 @@ const zhCN = {
     'matrix.viewElimSteps': '点击「消元步骤」查看高斯消元过程',
 
     'category.linear-algebra': '线性代数',
+    'category.search': '搜索算法',
+
+    'game.levelLabel': '第 {{current}}/{{total}} 关',
+
+    'bfsTree.title': 'BFS 逐层探索',
+    'bfsTree.start': '起点',
+    'bfsTree.push': '推',
+    'bfsTree.walk': '走',
+    'bfsTree.findOptimal': '找最优解',
+    'bfsTree.legend.expandable': '可展开',
+    'bfsTree.legend.deadlock': '死锁',
+    'bfsTree.legend.solved': '已解',
+    'bfsTree.legend.optimal': '最优路径',
+    'bfsTree.solvedBanner': '所有箱子到位——关卡已解开！',
+    'bfsTree.deadlockWarn': '当前状态存在死锁箱子——关卡无法继续',
+    'bfsTree.unsolvableWarn': '当前状态无解——BFS 已穷尽所有可能',
+    'bfsTree.timeoutWarn': '求解超时——复杂度较高，可能仍有解',
+
+    'levelSelector.select': '选择',
+    'levelSelector.collection': '合集',
+    'levelSelector.level': '关卡',
 
     'hub.title': '探索游戏',
     'hub.play': '开始玩',

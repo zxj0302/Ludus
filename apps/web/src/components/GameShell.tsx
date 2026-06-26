@@ -1,12 +1,17 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import type { Move } from '@ludus/core';
+import { getGame, LightsOutBoard, SokobanBoard } from '@ludus/games';
+import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove } from '@ludus/games';
 import { useGameStore } from '../stores/gameStore';
-import { getGame, LightsOutBoard } from '@ludus/games';
-import type { LightsOutState, LightsOutMove } from '@ludus/games';
+import { useSokobanLevels } from '../hooks/useSokobanLevels';
 import { GameToolbar } from './GameToolbar';
 import { GameStatusBar } from './GameStatusBar';
 import { EducationPanel } from './EducationPanel';
+import { ErrorBoundary } from './ErrorBoundary';
+import { LevelSelector } from './LevelSelector';
+import { stateHash } from '@ludus/core';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }
@@ -20,20 +25,20 @@ export function GameShell({ gameId }: Props) {
     gameState: s.gameState,
     applyMove: s.applyMove, undo: s.undo, redo: s.redo, reset: s.reset, newLevel: s.newLevel,
     requestSolve: s.requestSolve, requestHint: s.requestHint,
-    solution: s.solution, solverStatus: s.solverStatus,
+    solution: s.solution, solverStatus: s.solverStatus, solveError: s.solveError,
     hintMove: s.hintMove, initialOptimalSteps: s.initialOptimalSteps, currentOptimalSteps: s.currentOptimalSteps,
     solvePlayback: s.solvePlayback, solveStepIndex: s.solveStepIndex,
     nextPlaybackStep: s.nextPlaybackStep, prevPlaybackStep: s.prevPlaybackStep, stopPlayback: s.stopPlayback,
     disclosureLevel: s.disclosureLevel, setDisclosureLevel: s.setDisclosureLevel,
     educationOpen: s.educationOpen, setEducationOpen: s.setEducationOpen,
     historyIndex: s.historyIndex, history: s.history,
-    startTime: s.startTime, elapsed: s.elapsed, tick: s.tick,
+    startTime: s.startTime, elapsed: s.elapsed, tick: s.tick, pauseTimer: s.pauseTimer,
   }));
 
   // 解构引用（从单一 selector 读取，避免多次订阅）
   const {
     gameState, applyMove, undo, redo, reset, newLevel,
-    requestSolve, requestHint, solution, solverStatus,
+    requestSolve, requestHint, solution, solverStatus, solveError,
     hintMove, initialOptimalSteps, currentOptimalSteps,
     solvePlayback, solveStepIndex, nextPlaybackStep, prevPlaybackStep, stopPlayback,
     disclosureLevel, setDisclosureLevel, educationOpen, setEducationOpen,
@@ -41,7 +46,8 @@ export function GameShell({ gameId }: Props) {
   } = store;
 
   const loState = gameState as unknown as LightsOutState | null;
-  const isWin: boolean = loState && !solvePlayback && plugin ? plugin.isSolved(gameState!) : false;
+  const soState = gameState as unknown as SokobanState | null;
+  const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
   const remainingSteps = currentOptimalSteps;
@@ -69,13 +75,32 @@ export function GameShell({ gameId }: Props) {
     return () => clearInterval(timer);
   }, [solvePlayback, nextPlaybackStep, playStep]);
 
-  const handleMove = useCallback((move: LightsOutMove) => {
+  const handleMove = useCallback((move: LightsOutMove | SokobanMove) => {
     if (isWin || solvePlayback) return;
     applyMove(move);
     playToggle(); vibrate(5);
   }, [isWin, solvePlayback, applyMove, playToggle, vibrate]);
 
-  if (!plugin || !gameState || !loState) {
+  // 同步侧边栏高度到左侧列，实现底部对齐
+  const leftColumnRef = useRef<HTMLDivElement>(null);
+  const [leftColumnHeight, setLeftColumnHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const el = leftColumnRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h && h > 0) setLeftColumnHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
+  const stateMatchesPlugin =
+    (gameId === 'lights-out' && loState?.grid != null) ||
+    (gameId === 'sokoban' && soState?.walls != null);
+
+  if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <p className="text-lg text-warm-stone-500 animate-pulse">{t('game.loading')}</p>
@@ -83,12 +108,82 @@ export function GameShell({ gameId }: Props) {
     );
   }
 
+  // 以下 plugin 和 gameState 均非 null，且 state 与 gameId 匹配
+
+  // Sokoban 关卡合集（仅 Sokoban 时加载，避免 Lights Out 等游戏浪费解析）
+  const collections = useSokobanLevels(gameId === 'sokoban');
+  const [selectedCollection, setSelectedCollection] = useState('builtin');
+  const [selectedLevelIdx, setSelectedLevelIdx] = useState(0);
+  const loadCustomState = useGameStore(s => s.loadCustomState);
+  const currentLevels = collections.find(c => c.name === selectedCollection)?.levels ?? [];
+  const totalInCollection = currentLevels.length;
+
+  // 标记"本次状态变更来自关卡选择器"，避免 sync effect 回写覆盖
+  const fromSelector = useRef(false);
+
+  const handleCollectionChange = useCallback((name: string) => {
+    setSelectedCollection(name);
+    setSelectedLevelIdx(0);
+    const coll = collections.find(c => c.name === name);
+    if (coll && coll.levels.length > 0) {
+      fromSelector.current = true;
+      loadCustomState(coll.levels[0] as unknown as Record<string, unknown>);
+    }
+  }, [collections, loadCustomState]);
+
+  // 将 LevelSelector 与 loadGame / newLevel 产生的随机状态同步（仅首次或非选择器触发）
+  useEffect(() => {
+    if (gameId !== 'sokoban' || !soState?.boxes) return;
+    if (fromSelector.current) { fromSelector.current = false; return; }
+    const currentHash = stateHash(soState as SokobanState);
+    for (const coll of collections) {
+      const idx = coll.levels.findIndex(l => {
+        try { return stateHash(l as unknown as SokobanState) === currentHash; }
+        catch { return false; }
+      });
+      if (idx !== -1) {
+        if (coll.name !== selectedCollection) setSelectedCollection(coll.name);
+        if (idx !== selectedLevelIdx) setSelectedLevelIdx(idx);
+        return;
+      }
+    }
+  }, [gameId, gameState, collections]);
+
+  const handleLevelSelect = useCallback((index: number) => {
+    setSelectedLevelIdx(index);
+    if (currentLevels[index]) {
+      fromSelector.current = true;
+      loadCustomState(currentLevels[index] as unknown as Record<string, unknown>);
+    }
+  }, [currentLevels, loadCustomState]);
+
   let highlightCell: { row: number; col: number } | null = null;
+
+  // 从 move 提取高亮坐标（不同游戏的 move 结构不同）
+  const moveToCell = (move: Move): { row: number; col: number } | null => {
+    if (gameId === 'lights-out') {
+      const m = move as LightsOutMove;
+      if (m.row != null && m.col != null) return { row: m.row, col: m.col };
+    }
+    if (gameId === 'sokoban') {
+      const m = move as SokobanMove;
+      // Sokoban 提示：高亮玩家前进方向的格子
+      if (m.direction && soState) {
+        const delta: Record<string, { dr: number; dc: number }> = {
+          up: { dr: -1, dc: 0 }, down: { dr: 1, dc: 0 },
+          left: { dr: 0, dc: -1 }, right: { dr: 0, dc: 1 },
+        };
+        const d = delta[m.direction];
+        if (d) return { row: soState.player.row + d.dr, col: soState.player.col + d.dc };
+      }
+    }
+    return null;
+  };
+
   if (solvePlayback && solution?.moves) {
-    const m = solution.moves[solveStepIndex];
-    if (m) highlightCell = { row: (m as LightsOutMove).row, col: (m as LightsOutMove).col };
+    highlightCell = moveToCell(solution.moves[solveStepIndex]!);
   } else if (hintMove) {
-    highlightCell = hintMove;
+    highlightCell = moveToCell(hintMove);
   }
 
   return (
@@ -118,9 +213,9 @@ export function GameShell({ gameId }: Props) {
         {educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
       </button>
 
-      <div className="flex justify-center">
-        {/* 游戏主区域 — 宽度瞬时切换（不参与 transition，避免 layout thrash） */}
-        <div className={`space-y-4 shrink-0 ${educationOpen ? 'lg:w-[55%]' : 'w-full max-w-2xl'}`}>
+      <div className="flex justify-center items-start">
+        {/* 游戏主区域 */}
+        <div ref={leftColumnRef} className={`space-y-4 shrink-0 ${educationOpen ? 'lg:w-[55%]' : 'w-full max-w-2xl'}`}>
           <div className="bento-card p-6 text-center">
             <h1 className="text-2xl font-bold text-warm-stone-800">{t(plugin.metadata.nameKey)}</h1>
             <p className="text-sm text-warm-stone-500 mt-1">{t(plugin.metadata.descriptionKey)}</p>
@@ -131,6 +226,7 @@ export function GameShell({ gameId }: Props) {
             optimalSteps={optimalSteps} remainingSteps={remainingSteps} elapsed={elapsed}
             solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
             totalSolveSteps={solution?.moves.length ?? 0}
+            solveError={solveError}
           />
 
           <GameToolbar
@@ -142,20 +238,42 @@ export function GameShell({ gameId }: Props) {
             isSolving={solverStatus === 'running'} isSolved={isWin}
             solvePlayback={solvePlayback}
             hasHint={!!hintMove}
+            newLevelSlot={gameId === 'sokoban' ? (
+              <LevelSelector
+                collections={collections}
+                selectedCollection={selectedCollection}
+                selectedLevelIdx={selectedLevelIdx}
+                totalInCollection={totalInCollection}
+                onCollectionChange={handleCollectionChange}
+                onLevelSelect={handleLevelSelect}
+              />
+            ) : undefined}
           />
 
-          <div className="bento-card p-6 flex justify-center">
-            <LightsOutBoard
-              state={loState} onMove={handleMove}
-              disabled={isWin || solvePlayback} highlightCell={highlightCell}
-            />
+          <div className="bento-card p-6 flex justify-center min-h-[420px]">
+            <ErrorBoundary>
+              {gameId === 'sokoban' && soState?.walls ? (
+                <SokobanBoard
+                  state={soState} onMove={handleMove}
+                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
+                />
+              ) : loState?.grid ? (
+                <LightsOutBoard
+                  state={loState} onMove={handleMove}
+                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
+                />
+              ) : (
+                <p className="text-warm-stone-400 text-sm">{t('game.loading')}</p>
+              )}
+            </ErrorBoundary>
           </div>
         </div>
 
-        {/* 桌面端侧边栏 — transform 滑入 + opacity（GPU 合成，不触发 layout reflow） */}
+        {/* 桌面端侧边栏 */}
         <div
           className={`hidden lg:block shrink-0 overflow-hidden
             ${educationOpen ? 'w-[40%]' : 'w-0'}`}
+          style={educationOpen && leftColumnHeight != null ? { height: leftColumnHeight } : undefined}
         >
           <motion.div
             initial={false}
@@ -164,7 +282,7 @@ export function GameShell({ gameId }: Props) {
               opacity: educationOpen ? 1 : 0,
             }}
             transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
-            className="lg:sticky lg:top-24 max-h-[calc(100vh-8rem)] overflow-y-auto ml-6"
+            className="lg:sticky lg:top-24 max-h-full overflow-y-auto ml-6"
           >
             <EducationPanel
               gameId={gameId} open={educationOpen}
@@ -173,7 +291,7 @@ export function GameShell({ gameId }: Props) {
               onChangeDisclosureLevel={setDisclosureLevel}
               solution={solution}
               solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
-              gameState={loState}
+              gameState={gameState}
             />
           </motion.div>
         </div>
@@ -194,7 +312,7 @@ export function GameShell({ gameId }: Props) {
             onChangeDisclosureLevel={setDisclosureLevel}
             solution={solution}
             solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
-            gameState={loState}
+            gameState={gameState}
           />
         </motion.div>
       </div>

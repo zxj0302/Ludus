@@ -101,6 +101,8 @@ export interface SolutionStats {
   timeMs: number;
   solutionLength: number;
   solverName: string;
+  /** 求解器终止原因（用于区分超时 vs 真正无解） */
+  terminated?: 'solved' | 'timeout' | 'exhausted';
 }
 
 // ---- 难度 ----
@@ -164,7 +166,7 @@ export interface VisualizationManifest {
   /** 可视化组件名（用于动态选择 React Flow / D3 组件） */
   componentName: string;
   /** 使用的可视化库 */
-  library: 'react-flow' | 'd3' | 'both';
+  library: 'react-flow' | 'd3' | 'both' | 'custom-svg';
 }
 
 // ============================================================

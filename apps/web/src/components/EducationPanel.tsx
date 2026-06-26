@@ -1,22 +1,34 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { Solution } from '@ludus/core';
+import type { Solution, GameState } from '@ludus/core';
 import { MatrixViz } from './MatrixViz';
 import { KnowledgeCard } from './KnowledgeCard';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '../stores/gameStore';
-import type { LightsOutState } from '@ludus/games';
+import type { LightsOutState, SokobanState } from '@ludus/games';
 
-import l2zh from '@ludus/education/src/content/lights-out/l2.zh-CN.md?raw';
-import l2en from '@ludus/education/src/content/lights-out/l2.en.md?raw';
-import l3zh from '@ludus/education/src/content/lights-out/l3.zh-CN.md?raw';
-import l3en from '@ludus/education/src/content/lights-out/l3.en.md?raw';
+const BFSTreeViz = lazy(() => import('./BFSTreeViz'));
 
-const contentMap: Record<string, Record<string, string>> = {
-  'zh-CN': { L2: l2zh, L3: l3zh },
-  en: { L2: l2en, L3: l3en },
+import l2zhLO from '@ludus/education/src/content/lights-out/l2.zh-CN.md?raw';
+import l2enLO from '@ludus/education/src/content/lights-out/l2.en.md?raw';
+import l3zhLO from '@ludus/education/src/content/lights-out/l3.zh-CN.md?raw';
+import l3enLO from '@ludus/education/src/content/lights-out/l3.en.md?raw';
+import l2zhSK from '@ludus/education/src/content/sokoban/l2.zh-CN.md?raw';
+import l2enSK from '@ludus/education/src/content/sokoban/l2.en.md?raw';
+import l3zhSK from '@ludus/education/src/content/sokoban/l3.zh-CN.md?raw';
+import l3enSK from '@ludus/education/src/content/sokoban/l3.en.md?raw';
+
+const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
+  'lights-out': {
+    'zh-CN': { L2: l2zhLO, L3: l3zhLO },
+    en: { L2: l2enLO, L3: l3enLO },
+  },
+  sokoban: {
+    'zh-CN': { L2: l2zhSK, L3: l3zhSK },
+    en: { L2: l2enSK, L3: l3enSK },
+  },
 };
 
 /** 从 markdown 提取正文（跳过 frontmatter） */
@@ -45,7 +57,7 @@ interface Props {
   solution: Solution | null;
   solvePlayback: boolean;
   solveStepIndex: number;
-  gameState: LightsOutState | null;
+  gameState: GameState | null;
 }
 
 export function EducationPanel({
@@ -73,7 +85,8 @@ export function EducationPanel({
   }, [solveStepIndex, solvePlayback]);
 
   const depth = disclosureLevel >= 3 ? 'L3' : 'L2';
-  const rawMd = contentMap[language]?.[depth] ?? contentMap['zh-CN']![depth]!;
+  const gameContent = CONTENT_MAPS[gameId] ?? CONTENT_MAPS['lights-out']!;
+  const rawMd = gameContent[language]?.[depth] ?? gameContent['zh-CN']?.[depth] ?? '';
   const bodyMd = extractBody(rawMd);
 
   const getSectionId = (english: string) =>
@@ -85,14 +98,15 @@ export function EducationPanel({
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  // 求解演示时自动滚动到可视化区域（顶部），而非 markdown 章节
+  // 求解演示时自动滚动到可视化区域
   useEffect(() => {
     if (solvePlayback) {
       setHighlightedTab('solve');
-      // 滚动到可视化容器顶部
+      // 找到实际滚动容器（EducationPanel 外层 motion.div 有 overflow-y-auto）
       const vizEl = document.getElementById('solver-viz-top');
-      if (vizEl) {
-        vizEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const scrollParent = vizEl?.closest('.overflow-y-auto') as HTMLElement | null;
+      if (scrollParent && vizEl) {
+        scrollParent.scrollTo({ top: vizEl.offsetTop - scrollParent.offsetTop - 20, behavior: 'smooth' });
       } else {
         contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -107,8 +121,20 @@ export function EducationPanel({
 
   if (!open && !hasBeenOpened) return null;
 
-  const onCount = gameState?.grid.filter(c => c === 1).length ?? 0;
-  const totalCells = gameState ? gameState.n * gameState.n : 0;
+  // Lights Out specific stats
+  const loState = gameState as LightsOutState | null;
+  const onCount = loState?.grid?.filter(c => c === 1).length ?? 0;
+  const totalCells = loState ? loState.n * loState.n : 0;
+
+  // Sokoban specific stats
+  const soState = gameState as Record<string, unknown> | null;
+  const boxesOnGoals = (soState?.boxes as Array<{ row: number; col: number }> | undefined)?.filter(
+    b => (soState?.goals as Array<{ row: number; col: number }> | undefined)?.some(g => g.row === b.row && g.col === b.col)
+  ).length ?? 0;
+  const totalBoxes = (soState?.boxes as Array<unknown> | undefined)?.length ?? 0;
+
+  const isLO = gameId === 'lights-out';
+  const isSK = gameId === 'sokoban';
 
   return (
     <motion.div
@@ -168,33 +194,66 @@ export function EducationPanel({
         {gameState && (
           <KnowledgeCard title={t('education.currentState')} icon="🎯">
             <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                <div className="text-[10px] text-warm-stone-500">{t('education.litCells')}</div>
-                <div className="text-lg font-bold text-game-amber-700">{onCount}</div>
-              </div>
-              <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                <div className="text-[10px] text-warm-stone-500">{t('education.optimalSteps')}</div>
-                <div className="text-lg font-bold text-clarity-teal-dark">
-                  {solution?.solvable ? solution.stats.solutionLength : '—'}
-                </div>
-              </div>
-              <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
-                <div className="text-[10px] text-warm-stone-500">{t('education.litRatio')}</div>
-                <div className="text-lg font-bold text-logic-indigo-700">
-                  {totalCells > 0 ? Math.round((onCount / totalCells) * 100) : 0}%
-                </div>
-              </div>
+              {isLO && (
+                <>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.litCells')}</div>
+                    <div className="text-lg font-bold text-game-amber-700">{onCount}</div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.optimalSteps')}</div>
+                    <div className="text-lg font-bold text-clarity-teal-dark">
+                      {solution?.solvable ? solution.stats.solutionLength : '—'}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.litRatio')}</div>
+                    <div className="text-lg font-bold text-logic-indigo-700">
+                      {totalCells > 0 ? Math.round((onCount / totalCells) * 100) : 0}%
+                    </div>
+                  </div>
+                </>
+              )}
+              {isSK && (
+                <>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.boxesPlaced')}</div>
+                    <div className="text-lg font-bold text-game-amber-700">{boxesOnGoals}/{totalBoxes}</div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.optimalSteps')}</div>
+                    <div className="text-lg font-bold text-clarity-teal-dark">
+                      {solution?.solvable ? solution.stats.solutionLength : '—'}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+                    <div className="text-[10px] text-warm-stone-500">{t('education.nodesExplored')}</div>
+                    <div className="text-lg font-bold text-logic-indigo-700">
+                      {solution?.stats.nodesExplored ?? 0}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </KnowledgeCard>
         )}
 
-        {/* 矩阵可视化（有解时始终显示） */}
+        {/* 可视化区域：根据游戏类型 / trace 类型选择组件 */}
         <div id="solver-viz-top" className="scroll-mt-28" />
-        {solution?.trace && (
+
+        {/* Sokoban：交互式逐层展开树 */}
+        {isSK && gameState && (gameState as SokobanState).boxes && (
+          <Suspense fallback={<div className="h-80 rounded-card bg-warm-stone-100 animate-pulse" />}>
+            <BFSTreeViz gameState={gameState as SokobanState} />
+          </Suspense>
+        )}
+
+        {/* Lights Out：矩阵消元可视化 */}
+        {solution?.trace?.type === 'matrix-transform' && (
           <MatrixViz
             solution={solution}
             solveStepIndex={solveStepIndex}
-            gameState={gameState}
+            gameState={loState}
           />
         )}
 
@@ -203,9 +262,19 @@ export function EducationPanel({
           <KnowledgeCard title={t('education.optimalSolution', { count: solution.moves.length })} icon="👆">
             <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
               {solution.moves.map((m, i) => {
-                const move = m as { row: number; col: number };
                 const isCurrentStep = solvePlayback && i === solveStepIndex;
                 const isPastStep = solvePlayback && i < solveStepIndex;
+
+                // Render move description based on game type
+                let moveLabel: string;
+                if (isLO) {
+                  const move = m as { row: number; col: number };
+                  moveLabel = t('education.pressCell', { row: move.row + 1, col: move.col + 1 });
+                } else {
+                  const move = m as { direction: string };
+                  moveLabel = t(`education.move.${move.direction}`, move.direction);
+                }
+
                 return (
                   <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
                     text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
@@ -214,7 +283,7 @@ export function EducationPanel({
                       'text-warm-stone-600'}
                   `}>
                     <span className="w-5 text-right tabular-nums">{i + 1}.</span>
-                    <span>{t('education.pressCell', { row: move.row + 1, col: move.col + 1 })}</span>
+                    <span>{moveLabel}</span>
                     {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
                   </div>
                 );
@@ -224,7 +293,7 @@ export function EducationPanel({
         )}
 
         {/* 完整 Markdown 教学内容（所有章节） */}
-        <MarkdownRenderer content={bodyMd} />
+        {bodyMd && <MarkdownRenderer content={bodyMd} />}
       </div>
     </motion.div>
   );

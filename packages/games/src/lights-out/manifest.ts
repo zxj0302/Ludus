@@ -24,13 +24,3 @@ export const lightsOutVisualizationManifest: VisualizationManifest = {
   componentName: 'MatrixViz',
   library: 'react-flow',
 };
-
-export const lightsOutSoundManifest = {
-  gameId: 'lights-out',
-  events: {
-    toggle: { src: '/sounds/toggle.mp3', volume: 0.6 },
-    solve: { src: '/sounds/solve.mp3', volume: 0.8 },
-    win: { src: '/sounds/win.mp3', volume: 1.0 },
-    error: { src: '/sounds/error.mp3', volume: 0.7 },
-  },
-};

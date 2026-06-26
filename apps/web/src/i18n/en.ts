@@ -9,6 +9,9 @@ const en = {
     'game.lights-out.name': 'Lights Out',
     'game.lights-out.description': 'Tap cells to toggle lights and neighbours — turn everything off with GF(2) linear algebra',
 
+    'game.sokoban.name': 'Sokoban',
+    'game.sokoban.description': 'Push boxes to goal tiles — BFS search for the shortest path in a PSPACE state space',
+
     'game.loading': 'Loading game…',
     'game.noGame': 'No game specified',
 
@@ -36,6 +39,7 @@ const en = {
     'game.status.remainingLabel': 'Remaining',
     'game.status.timeLabel': 'Time',
     'game.status.demo': '▶ Demo',
+    'game.status.timedOut': 'Timed out — level may still be solvable',
 
     'game.board.cellOn': 'on',
     'game.board.cellOff': 'off',
@@ -60,6 +64,12 @@ const en = {
     'education.litRatio': 'Lit Ratio',
     'education.optimalSolution': 'Optimal Solution ({{count}} moves)',
     'education.pressCell': 'Press ({{row}}, {{col}})',
+    'education.boxesPlaced': 'Boxes Placed',
+    'education.nodesExplored': 'Nodes Explored',
+    'education.move.up': '↑ Up',
+    'education.move.down': '↓ Down',
+    'education.move.left': '← Left',
+    'education.move.right': '→ Right',
 
     'solver.play': 'Play',
     'solver.pause': 'Pause',
@@ -109,6 +119,27 @@ const en = {
     'matrix.viewElimSteps': 'Click "Elimination Steps" to view the Gaussian elimination process',
 
     'category.linear-algebra': 'Linear Algebra',
+    'category.search': 'Search Algorithms',
+
+    'game.levelLabel': 'Lv.{{current}}/{{total}}',
+
+    'bfsTree.title': 'BFS Step Explorer',
+    'bfsTree.start': 'Start',
+    'bfsTree.push': 'push',
+    'bfsTree.walk': 'walk',
+    'bfsTree.findOptimal': 'Find Optimal',
+    'bfsTree.legend.expandable': 'Expandable',
+    'bfsTree.legend.deadlock': 'Deadlock',
+    'bfsTree.legend.solved': 'Solved',
+    'bfsTree.legend.optimal': 'Optimal path',
+    'bfsTree.solvedBanner': 'All boxes on goals — level solved!',
+    'bfsTree.deadlockWarn': 'Box in deadlock — level cannot be completed',
+    'bfsTree.unsolvableWarn': 'Current state is unsolvable — BFS exhausted all possibilities',
+    'bfsTree.timeoutWarn': 'Solve timed out — level may still be solvable',
+
+    'levelSelector.select': 'Select',
+    'levelSelector.collection': 'Collection',
+    'levelSelector.level': 'Level',
 
     'hub.title': 'Explore Games',
     'hub.play': 'Play',

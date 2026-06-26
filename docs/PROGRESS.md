@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 4（垂直切片 — Lights Out 端到端样板）已完成**。全链路打通：Core 逻辑 → Game 插件 → Web 前端 → Worker → 测试。下一步进入 **阶段 5（增量游戏 — 数独 + Nim/Wythoff）**。
-- **MVP 范围**：3 款游戏（Lights Out ✅ + 数独 + Nim/Wythoff）。
+- **当前阶段**：**阶段 5（增量游戏）进行中— Sokoban 原型已完成**。下一步：高质量生成器，或开始下一款游戏。
+- **MVP 范围**：3 款游戏（Lights Out ✅ + Sokoban ✅ + 待定）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），46 个源文件，39 个测试（全过），Vite 构建成功，Worker 正确分包。
-- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 17 测 / 生成器 5 测 = **38 测试全过**。
+- **代码库状态**：3 包 monorepo（core / games / web），~70 个源文件，69 个测试（全过），Vite 构建成功，React Flow 懒加载。
+- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 / 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 = **69 测试全过**。
 
 ## ✅ DONE
 
@@ -47,6 +47,18 @@
   - `docs/phases/00-backlog.md`：74 → 162 款（+88 款），16 个领域全覆盖
   - 新增"优先采用权威实现"政策 + 🔗 权威/参考实现索引
 - **四轮全项目审计** ✅：全 8 个阶段/决策文件逐行审查，修复 36 处一致性与准确性问题
+- **阶段 5a — Sokoban 推箱子原型** ✅：
+  - Core: Sokoban 状态类型 + 规则引擎（rules/legalMoves/applyMove/isSolved/deadlock）+ BFS 求解器（状态去重 + 死锁剪枝 + search-tree trace）
+  - Core: Microban 经典关卡集 15 关（David W. Skinner，公域）+ 解析器 + 生成器（按难度范围选关）
+  - Game: 完整插件（rules/manifest/index）+ SokobanBoard 渲染（DOM+CSS Grid，墙壁/箱子/目标/玩家四层渲染，Framer Motion layout 动画，键盘+滑动操控）
+  - Web: GameShell 动态 Board 选择 + EducationPanel 游戏泛化（支持 search-tree trace + Sokoban 状态卡片）
+  - Web: BFSTreeViz（custom SVG 懒加载，BFS 搜索树交互式逐层展开 + 最优路径标记 + 死锁/已解状态高亮）
+  - i18n: 中英翻译 key（Sokoban 名称/描述/搜索树/移动方向/状态卡片）
+  - 教学: 四份 markdown（L2/L3 × zh/en），五段式结构
+  - 测试: Sokoban 规则+求解器 16 测 + 生成器 7 测 + 难度 3 测 = **26 新测试，69 全过**
+  - 构建: v1.0 成功，React Flow 懒加载分包（+178KB gzip 58KB）
+  - 新增 17 个文件，修改 10 个文件
+
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
   - **Game 层**：Lights Out 完整插件（rules/solver/generator/manifest/render/plugin） + 游戏注册表
@@ -60,27 +72,19 @@
 
 ## 🚧 IN PROGRESS
 
-- 无。
+- **Sokoban 高质量生成器**（待做——参考学术资料实现反向行走/模板拼接/进化算法）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-以 **游戏引擎开发 + 算法工程师角色** 进入 **阶段 5 增量游戏**：
+Sokoban 原型已完成（BFS 求解器 + Microban 关卡 + 渲染 + 教学 + 搜索树可视化）。下一步二选一：
 
-### 阶段 5a — 数独（Sudoku）
-1. Core: DLX (Dancing Links / Algorithm X) 求解器 (`packages/core/src/solver/dlx.ts`)
-2. Core: 数独生成器（挖空 + DLX 验证唯一解）
-3. Game: `packages/games/src/sudoku/` 完整插件（rules/solver/generator/manifest/render/plugin）
-4. 五段式教学内容（L2/L3 × zh/en）
-5. Web: SudokuBoard 渲染组件 + 教学面板
-6. 单元测试：DLX 求解器正确性、生成器唯一解验证
+### 选项 A：Sokoban 生成器升级
+参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器。
 
-### 阶段 5b — Nim / Wythoff（组合博弈论）
-7. Core: Minimax + Nim-sum + Grundy 数求解器
-8. Game: `packages/games/src/nim/` 插件（含 Nim/Wythoff/Nimble 三变体）
-9. 五段式教学内容
-10. Web: Nim 堆可视化 + 博弈树组件（React Flow）
+### 选项 B：下一款游戏
+继续增量游戏——数独（DLX）或 Nim/Wythoff（博弈论），见 `docs/phases/00-backlog.md` §2、§4。
 
-详见 `docs/phases/00-backlog.md` §2 组合博弈论、§4 CSP/SAT。
+**建议**：先完成选项 A（Sokoban 高质量生成器），让 Sokoban 达到完整 DoD，再开新游戏。
 
 ## 🐛 KNOWN ISSUES
 
@@ -90,7 +94,9 @@
 - 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器有 fallback 处理
 - `packages/i18n` 为空壳（package.json 存在但无 src），`npm run typecheck` 在根目录会因该包而失败
 - `LightsOutBoard` 的 `aria-label`（`render.tsx`）为硬编码英文，因 packages/games 无 react-i18next 依赖
-- Worker (`solver.worker.ts`) 尚未被 store 实际使用——Worker 基础设施就绪但未接入 `shouldUseWorker` 分流逻辑
+- Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施（`solver.worker.ts`）就绪但未接入 `shouldUseWorker` 分流逻辑
+- Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成（反向行走/模板/进化）
+- 侧边栏布局已确定终局方案：flex `items-start` + ResizeObserver 左列高度测量 + 右列 `height` 同步（非 `min-height`）。见 memory `lessons-learned.md` §9.4。
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
@@ -130,4 +136,54 @@
     39 测试全过，typecheck 通过。
   - [2026-06-26] 侧边栏动画性能优化：去除 CSS `transition-all` on width（触发布局重算），改用 Framer Motion `translateX` + `opacity`（GPU 合成）；EducationPanel 首次打开后保持挂载（避免动画中 mount/unmount）；移动端使用全屏 overlay + translateX 滑入。
   - [2026-06-26] 编写 `docs/lessons-learned.md`：从 Lights Out 开发中总结 9 大类经验（架构/i18n/性能/常见 Bug/测试/Worker/难度系统/开发流程/新游戏检查清单），供后续游戏开发参考。
+- [2026-06-26] **阶段 5a — Sokoban 推箱子原型**：
+  - 从立项到端到端打通：Core 规则引擎 + BFS 求解器 + 死锁检测 + Microban 15 关 + Game 层完整插件 + SokobanBoard 渲染（DOM 四层 + Framer Motion layout 动画 + 键盘/触屏支持）
+  - 架构演进：GameShell 动态 Board 选择（按 gameId 分支）+ EducationPanel 游戏泛化（支持 matrix-transform / search-tree 两种 trace）
+  - 新增 BFSTreeViz（custom SVG 懒加载）；@xyflow/react 依赖保留供未来图类可视化使用
+  - i18n 新增 20+ key，教学 4 份 markdown（L2/L3 × zh/en）
+  - 65 测试全过，typecheck 全绿，vite build 成功（~1042KB，gzip ~330KB）
+  - 生成器为 Microban 选关（v0.1），高质量生成器（反向行走/模板/进化）待后续实现
+- [2026-06-26] **Sokoban 全面审查与 5 项修复**：
+  1. L3 教育文档事实错误：Microban 关卡数 40 → 155，难度公式对齐实际代码
+  2. gameStore solveError 硬编码英文 → i18n key `game.status.timedOut`
+  3. stopPlayback N 次 undo 逐个重渲染 → 单次 set() 历史切片
+  4. 删除未使用的 `sokobanSoundManifest`
+  5. `generateSokobanLevel` 现在按 `difficultyRange` 筛选关卡
+  6. 测试 65/65 全过，typecheck + vite build 通过
+- [2026-06-26] **Sokoban 第二轮审查 + 15 修复 + 侧边栏终局方案 + 经验沉淀**：
+  1. BFS `shift()` O(n²) → 索引出队 O(1)
+  2. `visualizationManifest` 信息过时 → `BFSTreeViz` + `custom-svg`
+  3. `generateSokobanLevel` 同步 BFS 阻塞 UI → 移除 BFS 调用
+  4. `getDifficulty` 在 rules.ts 和 generator.ts 重复 → 提取 `computeSokobanDifficulty` 到 core 层
+  5. `generatePlayableState` fallback 随机游走对 Sokoban 无意义 → 简化为 `plugin.initialState()`
+  6. 超时检测 `>= 9000` vs BFS `8000ms` → 统一为 `>= 7000`
+  7. `maxFrontier` 死代码 → 移除
+  8. 双重 solver 包装 → 直接 re-export
+  9. `useSokobanLevels` 内建关卡重复 → 从 core `getLevel()` 导入
+  10. 关卡 ASCII 格式注释缺 `+` 符号 → 补全
+  11. L3 死锁伪代码与实际实现不符 → 修正为 `isWall` only
+  12. L3 "Microban 40 关" → 澄清 web 层加载外部关卡
+  13. Level 1 来源错误标注 → 移除 "Thinking Rabbit original #1"
+  14. `setDisclosureLevel` 对 Sokoban 同步 BFS → 保留旧解
+  15. `requestHint` 同步 BFS → `setTimeout` + `solverStatus: 'running'`
+  16. **侧边栏布局终极方案**：flex `items-start` + ResizeObserver 测量左列高度 + 右列 `height` 同步（非 `min-height`），同时解决顶部和底部对齐
+  17. "最优解"卡片关卡切换不消失：`loadCustomState` 对 Sokoban 保留 `prevSol`，500ms 延迟后台 BFS
+  18. 后台 BFS 不卡 UI：延迟从 100ms → 500ms + state 引用检查防 stale
+  19. LevelSelector popover 误关闭：backdrop div → document `mousedown` + `ref.contains()`
+  20. 测试 65/65 全过，typecheck + vite build 通过
+- [2026-06-26] **Sokoban 第三轮审查 + 修复**：
+  1. `bfs-sokoban.ts` 队列耗尽 case 缺 `trace` → 三路返回都带 trace
+  2. `SolutionStats` 加 `terminated: 'solved'|'timeout'|'exhausted'` 显式信号，替换 `timeMs >= 7000` 启发式（store + BFSTreeViz 同步更新）
+  3. `buildTrace` `maxDepth` 从 step 反推不可靠 → 独立变量追踪，首层 trace 必入
+  4. `LevelSelector` 硬编码 'Select'/合集/关卡 → i18n 化（新增 3 key × 2 语言）
+  5. 删除孤儿 `SearchTreeViz.tsx`（无任何组件 import）
+  6. 删除死 i18n key：`searchTree.*` (5 个) + `bfsTree.reset/expandedCount/optimalSteps/nodesExplored/optimalHint` (5 个)
+  7. `useSokobanLevels` 硬编码 `[getLevel(0), getLevel(1), getLevel(2)]` → `getAllLevels()`
+  8. 删除 core 层未使用的 `addExternalLevels`/`clearExternalLevels`/`_externalCache`（死 API）
+  9. `manifest.ts` `complexityClass` 风格统一（加描述性补充）
+  10. L3 文档加死锁实现限制说明 + Worker 分流"未实现"标注
+  11. L3 Microban 关卡数 155 → 150+（与实际文件一致）
+  12. `sokoban-generator.test.ts` 测试描述 "5 levels" → "3 builtin levels"
+  13. PROGRESS.md 测试数 65 → 69；移除 SearchTreeViz 已交付描述；合并重复 Worker KNOWN ISSUES
+  14. `sokoban-levels.ts` 注释"只在整个块之外"误导 → 改为"XSB 格式以 ; 开头"
 

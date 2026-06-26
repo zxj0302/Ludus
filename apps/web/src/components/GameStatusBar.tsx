@@ -10,6 +10,7 @@ interface Props {
   solvePlayback: boolean;
   solveStepIndex: number;
   totalSolveSteps: number;
+  solveError?: string | null;
 }
 
 function formatTime(ms: number): string {
@@ -21,7 +22,7 @@ function formatTime(ms: number): string {
 
 export function GameStatusBar({
   stepCount, isSolved, isSolving, optimalSteps, remainingSteps,
-  elapsed, solvePlayback, solveStepIndex, totalSolveSteps,
+  elapsed, solvePlayback, solveStepIndex, totalSolveSteps, solveError,
 }: Props) {
   const { t } = useTranslation();
 
@@ -77,6 +78,7 @@ export function GameStatusBar({
             </div>
           )}
           {solvePlayback && <Badge color="amber">{t('game.status.demo')}</Badge>}
+          {solveError && <span className="text-xs text-game-amber-700 bg-game-amber-50 px-2 py-1 rounded">{solveError}</span>}
         </div>
       </div>
     </div>

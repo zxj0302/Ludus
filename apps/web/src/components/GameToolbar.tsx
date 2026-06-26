@@ -16,6 +16,8 @@ interface Props {
   isSolved: boolean;
   solvePlayback: boolean;
   hasHint: boolean;
+  /** 替换"+新关卡"按钮的内容 */
+  newLevelSlot?: React.ReactNode;
 }
 
 function Btn({ onClick, disabled, children, accent }: {
@@ -39,7 +41,7 @@ export function GameToolbar({
   onUndo, onRedo, onReset, onNewLevel, onSolve, onHint,
   onStopPlayback, onPrevStep, onNextStep,
   canUndo, canRedo, isSolving, isSolved,
-  solvePlayback, hasHint,
+  solvePlayback, hasHint, newLevelSlot,
 }: Props) {
   const { t } = useTranslation();
 
@@ -48,7 +50,7 @@ export function GameToolbar({
       <div className="bento-card p-3 flex items-center justify-center gap-2 flex-wrap">
         <Btn onClick={onPrevStep}>◀</Btn>
         <Btn onClick={onNextStep}>▶ {t('game.toolbar.nextStep')}</Btn>
-        <div className="w-px h-6 bg-warm-stone-200 mx-1" />
+        <div className="w-px h-5 bg-warm-stone-200 mx-1" />
         <Btn onClick={onStopPlayback}>■ {t('game.toolbar.reset')}</Btn>
       </div>
     );
@@ -59,10 +61,10 @@ export function GameToolbar({
       <Btn onClick={onUndo} disabled={!canUndo}>↩ {t('game.toolbar.undo')}</Btn>
       <Btn onClick={onRedo} disabled={!canRedo}>↪ {t('game.toolbar.redo')}</Btn>
       <Btn onClick={onReset}>⟳ {t('game.toolbar.reset')}</Btn>
-      <div className="w-px h-6 bg-warm-stone-200 mx-1" />
-      <Btn onClick={onNewLevel}>+ {t('game.toolbar.new')}</Btn>
+      <div className="w-px h-5 bg-warm-stone-200 mx-1" />
+      {newLevelSlot ?? <Btn onClick={onNewLevel}>+ {t('game.toolbar.new')}</Btn>}
 
-      <div className="w-px h-6 bg-warm-stone-200 mx-1" />
+      <div className="w-px h-5 bg-warm-stone-200 mx-1" />
 
       <Btn onClick={onHint} disabled={isSolving || isSolved} accent="hint">
         💡 {t('game.toolbar.hint')}

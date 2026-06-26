@@ -18,7 +18,7 @@ interface GameStore {
   solveError: string | null;
 
   // 提示
-  hintMove: { row: number; col: number } | null;
+  hintMove: Move | null;
   // 最优步数：initial = 初始关卡的最优 / current = 当前状态的最优（剩余步数）
   initialOptimalSteps: number | null;
   currentOptimalSteps: number | null;
@@ -42,6 +42,7 @@ interface GameStore {
   soundEnabled: boolean;
 
   loadGame: (gameId: string) => void;
+  loadCustomState: (state: GameState) => void;
   applyMove: (move: Move) => void;
   undo: () => void;
   redo: () => void;
@@ -57,6 +58,7 @@ interface GameStore {
   setLanguage: (lang: string) => void;
   toggleSound: () => void;
   tick: () => void;
+  pauseTimer: () => void;
 }
 
 function generatePlayableState(plugin: GamePlugin): GameState {
@@ -68,19 +70,7 @@ function generatePlayableState(plugin: GamePlugin): GameState {
     });
     return level.initialState as GameState;
   } catch {
-    // fallback: 随机走子直到产生非全灭状态
-    let state = plugin.initialState();
-    const moves = plugin.legalMoves(state);
-    for (let attempt = 0; attempt < 20; attempt++) {
-      state = plugin.initialState();
-      const numMoves = 3 + Math.floor(Math.random() * 5);
-      for (let i = 0; i < numMoves; i++) {
-        const m = moves[Math.floor(Math.random() * moves.length)]!;
-        state = plugin.applyMove(state, m);
-      }
-      if (!plugin.isSolved(state)) break;
-    }
-    return state;
+    return plugin.initialState();
   }
 }
 
@@ -110,9 +100,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const plugin = getGame(gameId);
     if (!plugin) return;
     const state = generatePlayableState(plugin);
-    // 始终计算最优步数以持续显示
-    const sol = plugin.solve(state);
-    const opt = sol.solvable ? sol.stats.solutionLength : null;
+
+    const isFastGame = plugin.metadata.id === 'lights-out';
+    const sol = isFastGame ? plugin.solve(state) : null;
+    const opt = sol?.solvable ? sol.stats.solutionLength : null;
+
     set({
       gameId,
       plugin,
@@ -132,6 +124,23 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       elapsed: 0,
       educationOpen: false,
     });
+
+    // Sokoban 等慢求解器：延迟后台求解，避免切换时抢帧
+    if (!isFastGame) {
+      const savedState = state;
+      setTimeout(() => {
+        const { plugin: p, gameState: s } = get();
+        if (!p || s !== savedState) return;
+        const bgSol = p.solve(s);
+        if (bgSol.solvable && bgSol.moves.length > 0) {
+          set({
+            solution: bgSol,
+            initialOptimalSteps: bgSol.stats.solutionLength,
+            currentOptimalSteps: bgSol.stats.solutionLength,
+          });
+        }
+      }, 500);
+    }
   },
 
   applyMove: (move) => {
@@ -140,68 +149,82 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!solvePlayback && plugin.isSolved(gameState)) return;
 
     const newState = plugin.applyMove(gameState, move);
+    // 非法移动返回原引用，跳过
+    if (newState === gameState) return;
+
     const newHistory = [...history.slice(0, historyIndex + 1), newState];
-    const isWin = plugin.isSolved(newState);
 
-    // 始终重新计算当前状态的最优解
-    const sol = plugin.solve(newState);
-    const currentOpt = sol.solvable ? sol.stats.solutionLength : null;
-
-    // 演示期间不覆盖 solution（保留原始求解结果供步骤列表用）
+    // 演示期间不覆盖 solution
     const keepExistingSolution = solvePlayback && get().solution;
+
+    // Lights Out 的 GF(2) 求解 < 1ms，每一步都重新求解以保持可视化同步
+    // Sokoban 的 BFS 可能很慢，保留旧解，不阻塞 UI
+    let solution = keepExistingSolution ? get().solution! : get().solution;
+    if (!keepExistingSolution && plugin.metadata.id === 'lights-out') {
+      solution = plugin.solve(newState);
+    }
+
     set({
       gameState: newState,
       history: newHistory,
       historyIndex: newHistory.length - 1,
       hintMove: null,
-      currentOptimalSteps: currentOpt,
-      solution: keepExistingSolution ? get().solution! : sol,
+      currentOptimalSteps: null,
+      solution,
     });
   },
 
   undo: () => {
-    const { historyIndex, history, plugin, solvePlayback } = get();
+    const { historyIndex, history, solvePlayback, plugin } = get();
     if (historyIndex > 0) {
       const newIdx = historyIndex - 1;
       const newState = history[newIdx]!;
-      const sol = plugin?.solve(newState);
+      // Lights Out 的 GF(2) 求解 < 1ms，撤销后同步刷新可视化
+      let solution = get().solution;
+      if (!solvePlayback && plugin?.metadata.id === 'lights-out') {
+        solution = plugin.solve(newState);
+      }
       set({
         historyIndex: newIdx,
         gameState: newState,
-        // 播放期间不覆盖 solution（保持演示用的解）
-        solution: solvePlayback ? get().solution : (sol ?? null),
-        currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
+        solution,
+        currentOptimalSteps: null,
         hintMove: null,
       });
     }
   },
 
   redo: () => {
-    const { historyIndex, history, plugin, solvePlayback } = get();
+    const { historyIndex, history, solvePlayback, plugin } = get();
     if (historyIndex < history.length - 1) {
       const newIdx = historyIndex + 1;
       const newState = history[newIdx]!;
-      const sol = plugin?.solve(newState);
+      let solution = get().solution;
+      if (!solvePlayback && plugin?.metadata.id === 'lights-out') {
+        solution = plugin.solve(newState);
+      }
       set({
         historyIndex: newIdx,
         gameState: newState,
-        solution: solvePlayback ? get().solution : (sol ?? null),
-        currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
+        solution,
+        currentOptimalSteps: null,
         hintMove: null,
       });
     }
   },
 
   reset: () => {
-    const { history, plugin } = get();
+    const { history, plugin, solution: prevSol } = get();
     if (history.length === 0) return;
     const initial = history[0]!;
-    const sol = plugin?.solve(initial);
+    const isFastGame = plugin?.metadata.id === 'lights-out';
+    // 重置回初始状态，旧解如果存在就是针对这个状态的，保留它
+    const sol = isFastGame ? plugin?.solve(initial) ?? null : prevSol;
     set({
       historyIndex: 0,
       gameState: initial,
       history: [initial],
-      solution: sol ?? null,
+      solution: sol,
       solveError: null,
       hintMove: null,
       currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
@@ -218,9 +241,9 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { plugin } = get();
     if (!plugin) return;
     const state = generatePlayableState(plugin);
-    // 始终计算最优步数
-    const sol = plugin.solve(state);
-    const opt = sol.solvable ? sol.stats.solutionLength : null;
+    const isFastGame = plugin.metadata.id === 'lights-out';
+    const sol = isFastGame ? plugin.solve(state) : null;
+    const opt = sol?.solvable ? sol.stats.solutionLength : null;
     set({
       gameState: state,
       history: [state],
@@ -237,47 +260,118 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       startTime: Date.now(),
       elapsed: 0,
     });
+
+    // Sokoban 等慢求解器：延迟后台求解
+    if (!isFastGame) {
+      const savedState = state;
+      setTimeout(() => {
+        const { plugin: p, gameState: s } = get();
+        if (!p || s !== savedState) return;
+        const bgSol = p.solve(s);
+        if (bgSol.solvable && bgSol.moves.length > 0) {
+          set({
+            solution: bgSol,
+            initialOptimalSteps: bgSol.stats.solutionLength,
+            currentOptimalSteps: bgSol.stats.solutionLength,
+          });
+        }
+      }, 500);
+    }
+  },
+
+  loadCustomState: (state: GameState) => {
+    const { plugin, solution: prevSol } = get();
+    const isFastGame = plugin?.metadata.id === 'lights-out';
+    // Lights Out 瞬时求解；Sokoban 保留旧解避免卡片消失，后台更新
+    const sol = isFastGame ? plugin?.solve(state) ?? null : prevSol;
+    const opt = sol?.solvable ? sol.stats.solutionLength : null;
+    set({
+      gameState: state,
+      history: [state],
+      historyIndex: 0,
+      solverStatus: 'idle',
+      solution: sol,
+      solveError: null,
+      hintMove: null,
+      initialOptimalSteps: opt,
+      currentOptimalSteps: opt,
+      solvePlayback: false,
+      solveStepIndex: 0,
+      prePlaybackHistoryIndex: 0,
+      startTime: Date.now(),
+      elapsed: 0,
+    });
+
+    // Sokoban 等慢求解器：延迟 500ms 后台求解，减少切换关卡时的抢帧
+    if (!isFastGame && plugin) {
+      const savedState = state;
+      setTimeout(() => {
+        const { plugin: p, gameState: s } = get();
+        if (!p || s !== savedState) return;
+        const bgSol = p.solve(s);
+        if (bgSol.solvable && bgSol.moves.length > 0) {
+          set({
+            solution: bgSol,
+            initialOptimalSteps: bgSol.stats.solutionLength,
+            currentOptimalSteps: bgSol.stats.solutionLength,
+          });
+        }
+      }, 500);
+    }
   },
 
   requestSolve: () => {
-    const { plugin, gameState, historyIndex } = get();
-    if (!plugin || !gameState) return;
+    if (!get().plugin || !get().gameState) return;
     set({ solverStatus: 'running', solveError: null });
 
-    const solution = plugin.solve(gameState);
-    if (solution.solvable && solution.moves.length > 0) {
-      set({
-        solution,
-        solverStatus: 'done',
-        solvePlayback: true,
-        solveStepIndex: 0,
-        prePlaybackHistoryIndex: get().historyIndex,
-        hintMove: null,
-      });
-    } else {
-      set({ solution, solverStatus: 'done' });
-    }
+    // 延迟让 'running' 状态有机会 render（BFS 会阻塞主线程）
+    setTimeout(() => {
+      const { plugin, gameState } = get();
+      if (!plugin || !gameState) return;
+      const solution = plugin.solve(gameState);
+      if (solution.solvable && solution.moves.length > 0) {
+        set({
+          solution,
+          solverStatus: 'done',
+          solvePlayback: true,
+          solveStepIndex: 0,
+          prePlaybackHistoryIndex: get().historyIndex,
+          hintMove: null,
+        });
+      } else if (solution.stats.terminated === 'timeout') {
+        set({ solution, solverStatus: 'done', solveError: i18n.t('game.status.timedOut') });
+      } else {
+        set({ solution, solverStatus: 'done' });
+      }
+    }, 50);
   },
 
   requestHint: () => {
     const { plugin, gameState } = get();
     if (!plugin || !gameState) return;
 
-    const solution = plugin.solve(gameState);
-    if (solution.solvable && solution.moves.length > 0) {
-      const firstMove = solution.moves[0] as { row: number; col: number };
-      set({
-        hintMove: { row: firstMove.row, col: firstMove.col },
-        currentOptimalSteps: solution.moves.length,
-        solution,
-      });
-    } else {
-      set({
-        hintMove: null,
-        currentOptimalSteps: null,
-        solution,
-      });
-    }
+    set({ solverStatus: 'running' });
+    // setTimeout 让 'running' 状态有机会 render（BFS 会阻塞主线程）
+    setTimeout(() => {
+      const { plugin: p, gameState: s } = get();
+      if (!p || !s) return;
+      const solution = p.solve(s);
+      if (solution.solvable && solution.moves.length > 0) {
+        set({
+          hintMove: solution.moves[0]!,
+          currentOptimalSteps: solution.moves.length,
+          solution,
+          solverStatus: 'done',
+        });
+      } else {
+        set({
+          hintMove: null,
+          currentOptimalSteps: null,
+          solution,
+          solverStatus: 'done',
+        });
+      }
+    }, 50);
   },
 
   nextPlaybackStep: () => {
@@ -307,23 +401,29 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   stopPlayback: () => {
-    // 回退所有演示步骤，恢复到演示前状态
-    const { prePlaybackHistoryIndex, historyIndex } = get();
-    while (get().historyIndex > prePlaybackHistoryIndex) {
-      get().undo();
-    }
-    set({ solvePlayback: false, solveStepIndex: 0 });
+    // 一次性回退所有演示步骤，避免多次重渲染
+    const { prePlaybackHistoryIndex, history } = get();
+    const idx = Math.max(0, prePlaybackHistoryIndex);
+    set({
+      historyIndex: idx,
+      gameState: history[idx],
+      history: history.slice(0, idx + 1),
+      solvePlayback: false,
+      solveStepIndex: 0,
+    });
   },
 
   setDisclosureLevel: (level) => {
-    const { plugin, gameState, solvePlayback, solution } = get();
+    const { plugin, gameState, solvePlayback, solution: prevSol } = get();
     // 播放期间不覆盖 solution
     if (level >= 2 && plugin && gameState && !solvePlayback) {
-      const sol = plugin.solve(gameState);
+      // Lights Out GF(2) 瞬时求解；Sokoban BFS 可能很慢，保留旧解避免阻塞 UI
+      const isFastGame = plugin.metadata.id === 'lights-out';
+      const sol = isFastGame ? plugin.solve(gameState) : prevSol;
       set({
         disclosureLevel: level,
         solution: sol,
-        currentOptimalSteps: sol.solvable ? sol.stats.solutionLength : null,
+        currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
       });
     } else {
       set({ disclosureLevel: level });
@@ -341,6 +441,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { startTime } = get();
     if (startTime) {
       set({ elapsed: Date.now() - startTime });
+    }
+  },
+
+  pauseTimer: () => {
+    const { startTime } = get();
+    if (startTime) {
+      set({ elapsed: Date.now() - startTime, startTime: null });
     }
   },
 }));
