@@ -1,5 +1,5 @@
 import type { Level, LevelConfig } from '../types/plugin';
-import { solveSudoku, countSudokuSolutions, validateSudoku } from '../solver/dlx-sudoku';
+import { solveSudoku, countSudokuSolutions } from '../solver/dlx-sudoku';
 import { computeSudokuDifficulty } from '../difficulty/sudoku-difficulty';
 
 /** Mapping from difficultyRange to target clue count */

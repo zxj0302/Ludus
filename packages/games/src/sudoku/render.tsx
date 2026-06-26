@@ -1,5 +1,5 @@
 // packages/games/src/sudoku/render.tsx
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { SudokuState, SudokuMove } from './rules';
 
@@ -19,7 +19,7 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
   // Find conflicts with the currently selected cell
   const selectedValue = selected ? grid[selected.row * n + selected.col] : 0;
 
-  const isConflict = useCallback((r: number, c: number): boolean => {
+  const isConflict = (r: number, c: number): boolean => {
     const v = grid[r * n + c];
     if (v === 0) return false;
     // Check row/col/box for duplicates
@@ -39,7 +39,7 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
       }
     }
     return false;
-  }, [grid, n]);
+  };
 
   const isSameNumber = (r: number, c: number): boolean => {
     if (selectedValue === 0) return false;
@@ -51,10 +51,16 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
     setSelected({ row: r, col: c });
   };
 
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
+
   const handleNumberInput = (value: number) => {
-    if (!selected || disabled) return;
-    if (givenMask[selected.row * n + selected.col]) return;
-    onMove({ row: selected.row, col: selected.col, value });
+    const sel = selectedRef.current;
+    if (!sel || disabled) return;
+    if (givenMask[sel.row * n + sel.col]) return;
+    onMoveRef.current({ row: sel.row, col: sel.col, value });
   };
 
   // Keyboard: number keys
@@ -78,7 +84,7 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
       e.preventDefault();
       setSelected({ row: selected.row, col: selected.col + 1 });
     }
-  }, [selected, disabled]);
+  }, [selected, disabled, n, givenMask]);
 
   return (
     <div className="flex flex-col items-center gap-4 focus:outline-none" tabIndex={0} onKeyDown={handleKeyDown}>
@@ -156,7 +162,7 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
             transition-colors disabled:opacity-50
           `}
         >
-          x
+          ✕
         </motion.button>
       </div>
     </div>

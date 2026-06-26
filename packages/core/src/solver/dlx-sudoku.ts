@@ -251,7 +251,9 @@ function search(
     }
 
     state.steps.push({
-      description: `Backtrack from row ${r.rowIndex} at depth ${depth}`,
+      description: solutions
+        ? `Backtrack from row ${r.rowIndex} at depth ${depth} (seeking more solutions)`
+        : `Backtrack from row ${r.rowIndex} at depth ${depth}`,
       data: { rowIndex: r.rowIndex, depth, action: 'backtrack' },
     });
   }

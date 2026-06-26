@@ -1,6 +1,6 @@
 // packages/games/src/sudoku/rules.test.ts
 import { describe, it, expect } from 'vitest';
-import { createInitialState, legalMoves, applyMove, isSolved, getDifficulty } from './rules';
+import { createInitialState, legalMoves, applyMove, isSolved, getDifficulty, solveSudokuState } from './rules';
 
 function makeState(grid: number[], givenMask?: boolean[]): ReturnType<typeof createInitialState> {
   return {
@@ -139,5 +139,47 @@ describe('getDifficulty', () => {
     expect(d.score).toBe(100); // 0 clues = hardest
     expect(d.labelKey).toBe('difficulty.hard');
     expect(d.factors.clues).toBe(0);
+  });
+});
+
+describe('solveSudokuState', () => {
+  it('solves a known puzzle and returns valid Solution', () => {
+    const easyPuzzle = [
+      5,3,0, 0,7,0, 0,0,0,
+      6,0,0, 1,9,5, 0,0,0,
+      0,9,8, 0,0,0, 0,6,0,
+      8,0,0, 0,6,0, 0,0,3,
+      4,0,0, 8,0,3, 0,0,1,
+      7,0,0, 0,2,0, 0,0,6,
+      0,6,0, 0,0,0, 2,8,0,
+      0,0,0, 4,1,9, 0,0,5,
+      0,0,0, 0,8,0, 0,7,9,
+    ];
+    const s = makeState(easyPuzzle);
+    const result = solveSudokuState(s);
+    expect(result.solvable).toBe(true);
+    expect(result.moves.length).toBeGreaterThan(0);
+    for (const m of result.moves) {
+      const sm = m as { row: number; col: number; value: number };
+      expect(sm.row).toBeGreaterThanOrEqual(0);
+      expect(sm.row).toBeLessThan(9);
+      expect(sm.col).toBeGreaterThanOrEqual(0);
+      expect(sm.col).toBeLessThan(9);
+      expect(sm.value).toBeGreaterThanOrEqual(1);
+      expect(sm.value).toBeLessThanOrEqual(9);
+    }
+    expect(result.stats.solverName).toBe('DLX (Algorithm X)');
+    expect(result.trace?.type).toBe('constraint-propagation');
+  });
+
+  it('returns not solvable for impossible puzzle', () => {
+    // Two 5's in row 0
+    const impossible = new Array(81).fill(0);
+    impossible[0] = 5;
+    impossible[1] = 5;
+    const s = makeState(impossible);
+    const result = solveSudokuState(s);
+    expect(result.solvable).toBe(false);
+    expect(result.moves).toEqual([]);
   });
 });
