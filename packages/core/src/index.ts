@@ -21,4 +21,5 @@ export type {
 } from './schemas';
 export * from './solver';
 export * from './generator';
+export * from './difficulty';
 export * from './worker';
