@@ -1,6 +1,6 @@
 // packages/games/src/sudoku/rules.ts
 import type { GameState, Move, Solution, Difficulty } from '@ludus/core';
-import { solveSudoku as dlxSolve } from '@ludus/core';
+import { solveSudoku as dlxSolve, validateSudoku } from '@ludus/core';
 import { computeSudokuDifficulty } from '@ludus/core';
 
 export interface SudokuState extends GameState {
@@ -27,34 +27,6 @@ export function createInitialState(): SudokuState {
 /** Get box index (0-8) for cell (r,c) */
 function box(r: number, c: number): number {
   return Math.floor(r / 3) * 3 + Math.floor(c / 3);
-}
-
-/** Validate a fully filled grid has no conflicts (local impl, not from core) */
-function validateGrid(grid: number[]): boolean {
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      const v = grid[r * 9 + c]!;
-      if (v === 0) continue;
-      if (v < 1 || v > 9) return false;
-      // Check row
-      for (let cc = c + 1; cc < 9; cc++) {
-        if (grid[r * 9 + cc] === v) return false;
-      }
-      // Check column
-      for (let rr = r + 1; rr < 9; rr++) {
-        if (grid[rr * 9 + c] === v) return false;
-      }
-      // Check box
-      const br = Math.floor(r / 3) * 3;
-      const bc = Math.floor(c / 3) * 3;
-      for (let rr = br; rr < br + 3; rr++) {
-        for (let cc = bc; cc < bc + 3; cc++) {
-          if ((rr !== r || cc !== c) && grid[rr * 9 + cc] === v) return false;
-        }
-      }
-    }
-  }
-  return true;
 }
 
 /**
@@ -117,7 +89,7 @@ export function isSolved(state: SudokuState): boolean {
   // All cells filled
   if (grid.some(v => v === 0)) return false;
   // No conflicts
-  return validateGrid(grid);
+  return validateSudoku(grid);
 }
 
 /** Compute difficulty from clue count */
