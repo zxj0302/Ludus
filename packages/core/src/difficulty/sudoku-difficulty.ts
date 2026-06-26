@@ -16,8 +16,8 @@ export function computeSudokuDifficulty(clues: number): Difficulty {
   return {
     score: Math.max(0, Math.min(100, score)),
     factors: {
-      clues: clamped,
-      emptyCells: 81 - clamped,
+      clues,
+      emptyCells: 81 - clues,
     },
     labelKey,
   };
