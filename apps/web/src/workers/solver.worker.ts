@@ -1,5 +1,5 @@
 // Web Worker — 在独立线程中运行求解/生成任务，避免阻塞 UI
-import { solveGF2, buildLightsOutMatrix, optimalSolution, hammingWeight } from '@ludus/games';
+import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games';
 import type { WorkerRequest, WorkerResponse } from '@ludus/core';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {

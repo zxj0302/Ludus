@@ -2,16 +2,14 @@
   "name": "@ludus/core",
   "version": "0.1.0",
   "private": true,
-  "description": "Ludus 核心逻辑层 — 框架无关的纯 TypeScript：类型定义、求解器、关卡生成器、难度度量",
+  "description": "Ludus 核心逻辑层 — 框架无关的纯 TypeScript：类型定义、Zod Schema、版本化 Migrator、Worker 消息协议",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./types": "./src/types/index.ts",
-    "./schemas": "./src/schemas/index.ts",
-    "./solver": "./src/solver/index.ts",
-    "./generator": "./src/generator/index.ts"
+    "./schemas": "./src/schemas/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

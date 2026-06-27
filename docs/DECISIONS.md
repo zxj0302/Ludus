@@ -225,4 +225,4 @@
   - **理由**：当前 5 款游戏后 core 膨胀至 41 文件、GameShell 418 行上帝组件、gameStore 硬编码 Nim/Wythoff AI。新增第 6 款游戏摩擦成本递增。162 款游戏 backlog 需要可缩放架构。
   - **新增接口**：`GamePluginEntry`（`packages/games/src/types.ts`）— 包装 `GamePlugin` + BoardComponent + isOwnState + i18n + ui 扩展 + education + visualization
   - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
-  - **迁移计划**：10 步，已完成 3 步（接口定义 + 游戏代码迁移 + AI 字段实现）。详见重构计划。
+  - **迁移计划**：10 步，全部完成。详见各阶段 commit 记录。最终包结构：core/games/education/ui 4 包 + apps/web。i18n/viz 包已移除。

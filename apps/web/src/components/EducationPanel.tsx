@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useMemo, useState, Suspense } from 'react';
+import { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState } from '@ludus/core';

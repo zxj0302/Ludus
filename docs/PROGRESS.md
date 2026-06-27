@@ -5,12 +5,13 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）进行中 — 架构重构中：游戏即插件**。5 款游戏已完成，正在进行插件化解耦重构。
+- **当前阶段**：**阶段 5（增量游戏）— 架构重构已完成**。下一步：新游戏开发或 Sokoban 生成器升级。
 - **MVP 范围**：5 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），120+ 个源文件，196 个测试（全过），Vite 构建成功。
-- **测试覆盖**：18 个测试文件，196 测试全过（games 包内所有测试已随源码迁移至对应游戏目录）。
-- **重构进度**：10 步计划已完成 3 步——GamePluginEntry 接口 ✅、ai 字段 ✅、游戏代码迁移 ✅。
+- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，196 个测试（全过），Vite 构建成功。
+- **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。
+- **测试覆盖**：18 个测试文件，196 测试全过。
+- **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。新增游戏 = 加目录 + registry 一行。
 
 ## ✅ DONE
 
@@ -131,19 +132,16 @@
 
 ## 🐛 KNOWN ISSUES
 
-- `packages/ui` / `packages/viz` 尚未提取（重构 Step 5 将处理）
-- `packages/i18n` 为空壳（重构 Step 7 将处理）
 - 音效文件（.mp3 audio sprite）尚未制作，`useSound` hook 与 Howler.js 封装已就绪
 - 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器有 fallback 处理
 - `LightsOutBoard` 的 `aria-label`（`render.tsx`）为硬编码英文，因 packages/games 无 react-i18next 依赖
 - Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
-- Core 层仍保留游戏专属代码副本（solver/generator/difficulty 原文），重构 Step 9 清理
-- `apps/web/src/workers/solver.worker.ts` 仍从 `@ludus/core` 导入 GF(2) 函数，重构完成前可用
+- Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
+- Lights Out + Sokoban 的 difficulty 逻辑在 rules.ts / solver-utils.ts 中，无独立 difficulty.ts（其他 3 款游戏有）
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 是否需要在阶段 5 前先提取 `packages/ui`（GameShell 等已被 5 款游戏使用，已达提取阈值）？
 - 下一款游戏：15-puzzle (A*) 还是 Sokoban 生成器升级？
 
 ## 📝 SESSION LOG

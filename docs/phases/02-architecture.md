@@ -2,7 +2,8 @@
 
 > 产出日期：2026-06-25
 > 状态：✅ 已确认
-> 关联决策：ADR-001(Core 纯 TS)、ADR-002(i18n)、ADR-003(渐进式揭示)、ADR-004(Lights Out)、ADR-006(pnpm)、ADR-008(schema)、ADR-009(平台优先级)、ADR-010(跨端)、ADR-011(渲染分层)、ADR-012(手感美术)、ADR-013(react-i18next)、ADR-014(Vitest)、ADR-015(MVP)
+> **修订 2026-06-27**：经 ADR-023 重构，包结构从 9 个简化为 4 个（core/games/education/ui）+ apps/web。Core 不再包含 solver/generator/difficulty，全部迁入各游戏目录。详见 §2.3 包清单。
+> 关联决策：ADR-001~023
 
 ---
 
@@ -696,9 +697,9 @@ Ludus/
 
 Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含 React 组件签名**。具体渲染由 `packages/games/<game>/render.tsx` 实现，通过 `packages/ui/GameShell` 加载。这保持了 Core 零 UI 依赖，同时允许每个游戏选择渲染策略。
 
-### 7.2 求解器与生成器为何在 Core 而非各游戏？
+### 7.2 求解器与生成器为何在各游戏而非 Core？
 
-广义求解器（BFS/DFS/A*/GF(2)/DLX）是跨游戏可复用的。每个游戏的 `solver.ts` 将自身规则映射到 Core solver 的输入格式，而非从头实现搜索。游戏特定的启发式/剪枝在游戏层实现。
+> **2026-06-27 修订（ADR-023）**：本节的原始结论已被推翻。求解器、生成器和难度度量现已全部迁入各游戏目录。理由：5 款游戏后，策略重合度不足以为"通用框架"提供依据；即使相似策略（如 GF(2)、DLX、BFS）在细节上也各有差异，强行抽象增加耦合。Core 仅保留类型定义、Schema 和 Worker 消息协议。
 
 ### 7.3 Worker 策略
 

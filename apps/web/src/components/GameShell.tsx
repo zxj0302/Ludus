@@ -7,7 +7,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { EducationPanel } from './EducationPanel';
-import { SokobanToolbar } from './SokobanToolbar';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }
@@ -105,7 +104,7 @@ export function GameShell({ gameId }: Props) {
   }, []);
 
   // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
-  const stateMatchesPlugin = entry ? entry.isOwnState(gameState as GameState) : false;
+  const stateMatchesPlugin = entry && gameState ? entry.isOwnState(gameState) : false;
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -181,7 +180,6 @@ export function GameShell({ gameId }: Props) {
             solvePlayback={solvePlayback}
             hasHint={!!hintMove}
             newLevelSlot={
-              gameId === 'sokoban' ? <SokobanToolbar onNewLevel={newLevel} /> :
               entry?.ui?.toolbarSlot ? <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} /> :
               undefined
             }

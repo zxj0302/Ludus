@@ -65,7 +65,7 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
             <div>
               <div className="text-[10px] text-warm-stone-500">{t('education.nodesExplored')}</div>
               <div className="text-lg font-bold text-clarity-teal-700">
-                {solution?.trace?.type === 'search-tree' ? '—' : '—'}
+                {solution?.stats.nodesExplored ?? 0}
               </div>
             </div>
             {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
@@ -116,7 +116,7 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
     }
     case 'wythoff': {
       const s = gameState as WythoffState | null;
-      const isP = s?.piles ? isWythoffPPosition(s.piles[0]!, s.piles[1]!) : false;
+      const isP = s?.piles && s.piles.length >= 2 ? isWythoffPPosition(s.piles[0]!, s.piles[1]!) : false;
       return (
         <KnowledgeCard title={t('education.currentState')} icon="⚖️">
           <div className="space-y-3">

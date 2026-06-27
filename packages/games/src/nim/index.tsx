@@ -12,6 +12,7 @@ import {
 import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
 import { findWinningMove, computeNimSum, isPPosition } from './solver';
+import { NimToolbarSlot } from './toolbar';
 
 import type { GamePluginEntry } from '../types';
 import { NimBoard } from './render';
@@ -101,8 +102,6 @@ const NimBoardEntry = (props: any) => (
     }}
   />
 );
-
-import { NimToolbarSlot } from './toolbar';
 
 export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   plugin: nimPlugin,
