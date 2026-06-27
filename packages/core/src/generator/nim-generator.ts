@@ -34,17 +34,15 @@ function generatePPosition(pileCount: number, maxStone: number): number[] {
     }
     // runningXor is 0 or > maxStone — retry with different random values
   }
-  // Fallback: guaranteed P-position using pairs
+  // Fallback: guaranteed P-position — for even counts use pairs [1,1,2,2,...],
+  // for odd counts reduce to even by making two piles equal (they XOR out).
   const fallback: number[] = [];
-  for (let i = 0; i < pileCount; i++) {
-    // Pair up: [1,1,2,2,3,3,...] — each pair XORs to 0
-    fallback.push(Math.floor(i / 2) + 1);
-  }
-  // If odd count, make last pile XOR of all others (guarantees nim-sum = 0)
-  if (pileCount % 2 === 1) {
-    let xor = 0;
-    for (let i = 0; i < pileCount - 1; i++) xor ^= fallback[i]!;
-    fallback[pileCount - 1] = xor > 0 ? xor : 1;
+  if (pileCount % 2 === 0) {
+    for (let i = 0; i < pileCount; i++) fallback.push(Math.floor(i / 2) + 1);
+  } else {
+    // Odd: make first two equal (XOR to 0), then pair the rest as even
+    fallback.push(1, 1);
+    for (let i = 2; i < pileCount; i++) fallback.push(Math.floor((i - 2) / 2) + 2);
   }
   return fallback;
 }

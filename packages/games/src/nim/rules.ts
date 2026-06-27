@@ -1,6 +1,6 @@
 import type { Difficulty, Solution } from '@ludus/core';
 import type { NimState, NimMove } from '@ludus/core';
-import { computeNimSum, solveNim as coreSolveNim } from '@ludus/core';
+import { computeNimSum } from '@ludus/core';
 import { findWinningMove } from '@ludus/core';
 import { computeNimDifficulty } from '@ludus/core';
 
@@ -11,7 +11,7 @@ export function createInitialState(): NimState {
     piles: [3, 4, 5],
     currentPlayer: 0,
     initialPiles: [3, 4, 5],
-    phase: 'playing',
+    phase: 'choosing',
   };
 }
 

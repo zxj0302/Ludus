@@ -12,16 +12,24 @@ interface Props {
   onNewGame?: (preset: 'easy' | 'medium' | 'hard') => void;
 }
 
-const PILE_COLORS = [
-  { bg: 'bg-amber-500', shadow: 'shadow-amber-300/40', ring: 'ring-amber-400' },
-  { bg: 'bg-emerald-500', shadow: 'shadow-emerald-300/40', ring: 'ring-emerald-400' },
-  { bg: 'bg-violet-500', shadow: 'shadow-violet-300/40', ring: 'ring-violet-400' },
-  { bg: 'bg-rose-500', shadow: 'shadow-rose-300/40', ring: 'ring-rose-400' },
-  { bg: 'bg-cyan-500', shadow: 'shadow-cyan-300/40', ring: 'ring-cyan-400' },
+// ── Stone appearance constants ──
+const STONE_W = 46;
+const STONE_H = 34;
+const STONE_STEP = 20; // vertical spacing between stone centers
+
+// Warm stone-like gradient per pile — each is a slightly different natural hue
+const STONE_GRADIENTS = [
+  'radial-gradient(circle at 35% 30%, #e7e5e4, #a8a29e 55%, #78716c 100%)',
+  'radial-gradient(circle at 35% 30%, #e0ddd8, #9e9689 55%, #6b6255 100%)',
+  'radial-gradient(circle at 35% 30%, #ddd9d3, #968b7d 55%, #63584b 100%)',
+  'radial-gradient(circle at 35% 30%, #e2dfd9, #a09888 55%, #6e6355 100%)',
+  'radial-gradient(circle at 35% 30%, #e5e0d8, #a49b89 55%, #736758 100%)',
 ];
 
-const STONE_SIZE = 32;
-const STONE_STEP = 18; // spacing between stone centers
+const STONE_SHADOW = '0 2px 4px rgba(0,0,0,0.25), 0 0 2px rgba(0,0,0,0.1)';
+
+// Horizontal jitter per stone position within a pile
+const JITTER = [-2, 3, -1, 2, -3, 1, -2, 0, 3, -1, 2, -3, 0, 1, -2];
 
 export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand, onNewGame }: Props) {
   const [hoverCount, setHoverCount] = useState<number | null>(null);
@@ -37,7 +45,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
   const hintPileIndex = highlightCell?.row ?? null;
   const hintRemoveCount = highlightCell?.value ?? null;
 
-  // Click a stone: remove that stone + all above
   const handleStoneClick = (pileIndex: number, stoneIdx: number) => {
     if (!isPlayerTurn || disabled || isGameOver) return;
     const count = piles[pileIndex]!;
@@ -55,42 +62,52 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
   if (isChoosing) {
     return (
       <div className="flex flex-col items-center gap-8 select-none">
-        <div className="text-lg font-semibold text-warm-stone-700">{t('nim.chooseHand')}</div>
+        <div className="text-xl font-bold text-warm-stone-700">{t('nim.chooseHand')}</div>
+        <div className="text-sm text-warm-stone-500 text-center max-w-xs">
+          Nim-sum = {piles.join(' ^ ')} = {piles.reduce((a, b) => a ^ b, 0)}
+        </div>
         <div className="flex flex-wrap justify-center gap-6">
           {piles.map((count, i) => {
-            const color = PILE_COLORS[i % PILE_COLORS.length]!;
-            const visibleStones = Math.min(count, 10);
+            const gradient = STONE_GRADIENTS[i % STONE_GRADIENTS.length]!;
+            const visible = Math.min(count, 8);
             return (
-              <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-warm-stone-50 min-w-[80px]">
+              <div key={i} className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
                 <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                   {t('nim.pile', { index: i + 1 })}
                 </span>
-                <div className="relative" style={{ width: STONE_SIZE, height: Math.max(visibleStones * STONE_STEP - (STONE_STEP - STONE_SIZE), STONE_SIZE) }}>
-                  {Array.from({ length: visibleStones }, (_, j) => (
+                <div style={{ width: STONE_W, height: Math.max(visible * STONE_STEP + (STONE_H - STONE_STEP), STONE_H) }}>
+                  {Array.from({ length: visible }, (_, j) => (
                     <span
                       key={j}
-                      className={`absolute left-0 rounded-full ${color.bg} ${color.shadow} border border-white/30`}
-                      style={{ top: j * STONE_STEP, width: STONE_SIZE, height: STONE_SIZE }}
+                      className="absolute left-0 rounded-[45%]"
+                      style={{
+                        top: j * STONE_STEP,
+                        width: STONE_W,
+                        height: STONE_H,
+                        background: gradient,
+                        boxShadow: STONE_SHADOW,
+                        transform: `translateX(${JITTER[j % JITTER.length]!}px)`,
+                      }}
                     />
                   ))}
-                  {count > 10 && (
-                    <span className="absolute left-0 text-[10px] text-warm-stone-400 font-bold" style={{ top: 10 * STONE_STEP + 2, width: STONE_SIZE, textAlign: 'center' }}>
-                      +{count - 10}
+                  {count > 8 && (
+                    <span className="absolute text-[11px] text-warm-stone-500 font-bold" style={{ left: STONE_W / 2 - 12, top: 8 * STONE_STEP + 4 }}>
+                      +{count - 8}
                     </span>
                   )}
                 </div>
-                <span className="text-lg font-bold text-warm-stone-800">{count}</span>
+                <span className="text-xl font-bold font-mono text-warm-stone-800">{count}</span>
               </div>
             );
           })}
         </div>
         <div className="flex gap-4">
           <motion.button type="button" onClick={() => onChooseHand?.(true)} whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 rounded-xl bg-logic-indigo-600 text-white font-bold text-lg hover:bg-logic-indigo-700 transition-colors shadow-lg">
+            className="px-8 py-3 rounded-xl bg-logic-indigo-600 text-white font-bold text-lg hover:bg-logic-indigo-700 transition-colors shadow-lg">
             {t('nim.playFirst')}
           </motion.button>
           <motion.button type="button" onClick={() => onChooseHand?.(false)} whileTap={{ scale: 0.95 }}
-            className="px-6 py-3 rounded-xl bg-warm-stone-200 text-warm-stone-700 font-bold text-lg hover:bg-warm-stone-300 transition-colors shadow-lg">
+            className="px-8 py-3 rounded-xl bg-warm-stone-200 text-warm-stone-700 font-bold text-lg hover:bg-warm-stone-300 transition-colors shadow-md">
             {t('nim.aiFirst')}
           </motion.button>
         </div>
@@ -98,7 +115,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
           <span className="text-xs text-warm-stone-400 self-center">{t('nim.difficulty')}:</span>
           {(['easy', 'medium', 'hard'] as const).map(p => (
             <button key={p} type="button" onClick={() => onNewGame?.(p)}
-              className="text-xs px-2 py-1 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
+              className="text-xs px-2.5 py-1 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
               {t(`difficulty.${p}`)}
             </button>
           ))}
@@ -113,80 +130,97 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
       {/* Status */}
       <AnimatePresence mode="wait">
         {playerWon ? (
-          <motion.div key="win" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-bold text-game-amber-600">
+          <motion.div key="win" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="text-2xl font-bold text-game-amber-600">
             {t('nim.youWin')}
           </motion.div>
         ) : aiWon ? (
-          <motion.div key="lose" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-bold text-warm-stone-400">
+          <motion.div key="lose" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="text-2xl font-bold text-warm-stone-400">
             {t('nim.aiWins')}
           </motion.div>
         ) : (
           <motion.div key="turn" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className={`text-lg font-semibold flex items-center gap-2 ${isPlayerTurn ? 'text-logic-indigo-700' : 'text-warm-stone-500'}`}>
+            className={`text-lg font-semibold flex items-center gap-2 ${
+              isPlayerTurn ? 'text-logic-indigo-700' : 'text-warm-stone-500'
+            }`}>
             <span className={`w-2.5 h-2.5 rounded-full ${isPlayerTurn ? 'bg-logic-indigo-500 animate-pulse' : 'bg-warm-stone-400'}`} />
             {isPlayerTurn ? t('nim.yourTurn') : t('nim.aiThinking')}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Initial piles reference */}
-      <div className="text-xs text-warm-stone-400 font-mono tracking-wide">
-        {initialPiles.join(' · ')}
+      {/* Nim-sum display */}
+      <div className="text-sm text-warm-stone-500 font-mono">
+        {piles.join('  ')} &nbsp;→&nbsp; XOR = {piles.reduce((a, b) => a ^ b, 0)}
+        {piles.reduce((a, b) => a ^ b, 0) === 0
+          ? <span className="ml-2 text-red-500 font-semibold">{t('nim.pPosition')}</span>
+          : <span className="ml-2 text-blue-600 font-semibold">{t('nim.nPosition')}</span>
+        }
       </div>
 
-      {/* Piles — click stone to remove */}
-      <div className="flex flex-wrap justify-center gap-6">
+      {/* Piles */}
+      <div className="flex flex-wrap justify-center gap-8">
         {piles.map((count, i) => {
           const isEmpty = count === 0;
           const isHinted = hintPileIndex === i && isPlayerTurn;
-          const color = PILE_COLORS[i % PILE_COLORS.length]!;
-          const visibleStones = Math.min(count, 12);
-          const stackH = Math.max(visibleStones * STONE_STEP - (STONE_STEP - STONE_SIZE), STONE_SIZE);
+          const gradient = STONE_GRADIENTS[i % STONE_GRADIENTS.length]!;
+          const visible = Math.min(count, 10);
+          const containerH = Math.max(visible * STONE_STEP + (STONE_H - STONE_STEP), STONE_H);
 
           return (
-            <motion.div
-              key={i}
-              layout
-              className={`
-                flex flex-col items-center gap-3 p-4 rounded-2xl min-w-[90px] transition-all duration-200
-                ${isHinted && isPlayerTurn ? 'bg-game-amber-50 ring-2 ring-game-amber-400' : 'bg-warm-stone-50'}
+            <motion.div key={i} layout
+              className={`flex flex-col items-center gap-3 p-4 rounded-2xl min-w-[100px] transition-all duration-200
+                ${isHinted && isPlayerTurn ? 'bg-game-amber-50 ring-2 ring-game-amber-400 shadow-lg' : 'bg-warm-stone-50'}
                 ${!isPlayerTurn || disabled || isGameOver || isEmpty ? 'opacity-50' : ''}
               `}
             >
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}
               </span>
-              {/* Clickable stacked stones */}
-              <div className="relative" style={{ width: STONE_SIZE, height: stackH }}>
-                {Array.from({ length: visibleStones }, (_, j) => {
-                  const removeCount = count - j; // clicking this stone removes (count - j) stones
+
+              {/* Stacked stones */}
+              <div className="relative" style={{ width: STONE_W, height: containerH }}>
+                {Array.from({ length: visible }, (_, j) => {
+                  const removeCount = count - j;
                   const isInHover = hoverCount != null && hoverCount >= removeCount;
                   const isHintStone = isHinted && removeCount === hintRemoveCount;
+                  const canInteract = isPlayerTurn && !disabled && !isGameOver;
                   return (
                     <motion.button
                       key={j}
                       type="button"
                       onClick={() => handleStoneClick(i, j)}
-                      onMouseEnter={() => isPlayerTurn && !disabled && !isGameOver ? setHoverCount(removeCount) : null}
+                      onMouseEnter={() => canInteract ? setHoverCount(removeCount) : null}
                       onMouseLeave={() => setHoverCount(null)}
-                      disabled={!isPlayerTurn || disabled || isGameOver}
-                      whileTap={!disabled && isPlayerTurn && !isGameOver ? { scale: 0.85 } : undefined}
-                      className={`absolute left-0 rounded-full border border-white/30 transition-all cursor-pointer ${color.bg} ${color.shadow} hover:brightness-90
-                        ${isHintStone && isPlayerTurn ? 'ring-2 ring-game-amber-400 scale-110 z-10' : ''}
-                        ${isInHover && !isHintStone ? 'brightness-75 scale-105' : ''}
+                      disabled={!canInteract}
+                      whileTap={canInteract ? { scale: 0.9 } : undefined}
+                      className={`absolute rounded-[45%] border border-white/10 transition-all duration-150 cursor-pointer
+                        ${isHintStone && canInteract ? 'ring-[3px] ring-game-amber-400 z-10' : ''}
+                        ${isInHover && !isHintStone && canInteract ? 'brightness-75' : ''}
                       `}
-                      style={{ top: j * STONE_STEP, width: STONE_SIZE, height: STONE_SIZE }}
-                      aria-label={`Remove ${removeCount} from pile ${i + 1} (leaving ${j} stones)`}
+                      style={{
+                        top: j * STONE_STEP,
+                        width: STONE_W,
+                        height: STONE_H,
+                        background: gradient,
+                        boxShadow: isHintStone ? '0 0 0 4px rgba(232,168,56,0.4), 0 2px 4px rgba(0,0,0,0.3)' : STONE_SHADOW,
+                        transform: `translateX(${JITTER[j % JITTER.length]!}px) scale(${isHintStone ? 1.08 : isInHover ? 1.04 : 1})`,
+                        zIndex: isHintStone ? 20 : j,
+                      }}
+                      aria-label={`Remove ${removeCount} stones from pile ${i + 1}`}
                     />
                   );
                 })}
-                {count > 12 && (
-                  <span className="absolute left-0 text-[10px] text-warm-stone-400 font-bold" style={{ top: 12 * STONE_STEP + 2, width: STONE_SIZE, textAlign: 'center' }}>
-                    +{count - 12}
+                {count > 10 && (
+                  <span className="absolute text-[11px] text-warm-stone-500 font-bold"
+                    style={{ left: STONE_W / 2 - 14, top: 10 * STONE_STEP + 6 }}>
+                    +{count - 10}
                   </span>
                 )}
               </div>
-              <span className={`text-lg font-bold tabular-nums ${isEmpty ? 'text-warm-stone-300' : 'text-warm-stone-800'}`}>
+
+              <span className={`text-xl font-bold font-mono tabular-nums ${isEmpty ? 'text-warm-stone-300' : 'text-warm-stone-800'}`}>
                 {count}
               </span>
             </motion.div>
@@ -198,18 +232,18 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
       <AnimatePresence>
         {hintPileIndex != null && hintRemoveCount != null && isPlayerTurn && !isGameOver && (
           <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="text-sm text-game-amber-700 bg-game-amber-50 px-4 py-2 rounded-lg font-medium">
+            className="text-sm text-game-amber-700 bg-game-amber-50 px-4 py-2 rounded-lg font-medium shadow-sm">
             {t('nim.hintTip', { pile: hintPileIndex + 1, count: hintRemoveCount })}
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Difficulty presets */}
-      <div className="flex gap-2 mt-1">
+      <div className="flex gap-2">
         <span className="text-[10px] text-warm-stone-400 self-center mr-1">{t('nim.difficulty')}:</span>
         {(['easy', 'medium', 'hard'] as const).map(p => (
           <button key={p} type="button" onClick={() => onNewGame?.(p)}
-            className="text-[10px] px-2 py-0.5 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
+            className="text-[10px] px-2.5 py-1 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
             {t(`difficulty.${p}`)}
           </button>
         ))}
