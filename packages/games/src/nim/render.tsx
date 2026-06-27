@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { NimState, NimMove } from './rules';
@@ -34,9 +34,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
   const isChoosing = phase === 'choosing';
   const { t } = useTranslation();
 
-  const onMoveRef = useRef(onMove);
-  onMoveRef.current = onMove;
-
   const hintPileIndex = highlightCell?.row ?? null;
   const hintRemoveCount = highlightCell?.value ?? null;
 
@@ -45,7 +42,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
     const count = piles[pileIndex]!;
     const removeCount = count - idx;
     if (removeCount > 0 && removeCount <= count) {
-      onMoveRef.current({ pileIndex, removeCount });
+      onMove({ pileIndex, removeCount });
       setHover(null);
     }
   };
@@ -111,7 +108,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
             boxShadow,
             zIndex: z,
           }}
-          aria-label={`Remove ${removeCount} stones from pile ${pileIndex + 1}`}
+          aria-label={t('nim.stoneAria', { pile: pileIndex + 1, count: removeCount, remain: count - removeCount })}
         />,
       );
     }
@@ -121,7 +118,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
         <span
           key="overflow"
           className="absolute text-[11px] text-warm-stone-500 font-bold"
-          style={{ left: `${STONE_W / 2 - 12}px`, top: `${(maxVisible - 1) * STONE_STEP - 2}px` }}
+          style={{ left: `${STONE_W / 2 - 12}px`, top: '-18px' }}
         >
           +{count - maxVisible}
         </span>,
@@ -139,8 +136,8 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
         <div className="flex flex-wrap justify-center gap-6">
           {piles.map((count, i) => (
             <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
-              <div className="relative" style={{ width: STONE_W, height: maxContainerH(8) }}>
-                {renderPile(count, i, false, false, 8)}
+              <div className="relative" style={{ width: STONE_W, height: maxContainerH(10) }}>
+                {renderPile(count, i, false, false, 10)}
               </div>
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}

@@ -8,8 +8,8 @@ describe('computeNimDifficulty', () => {
     expect(d.labelKey).toBe('difficulty.easy');
   });
 
-  it('returns hard for 5 piles, large stones', () => {
-    const d = computeNimDifficulty(5, 12);
+  it('returns hard for 6 piles, large stones', () => {
+    const d = computeNimDifficulty(6, 10);
     expect(d.score).toBe(100);
     expect(d.labelKey).toBe('difficulty.hard');
   });

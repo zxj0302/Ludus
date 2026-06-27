@@ -121,7 +121,7 @@ export function solveNimState(state: NimState): Solution {
       timeMs,
       solutionLength: moves.length,
       solverName: 'Nim-sum (Bouton 1901) — optimal play sequence',
-      terminated: 'solved',
+      terminated: moves.length > 0 ? 'solved' : 'exhausted',
     },
   };
 }

@@ -81,10 +81,18 @@ function buildNimLevel(pileCount: number, maxStone: number): Level {
     pPiles = generatePPosition(pileCount, maxStone);
     walkable = pPiles.map((v, i) => v >= 2 ? i : -1).filter(i => i >= 0);
   }
-  // Ultimate fallback: force a walkable pile
+  // Ultimate fallback: deterministic P-position matching pileCount
   if (walkable.length === 0) {
-    pPiles = [2, 2]; // guaranteed P-position with walkable piles
-    walkable = [0];
+    pPiles = [];
+    let xor = 0;
+    for (let i = 0; i < pileCount - 1; i++) {
+      pPiles.push(i + 1);
+      xor ^= (i + 1);
+    }
+    pPiles.push(xor > 0 ? xor : 1); // last pile makes XOR=0, at least 1
+    // Ensure at least one pile has ≥2 stones for walking
+    if (pPiles.every(v => v === 1)) pPiles = [2, 2]; // minimal valid P-position
+    walkable = pPiles.map((v, i) => v >= 2 ? i : -1).filter(i => i >= 0);
   }
   const piles = [...pPiles];
   const walkPile = walkable[Math.floor(Math.random() * walkable.length)]!;
