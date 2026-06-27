@@ -11,11 +11,13 @@ import {
 } from './rules';
 import type { WythoffState, WythoffMove } from './types';
 import { wythoffEducationManifest, wythoffVisualizationManifest } from './manifest';
-import { findWythoffWinningMove } from './solver';
+import { findWythoffWinningMove, isWythoffPPosition } from './solver';
 import type { GamePluginEntry } from '../types';
 import { WythoffBoard } from './render';
 
 export { WythoffBoard };
+export { isWythoffPPosition };
+export { generateWythoffLevel };
 export { chooseHand };
 export { solveWythoffState } from './rules';
 

@@ -99,6 +99,10 @@ export const lightsOutPlugin: GamePlugin<LightsOutState, LightsOutMove> = {
   visualizationManifest: lightsOutVisualizationManifest,
 };
 
+// -- solver re-exports (for Worker) --
+export { solveGF2, solveGF2WithTrace, optimalSolution, buildLightsOutMatrix, hammingWeight, applyMoveToGrid } from './solver';
+export type { EliminationStep, GF2SolutionWithTrace } from './solver';
+
 // ═══════════════════════════════════════════════════════════════
 // GamePluginEntry — 自描述插件条目
 // ═══════════════════════════════════════════════════════════════

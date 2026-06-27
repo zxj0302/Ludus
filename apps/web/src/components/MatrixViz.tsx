@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Solution, SolverTrace, EliminationStep } from '@ludus/core';
+import type { Solution, SolverTrace } from '@ludus/core'; import type { EliminationStep } from '@ludus/games';
 import { KnowledgeCard } from './KnowledgeCard';
 import type { LightsOutState } from '@ludus/games';
 

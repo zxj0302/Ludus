@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SokobanState, SokobanMove } from '@ludus/games';
-import { expandState, stateHash, solveSokobanBFS, applyMove, isDeadlock, isSolved } from '@ludus/core';
-import { SOKOBAN_BFS_TIMEOUT_MS } from '@ludus/core';
+import { expandState, stateHash, solveSokobanBFS, applyMoveSokoban as applyMove, isDeadlock, isSolvedSokoban as isSolved } from '@ludus/games';
+import { SOKOBAN_BFS_TIMEOUT_MS } from '@ludus/games';
 
 const ROW_H = 56;
 const NODE_W = 80;

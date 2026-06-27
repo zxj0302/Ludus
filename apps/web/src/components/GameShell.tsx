@@ -4,14 +4,14 @@ import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
 import { getGame, getGameEntry, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, WythoffBoard, chooseHand, chooseWythoffHand } from '@ludus/games';
 import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove, WythoffState, WythoffMove } from '@ludus/games';
-import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/core';
+import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { EducationPanel } from './EducationPanel';
 import { LevelSelector } from './LevelSelector';
-import { stateHash } from '@ludus/core';
+import { stateHash } from '@ludus/games';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }

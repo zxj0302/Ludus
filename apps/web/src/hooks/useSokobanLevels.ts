@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { parseSokobanLevels, getAllLevels } from '@ludus/core';
-import type { SokobanState } from '@ludus/core';
+import { parseSokobanLevels, getAllLevels } from '@ludus/games';
+import type { SokobanState } from '@ludus/games';
 
 import microbanRaw from '../levels/Microban.txt?raw';
 import originalRaw from '../levels/Original.xsb?raw';

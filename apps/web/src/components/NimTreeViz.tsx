@@ -11,7 +11,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import type { SolverTrace } from '@ludus/core';
-import { computeNimSum } from '@ludus/core';
+import { computeNimSum } from '@ludus/games';
 import type { NimState } from '@ludus/games';
 
 interface Props {

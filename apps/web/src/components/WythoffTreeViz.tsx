@@ -11,7 +11,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import type { SolverTrace } from '@ludus/core';
-import { isWythoffPPosition } from '@ludus/core';
+import { isWythoffPPosition } from '@ludus/games';
 import type { WythoffState } from '@ludus/games';
 
 interface Props {

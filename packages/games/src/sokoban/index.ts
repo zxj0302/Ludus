@@ -1,6 +1,7 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
 import { generateSokobanLevel } from './generator';
-import { getLevel } from './levels';
+import { getLevel, parseSokobanLevels, getAllLevels } from './levels';
+export { parseSokobanLevels, getAllLevels };
 import type { SokobanState, SokobanMove } from './types';
 import {
   legalMoves,
@@ -13,8 +14,18 @@ import { sokobanEducationManifest, sokobanVisualizationManifest } from './manife
 import type { GamePluginEntry } from '../types';
 import { SokobanBoard } from './render';
 import { DIRECTION_DELTA } from './types';
+import {
+  stateHash,
+  expandState,
+  applyMove as sokobanApplyMove,
+  isDeadlock,
+  isSolved as sokobanIsSolved,
+} from './solver-utils';
+import { SOKOBAN_BFS_TIMEOUT_MS, solveSokobanBFS } from './solver';
 
 export { SokobanBoard };
+export { stateHash, SOKOBAN_BFS_TIMEOUT_MS, expandState, solveSokobanBFS, isDeadlock };
+export { sokobanApplyMove as applyMoveSokoban, sokobanIsSolved as isSolvedSokoban };
 
 const metadata = {
   id: 'sokoban',

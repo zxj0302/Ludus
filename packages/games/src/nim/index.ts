@@ -1,5 +1,5 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
-import { generateNimLevel } from './generator';
+import { generateNimLevel, generateNimLevelByPreset } from './generator';
 import {
   createInitialState,
   legalMoves,
@@ -11,12 +11,14 @@ import {
 } from './rules';
 import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
-import { findWinningMove } from './solver';
+import { findWinningMove, computeNimSum, isPPosition } from './solver';
 
 import type { GamePluginEntry } from '../types';
 import { NimBoard } from './render';
 
 export { NimBoard };
+export { computeNimSum, isPPosition };
+export { generateNimLevelByPreset };
 export { chooseHand };
 export { solveNimState } from './rules';
 

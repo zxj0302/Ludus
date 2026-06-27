@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect, useMemo, useState, lazy, Suspense } fro
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState } from '@ludus/core';
-import { computeNimSum, isWythoffPPosition } from '@ludus/core';
+import { computeNimSum, isWythoffPPosition } from '@ludus/games';
 import { MatrixViz } from './MatrixViz';
 import { KnowledgeCard } from './KnowledgeCard';
 import { MarkdownRenderer } from '@ludus/ui';
