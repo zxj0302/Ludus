@@ -5,6 +5,25 @@ import { findWinningMove } from '@ludus/core';
 import i18n from '../i18n';
 
 export type DisclosureLevel = 1 | 2 | 3;
+
+function scheduleNimAI(get: () => GameStore) {
+  setTimeout(() => {
+    const s = get();
+    if (!s.plugin || s.plugin.metadata.id !== 'nim' || s.solvePlayback) return;
+    const ns = s.gameState as unknown as { piles: number[]; currentPlayer: 0 | 1; phase: string } | null;
+    if (!ns || ns.currentPlayer !== 1 || ns.phase !== 'playing') return;
+    if (ns.piles.every((v: number) => v === 0)) return;
+    const wm = findWinningMove(ns.piles);
+    if (wm) {
+      s.applyMove({ pileIndex: wm.pileIndex, removeCount: wm.removeCount } as Move);
+    } else {
+      const firstNonEmpty = ns.piles.findIndex((v: number) => v > 0);
+      if (firstNonEmpty >= 0) {
+        s.applyMove({ pileIndex: firstNonEmpty, removeCount: 1 } as Move);
+      }
+    }
+  }, 600);
+}
 type SolverStatus = 'idle' | 'running' | 'done';
 
 interface GameStore {
@@ -146,6 +165,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    else if (gameId === 'nim') scheduleNimAI(get);
   },
 
   applyMove: (move) => {
@@ -178,30 +198,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution,
     });
 
-    // Nim AI auto-response
     if (plugin.metadata.id === 'nim' && !solvePlayback) {
-      const nimState = newState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
-      if (nimState.currentPlayer === 1 && !nimState.piles.every((v: number) => v === 0)) {
-        // AI plays after a short delay
-        setTimeout(() => {
-          const s = get();
-          if (s.plugin && s.gameState) {
-            const ns = s.gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
-            if (ns.currentPlayer !== 1) return; // player already moved again
-            const wm = findWinningMove(ns.piles);
-            if (wm) {
-              const aiMove = { pileIndex: wm.pileIndex, removeCount: wm.removeCount };
-              s.applyMove(aiMove as Move);
-            } else {
-              // P-position: take 1 from first non-empty pile
-              const firstNonEmpty = ns.piles.findIndex((v: number) => v > 0);
-              if (firstNonEmpty >= 0) {
-                s.applyMove({ pileIndex: firstNonEmpty, removeCount: 1 } as Move);
-              }
-            }
-          }
-        }, 600);
-      }
+      scheduleNimAI(get);
     }
   },
 
@@ -293,6 +291,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    else if (plugin.metadata.id === 'nim') scheduleNimAI(get);
   },
 
   loadCustomState: (state: GameState) => {
@@ -319,6 +318,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    else if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
   },
 
   requestSolve: () => {
@@ -392,27 +392,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solvePlayback: !isLastStep,
     });
 
-    // Nim: after playback ends, if it's AI's turn, trigger AI auto-response
-    if (isLastStep && get().plugin?.metadata.id === 'nim') {
-      const ns = get().gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 } | null;
-      if (ns && ns.currentPlayer === 1 && !ns.piles.every((v: number) => v === 0)) {
-        setTimeout(() => {
-          const s = get();
-          if (!s.plugin || !s.gameState) return;
-          const cur = s.gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
-          if (cur.currentPlayer !== 1) return;
-          const wm = findWinningMove(cur.piles);
-          if (wm) {
-            s.applyMove({ pileIndex: wm.pileIndex, removeCount: wm.removeCount } as Move);
-          } else {
-            const firstNonEmpty = cur.piles.findIndex((v: number) => v > 0);
-            if (firstNonEmpty >= 0) {
-              s.applyMove({ pileIndex: firstNonEmpty, removeCount: 1 } as Move);
-            }
-          }
-        }, 600);
-      }
-    }
+    if (isLastStep) scheduleNimAI(get);
   },
 
   prevPlaybackStep: () => {

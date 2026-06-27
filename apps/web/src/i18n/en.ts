@@ -46,6 +46,7 @@ const en = {
     'nim.removeCount': 'Remove {{count}}',
     'nim.selectRemove': 'How many to remove:',
     'nim.difficulty': 'Difficulty',
+    'nim.hintTip': 'Hint: Remove {{count}} from pile {{pile}}',
     'nim.selectPile': 'Select a pile',
     'nim.chooseHand': 'Choose who goes first',
     'nim.playFirst': 'I go first',

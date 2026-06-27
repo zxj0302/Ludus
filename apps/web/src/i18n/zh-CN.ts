@@ -46,6 +46,7 @@ const zhCN = {
     'nim.removeCount': '取 {{count}} 颗',
     'nim.selectRemove': '选择取子数量：',
     'nim.difficulty': '难度',
+    'nim.hintTip': '提示：从堆 {{pile}} 取 {{count}} 颗',
     'nim.selectPile': '选择一堆',
     'nim.chooseHand': '选择先后手',
     'nim.playFirst': '我先走',
