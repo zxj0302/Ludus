@@ -1,7 +1,7 @@
 // 游戏状态卡片 — 每款游戏的状态信息展示
 // EducationPanel 通过此模块渲染，无需 import 游戏专属类型或函数
 
-import { useMemo, Suspense } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameState, Solution } from '@ludus/core';
 import { computeNimSum, isWythoffPPosition } from '@ludus/games';
@@ -9,7 +9,6 @@ import type {
   LightsOutState, SokobanState, SudokuState, NimState, WythoffState,
 } from '@ludus/games';
 import { KnowledgeCard } from './components/KnowledgeCard';
-import { getVizComponent } from './vizComponents';
 
 interface Props {
   gameId: string;
@@ -21,8 +20,6 @@ interface Props {
 
 export function StatusCard({ gameId, gameState, solution }: Props) {
   const { t } = useTranslation();
-
-  const VizComponent = getVizComponent(solution?.trace as any);
 
   switch (gameId) {
     case 'lights-out': {
@@ -42,7 +39,6 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
                 {totalCells > 0 ? Math.round((onCount / totalCells) * 100) : 0}%
               </div>
             </div>
-            {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
           </div>
         </KnowledgeCard>
       );
@@ -68,7 +64,6 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
                 {solution?.stats.nodesExplored ?? 0}
               </div>
             </div>
-            {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
           </div>
         </KnowledgeCard>
       );
@@ -88,7 +83,6 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
               <div className="text-[10px] text-warm-stone-500">{t('education.sudokuGivens')}</div>
               <div className="text-lg font-bold text-logic-indigo-700">{givenCount}</div>
             </div>
-            {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
           </div>
         </KnowledgeCard>
       );
@@ -109,7 +103,6 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
               <div className="text-[10px] text-warm-stone-500">{t('nim.nimSum')}</div>
               <div className="text-lg font-bold text-warm-stone-800">{nimSum}</div>
             </div>
-            {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
           </div>
         </KnowledgeCard>
       );
@@ -132,7 +125,6 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
                 {isP ? t('wythoff.pPosition') : t('wythoff.nPosition')}
               </div>
             </div>
-            {VizComponent && <Suspense><VizComponent solution={solution} solveStepIndex={0} gameState={gameState} trace={solution?.trace} /></Suspense>}
           </div>
         </KnowledgeCard>
       );
