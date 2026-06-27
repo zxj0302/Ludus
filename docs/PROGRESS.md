@@ -109,27 +109,26 @@
 
 ## 🚧 IN PROGRESS
 
-- **架构重构：游戏即插件**（10 步计划，已完成 3 步）：
-  1. ✅ `GamePluginEntry` 接口 — `packages/games/src/types.ts`
-  2. ✅ `GamePlugin.ai` 可选字段 — Nim/Wythoff 已实现 `isAITurn` + `getAIMove`
-  3. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移，196 测试全过）
-  4. ⬜ gameStore 去游戏化 — 用 `plugin.ai` 替代 scheduleNimAI/scheduleWythoffAI
-  5. ⬜ GameShell 去游戏化 + 提取共享组件到 `packages/ui`
-  6. ⬜ EducationPanel 去静态 import
+- **架构重构：游戏即插件**（10 步计划，已完成 5 步）：
+  1. ✅ GamePluginEntry 接口 + GamePlugin.ai 字段
+  2. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移）
+  3. ✅ Nim/Wythoff 插件实现 ai 字段
+  4. ✅ gameStore 去游戏化（590→455 行，零游戏专属引用）
+  5. ✅ packages/ui 填充（5 个共享组件：ErrorBoundary/ProgressiveDisclosure/GameToolbar/GameStatusBar/MarkdownRenderer）
+  6. ⬜ EducationPanel 去静态 import + GameShell 改用 GamePluginEntry
   7. ⬜ i18n 拆分 — 游戏专属字符串归入各游戏
-  8. ⬜ Registry 更新 + Core barrel 清理
+  8. ⬜ Registry 更新 + Core barrel 清理 + Worker 迁移
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-继续架构重构 Step 4：重构 `gameStore.ts`。
+继续架构重构 Step 6：重构 EducationPanel + GameShell。
 
-1. 将 `scheduleNimAI` / `scheduleWythoffAI` 替换为通用 `scheduleAI`，调用 `plugin.ai.getAIMove()`
-2. 删除所有 `isAdversarial` 硬编码分支（`gameId === 'nim' || gameId === 'wythoff'`）
-3. 删除 `findWinningMove` / `findWythoffWinningMove` / `isWythoffPPosition` 等游戏专属 import
-4. 运行 `pnpm typecheck && pnpm test`，确保 196 测试全过
-5. 手动验证 Nim/Wythoff AI 自动对弈正常
+1. EducationPanel 消除静态 .md import（改用 GamePluginEntry.education.content）
+2. GameShell 消除游戏专属 Board/State/Move import（改用 GamePluginEntry）
+3. 为每款游戏创建 GamePluginEntry wrapper
+4. 运行 `pnpm typecheck && pnpm test`，验证所有游戏可玩
 
-参考文件：`packages/games/src/nim/index.ts`（已实现 `ai` 字段）、`apps/web/src/stores/gameStore.ts`（当前 590 行，目瘦至约 250 行）
+关键文件：`packages/games/src/types.ts`（GamePluginEntry 接口）、`packages/ui/src/GameShell.tsx`（待重构）、`apps/web/src/components/EducationPanel.tsx`
 
 ## 🐛 KNOWN ISSUES
 
@@ -296,3 +295,18 @@
   - Nim L3 伪代码 + §5.3 更新（最优化策略 + minimax 注释），中英双份
   - Wythoff L3 伪代码 + "求解"节更新（最优化策略 + minimax 注释），中英双份
   **验证**：196 测试全过，typecheck 零错误，vite build 成功
+- [2026-06-27] **架构重构：游戏即插件 — Step 4–5（续）**：
+  - **Step 4 — gameStore 去游戏化**：
+    - 删除 `scheduleNimAI` / `scheduleWythoffAI`（共 38 行游戏专属 AI 逻辑）
+    - 新增通用 `scheduleAI`（通过 `plugin.ai.isAITurn()` + `plugin.ai.getAIMove()` 实现）
+    - 删除所有 `isAdversarial` 硬编码分支和 `findWinningMove`/`findWythoffWinningMove`/`isWythoffPPosition` 等游戏专属 import
+    - `requestSolve`/`requestHint` 移除对抗游戏专属的 choosing phase 和 alternating solver 逻辑
+    - gameStore: 590 → 455 行（23% 缩减），零游戏专属引用
+  - **Step 5 — packages/ui 填充**：
+    - 创建 `packages/ui/src/` 目录 + tsconfig.json
+    - 5 个共享组件从 `apps/web/src/components/` 迁移至 `packages/ui/src/`（ErrorBoundary / ProgressiveDisclosure / GameToolbar / GameStatusBar / MarkdownRenderer）
+    - `DisclosureLevel` 类型定义移至 packages/ui（消除 web→store 循环引用隐患）
+    - web 添加 `@ludus/ui` 依赖，所有 import 更新为 `from '@ludus/ui'`
+    - 删除 web 中的本地副本（5 个文件）
+  - **验证**：314 测试全过（含 core 层旧副本），core / games / ui / web typecheck 全绿
+  - 重构进度：10 步完成 5 步

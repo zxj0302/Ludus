@@ -5,9 +5,9 @@ import type { Solution, GameState } from '@ludus/core';
 import { computeNimSum, isWythoffPPosition } from '@ludus/core';
 import { MatrixViz } from './MatrixViz';
 import { KnowledgeCard } from './KnowledgeCard';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
-import type { DisclosureLevel } from '../stores/gameStore';
+import type { DisclosureLevel } from '@ludus/ui';
 import type { LightsOutState, SokobanState, SudokuState, NimState, WythoffState } from '@ludus/games';
 
 const BFSTreeViz = lazy(() => import('./BFSTreeViz'));

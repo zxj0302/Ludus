@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import type { DisclosureLevel } from '../stores/gameStore';
+
+export type DisclosureLevel = 1 | 2 | 3;
 
 interface Props {
   currentLevel: DisclosureLevel;
