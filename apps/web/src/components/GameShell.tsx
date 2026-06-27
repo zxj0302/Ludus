@@ -257,6 +257,22 @@ export function GameShell({ gameId }: Props) {
                 onCollectionChange={handleCollectionChange}
                 onLevelSelect={handleLevelSelect}
               />
+            ) : gameId === 'nim' ? (
+              <div className="flex gap-1">
+                {(['easy', 'medium', 'hard'] as const).map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => {
+                      const level = generateNimLevelByPreset(p);
+                      useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
+                    }}
+                    className="text-xs px-2 py-1 rounded-md bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 transition-colors font-medium"
+                  >
+                    {t(`difficulty.${p}`)}
+                  </button>
+                ))}
+              </div>
             ) : undefined}
           />
 
@@ -286,10 +302,6 @@ export function GameShell({ gameId }: Props) {
                   onChooseHand={(playerFirst) => {
                     const newState = chooseHand(niState, playerFirst);
                     useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
-                  }}
-                  onNewGame={(preset) => {
-                    const level = generateNimLevelByPreset(preset);
-                    useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
                   }}
                 />
               ) : (

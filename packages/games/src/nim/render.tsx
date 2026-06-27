@@ -9,7 +9,6 @@ interface Props {
   disabled?: boolean;
   highlightCell?: { row: number; col: number; value?: number } | null;
   onChooseHand?: (playerFirst: boolean) => void;
-  onNewGame?: (preset: 'easy' | 'medium' | 'hard') => void;
 }
 
 const STONE_W = 48;
@@ -26,7 +25,7 @@ const GRADIENTS = [
 
 const SHADOW = '0 1px 3px rgba(0,0,0,0.2), inset 0 -2px 3px rgba(0,0,0,0.1)';
 
-export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand, onNewGame }: Props) {
+export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand }: Props) {
   // Per-pile hover: only stones in the hovered pile react
   const [hover, setHover] = useState<{ pile: number; removeCount: number } | null>(null);
   const { piles, currentPlayer, initialPiles, phase } = state;
@@ -160,15 +159,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
             {t('nim.aiFirst')}
           </motion.button>
         </div>
-        <div className="flex gap-2">
-          <span className="text-xs text-warm-stone-400 self-center">{t('nim.difficulty')}:</span>
-          {(['easy', 'medium', 'hard'] as const).map(p => (
-            <button key={p} type="button" onClick={() => onNewGame?.(p)}
-              className="text-xs px-2.5 py-1 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
-              {t(`difficulty.${p}`)}
-            </button>
-          ))}
-        </div>
       </div>
     );
   }
@@ -227,16 +217,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="flex gap-2">
-        <span className="text-[10px] text-warm-stone-400 self-center mr-1">{t('nim.difficulty')}:</span>
-        {(['easy', 'medium', 'hard'] as const).map(p => (
-          <button key={p} type="button" onClick={() => onNewGame?.(p)}
-            className="text-[10px] px-2.5 py-1 rounded-md bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700 transition-colors">
-            {t(`difficulty.${p}`)}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
