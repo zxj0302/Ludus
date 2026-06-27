@@ -145,31 +145,31 @@ library: 'react-flow'
 
 五段式 × (L2/L3) × (zh-CN/en) = 4 份 markdown。
 
-| 段 | L2（泛人群） | L3（专业） |
-|---|---|---|
-| 1. 玩 | 规则动画 | 同 L2 |
-| 2. 思考 | "为什么有的局面无论怎么走都会输？" | XOR 反直觉性 + Nim-sum 猜想引导 |
-| 3. 揭示 | Nim-sum = XOR，P/N 位置 | Bouton 定理 + Sprague-Grundy 定理简介 |
-| 4. 求解 | XOR 演算逐步展示 | 定理证明 + 归纳法 |
-| 5. 出题 | P 距离难度概念 | 生成器原理 + 对抗性 AI |
+| 段      | L2（泛人群）                       | L3（专业）                            |
+| ------- | ---------------------------------- | ------------------------------------- |
+| 1. 玩   | 规则动画                           | 同 L2                                 |
+| 2. 思考 | "为什么有的局面无论怎么走都会输？" | XOR 反直觉性 + Nim-sum 猜想引导       |
+| 3. 揭示 | Nim-sum = XOR，P/N 位置            | Bouton 定理 + Sprague-Grundy 定理简介 |
+| 4. 求解 | XOR 演算逐步展示                   | 定理证明 + 归纳法                     |
+| 5. 出题 | P 距离难度概念                     | 生成器原理 + 对抗性 AI                |
 
 ## 8. 技术架构
 
 ### 8.1 文件清单
 
-| 层 | 文件 | 职责 |
-|---|---|---|
-| Core | `packages/core/src/types/nim.ts` | NimState, NimMove 类型 |
-| Core | `packages/core/src/solver/nim-solver.ts` | Bouton XOR 求解器 |
-| Core | `packages/core/src/generator/nim-generator.ts` | P 距离驱动生成 |
-| Core | `packages/core/src/difficulty/nim-difficulty.ts` | P 距离 → score |
-| Game | `packages/games/src/nim/rules.ts` | 规则引擎 + legalMoves/applyMove/isSolved |
-| Game | `packages/games/src/nim/render.tsx` | NimBoard |
-| Game | `packages/games/src/nim/manifest.ts` | 教育/可视化清单 |
-| Game | `packages/games/src/nim/index.ts` | 插件入口 |
-| Web | `apps/web/src/components/NimTreeViz.tsx` | React Flow 博弈树 |
-| Edu | `packages/education/src/content/nim/l2.*.md` | L2 中英 |
-| Edu | `packages/education/src/content/nim/l3.*.md` | L3 中英 |
+| 层   | 文件                                               | 职责                                     |
+| ---- | -------------------------------------------------- | ---------------------------------------- |
+| Core | `packages/core/src/types/nim.ts`                 | NimState, NimMove 类型                   |
+| Core | `packages/core/src/solver/nim-solver.ts`         | Bouton XOR 求解器                        |
+| Core | `packages/core/src/generator/nim-generator.ts`   | P 距离驱动生成                           |
+| Core | `packages/core/src/difficulty/nim-difficulty.ts` | P 距离 → score                          |
+| Game | `packages/games/src/nim/rules.ts`                | 规则引擎 + legalMoves/applyMove/isSolved |
+| Game | `packages/games/src/nim/render.tsx`              | NimBoard                                 |
+| Game | `packages/games/src/nim/manifest.ts`             | 教育/可视化清单                          |
+| Game | `packages/games/src/nim/index.ts`                | 插件入口                                 |
+| Web  | `apps/web/src/components/NimTreeViz.tsx`         | React Flow 博弈树                        |
+| Edu  | `packages/education/src/content/nim/l2.*.md`     | L2 中英                                  |
+| Edu  | `packages/education/src/content/nim/l3.*.md`     | L3 中英                                  |
 
 ### 8.2 集成点
 
@@ -188,13 +188,13 @@ library: 'react-flow'
 
 ## 9. 测试范围
 
-| 模块 | 测试点 | 预计数量 |
-|---|---|---|
-| nim-solver | XOR 计算、P/N 判定、必胜走法正确性 | 8 |
-| nim-generator | 合法局面、P 距离准确、难度范围 | 5 |
-| nim-difficulty | score 映射、边界值 | 3 |
-| rules | legalMoves 完整性、applyMove 不可变性、isSolved | 8 |
-| 总计 | | ~24 |
+| 模块           | 测试点                                          | 预计数量 |
+| -------------- | ----------------------------------------------- | -------- |
+| nim-solver     | XOR 计算、P/N 判定、必胜走法正确性              | 8        |
+| nim-generator  | 合法局面、P 距离准确、难度范围                  | 5        |
+| nim-difficulty | score 映射、边界值                              | 3        |
+| rules          | legalMoves 完整性、applyMove 不可变性、isSolved | 8        |
+| 总计           |                                                 | ~24      |
 
 ## 10. 与其他游戏的一致性检查
 

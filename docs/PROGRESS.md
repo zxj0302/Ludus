@@ -100,7 +100,7 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-下一款游戏：Wythoff (博弈论姐妹篇) 或 15-puzzle (A*) 或 Sokoban 生成器升级。
+Nim 已完成全面优化（详见下方 session log）。下一款游戏待定。
 
 ### 选项 A：Wythoff（博弈论姐妹篇）
 
@@ -224,3 +224,17 @@
   - i18n: nim.* 中英完整覆盖; 教学: L2/L3 × zh/en 四份
   - 测试: 152 全过 (原有 108 + Nim 42 新增), typecheck 全绿, vite build 成功
   - NimTreeViz 懒加载分包 ~268KB (gzip ~90KB)
+- [2026-06-26] Nim 集成修复 — i18n 硬编码 / CONTENT_MAPS / AI 胜利检测：
+  1. `EducationPanel.tsx` 中 Nim 状态卡片的"Piles"/"Nim-sum"硬编码 → `t('nim.piles')`/`t('nim.nimSum')`
+  2. `CONTENT_MAPS` 缺少 nim 条目 → 添加 4 个 markdown 导入 + nim 注册
+  3. `rules.ts` `isSolved` 仅检测 `currentPlayer === 1` 导致 AI 取最后一颗石不被视为终结 → 改为仅检测所有堆为空
+  4. 新增 i18n key: `nim.piles` (zh-CN: "堆数", en: "Piles")
+  5. 测试 152/152 全过，typecheck 全绿
+- [2026-06-27] Nim 全面优化（多轮审查修复）：
+  **生成器**：随机生成替代 P-距离走步，P/N 自然分布，配合玩家自选先后手
+  **交互**：提示/求解高亮推荐先后手按钮，求解自动选择+播放完整序列，撤销/重做触发 AI
+  **修复**：最优步数对 Nim 隐藏、通关隐藏"解开了"、博弈树 memo 补全依赖、求解播放高亮石子、
+  　　　　重置回到选择先后手、新关卡即时刷新卡片、P-position 空窗口期处理
+  **文档**：L3 更新随机生成法+先手假设声明，清理过期伪代码，清理 4 个未使用 i18n key
+  **经验**：lessons-learned.md 新增 §11 Nim 专项（人机对战模式、AI 调度、先后手机制等）
+  测试 152/152 全过，typecheck 全绿
