@@ -50,9 +50,9 @@ function generatePPosition(pileCount: number, maxStone: number): number[] {
 export type NimPreset = 'easy' | 'medium' | 'hard';
 
 const PRESETS: Record<NimPreset, { pileCount: [number, number]; maxStone: [number, number] }> = {
-  easy:   { pileCount: [2, 2], maxStone: [3, 5] },
-  medium: { pileCount: [3, 3], maxStone: [4, 8] },
-  hard:   { pileCount: [4, 5], maxStone: [6, 12] },
+  easy:   { pileCount: [2, 3], maxStone: [3, 5] },
+  medium: { pileCount: [4, 5], maxStone: [4, 8] },
+  hard:   { pileCount: [6, 6], maxStone: [5, 10] },
 };
 
 export function generateNimLevelByPreset(preset: NimPreset): Level {
