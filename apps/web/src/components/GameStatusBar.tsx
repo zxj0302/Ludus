@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 interface Props {
+  gameId: string;
   stepCount: number;
   isSolved: boolean;
   isSolving: boolean;
@@ -21,7 +22,7 @@ function formatTime(ms: number): string {
 }
 
 export function GameStatusBar({
-  stepCount, isSolved, isSolving, optimalSteps, remainingSteps,
+  gameId, stepCount, isSolved, isSolving, optimalSteps, remainingSteps,
   elapsed, solvePlayback, solveStepIndex, totalSolveSteps, solveError,
 }: Props) {
   const { t } = useTranslation();
@@ -64,7 +65,7 @@ export function GameStatusBar({
 
         <div className="flex items-center gap-2">
           {isSolving && <Badge color="indigo" pulse>{t('game.status.solving')}</Badge>}
-          {isSolved && !solvePlayback && (
+          {isSolved && !solvePlayback && gameId !== 'nim' && (
             <div className="flex items-center gap-2">
               <Badge color="teal">
                 {optimalSteps != null

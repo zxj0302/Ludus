@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState, legalMoves, applyMove, isSolved, getDifficulty, solveNimState } from './rules';
 import type { NimState } from './rules';
 
-function makePlayingState(piles: number[] = [3, 4, 5]): NimState {
+function makePlayingState(piles: number[] = [1, 2, 3]): NimState {
   return { piles, currentPlayer: 0, initialPiles: [...piles], phase: 'playing' };
 }
 
@@ -18,9 +18,9 @@ describe('createInitialState', () => {
 
 describe('legalMoves', () => {
   it('returns all removal options for all piles', () => {
-    const s = makePlayingState(); // [3, 4, 5]
+    const s = makePlayingState([1, 2, 3]);
     const moves = legalMoves(s);
-    expect(moves.length).toBe(12); // 3+4+5
+    expect(moves.length).toBe(6); // 1+2+3
   });
 
   it('returns moves with correct pileIndex and removeCount', () => {
@@ -39,7 +39,7 @@ describe('legalMoves', () => {
   });
 
   it('returns empty when it is AI turn', () => {
-    const s: NimState = { piles: [3, 4, 5], currentPlayer: 1, initialPiles: [3, 4, 5], phase: 'playing' };
+    const s: NimState = { piles: [1, 2, 3], currentPlayer: 1, initialPiles: [1, 2, 3], phase: 'playing' };
     expect(legalMoves(s)).toEqual([]);
   });
 });
@@ -47,15 +47,15 @@ describe('legalMoves', () => {
 describe('applyMove', () => {
   it('removes stones from specified pile', () => {
     const s = makePlayingState();
-    const next = applyMove(s, { pileIndex: 0, removeCount: 2 });
-    expect(next.piles[0]).toBe(1);
+    const next = applyMove(s, { pileIndex: 1, removeCount: 1 });
+    expect(next.piles[1]).toBe(1);  // 2 → 1
     expect(next.currentPlayer).toBe(1);
   });
 
   it('is immutable', () => {
     const s = makePlayingState();
-    const next = applyMove(s, { pileIndex: 0, removeCount: 2 });
-    expect(s.piles[0]).toBe(3);
+    const next = applyMove(s, { pileIndex: 1, removeCount: 1 });
+    expect(s.piles[1]).toBe(2);  // unchanged
     expect(s.currentPlayer).toBe(0);
   });
 
@@ -106,10 +106,11 @@ describe('getDifficulty', () => {
 });
 
 describe('solveNimState', () => {
-  it('finds winning move for N-position', () => {
-    const s = makePlayingState(); // [3,4,5] = N-position
+  it('returns solvable for P-position (no immediate winning move)', () => {
+    const s = makePlayingState(); // [1,2,3] = P-position
     const sol = solveNimState(s);
     expect(sol.solvable).toBe(true);
+    expect(sol.moves).toEqual([]);
     expect(sol.trace?.type).toBe('nim-xor');
   });
 

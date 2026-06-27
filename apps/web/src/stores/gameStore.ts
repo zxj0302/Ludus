@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { GamePlugin, GameState, Move, Solution } from '@ludus/core';
-import { getGame } from '@ludus/games';
+import { getGame, solveNimState } from '@ludus/games';
 import { findWinningMove } from '@ludus/core';
 import i18n from '../i18n';
 
@@ -141,6 +141,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const state = generatePlayableState(plugin);
 
     const isFastGame = plugin.metadata.isFastSolver;
+    const isNim = gameId === 'nim';
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
 
@@ -154,8 +155,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: opt,
-      currentOptimalSteps: opt,
+      initialOptimalSteps: isNim ? null : opt,
+      currentOptimalSteps: isNim ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -165,7 +166,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (gameId === 'nim') scheduleNimAI(get);
+    else if (isNim) scheduleNimAI(get);
   },
 
   applyMove: (move) => {
@@ -185,6 +186,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     // Lights Out 的 GF(2) 求解 < 1ms，每一步都重新求解以保持可视化同步
     // Sokoban 的 BFS 可能很慢，保留旧解，不阻塞 UI
     let solution = keepExistingSolution ? get().solution! : get().solution;
+    const isNim = plugin.metadata.id === 'nim';
     if (!keepExistingSolution && plugin.metadata.isFastSolver) {
       solution = plugin.solve(newState);
     }
@@ -220,6 +222,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         currentOptimalSteps: null,
         hintMove: null,
       });
+      if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
     }
   },
 
@@ -239,6 +242,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         currentOptimalSteps: null,
         hintMove: null,
       });
+      if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
     }
   },
 
@@ -271,6 +275,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!plugin) return;
     const state = generatePlayableState(plugin);
     const isFastGame = plugin.metadata.isFastSolver;
+    const isNim = plugin.metadata.id === 'nim';
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
@@ -281,8 +286,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: opt,
-      currentOptimalSteps: opt,
+      initialOptimalSteps: isNim ? null : opt,
+      currentOptimalSteps: isNim ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -291,13 +296,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (plugin.metadata.id === 'nim') scheduleNimAI(get);
+    else if (isNim) scheduleNimAI(get);
   },
 
   loadCustomState: (state: GameState) => {
     const { plugin, solution: prevSol } = get();
     const isFastGame = plugin?.metadata.isFastSolver;
-    // Lights Out 瞬时求解；Sokoban 保留旧解避免卡片消失，后台更新
+    const isNim = plugin?.metadata.id === 'nim';
     const sol = isFastGame ? plugin?.solve(state) ?? null : prevSol;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
@@ -308,8 +313,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: opt,
-      currentOptimalSteps: opt,
+      initialOptimalSteps: isNim ? null : opt,
+      currentOptimalSteps: isNim ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -318,11 +323,70 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
+    else if (isNim) scheduleNimAI(get);
   },
 
   requestSolve: () => {
-    if (!get().plugin || !get().gameState) return;
+    const { plugin, gameState } = get();
+    if (!plugin || !gameState) return;
+
+    const isNim = plugin.metadata.id === 'nim';
+    const ns = gameState as unknown as { piles?: number[]; phase?: string; currentPlayer?: number } | null;
+
+    // Nim choosing phase: highlight recommendation then auto-choose and play
+    if (isNim && ns?.phase === 'choosing' && ns?.piles) {
+      const piles = ns.piles;
+      const nimSum = piles.reduce((a: number, b: number) => a ^ b, 0);
+      const playerFirst = nimSum !== 0;
+      // Highlight the chosen button first
+      set({ solverStatus: 'running', solveError: null, hintMove: { pileIndex: -1, removeCount: playerFirst ? 0 : 1 } as Move });
+      // Brief delay to show the highlight, then auto-choose and start playback
+      setTimeout(() => {
+        let state: Record<string, unknown> = {
+          ...ns, currentPlayer: playerFirst ? 0 : 1, phase: 'playing',
+          piles: [...piles], initialPiles: [...piles],
+        };
+        if (!playerFirst) {
+          const wm = findWinningMove(piles);
+          if (wm) {
+            const newPiles = [...piles];
+            newPiles[wm.pileIndex]! -= wm.removeCount;
+            state.piles = newPiles;
+          } else {
+            const idx = piles.findIndex((v: number) => v > 0);
+            if (idx >= 0) {
+              const newPiles = [...piles];
+              newPiles[idx]! -= 1;
+              state.piles = newPiles;
+            }
+          }
+          state.currentPlayer = 0;
+        }
+        set({ gameState: state as GameState, hintMove: null });
+        const sol = solveNimState(state as Parameters<typeof solveNimState>[0]);
+        if (sol.solvable && sol.moves.length > 0) {
+          set({ solution: sol, solverStatus: 'done', solvePlayback: true, solveStepIndex: 0, prePlaybackHistoryIndex: 0, hintMove: null });
+        } else {
+          set({ solution: sol, solverStatus: 'done', solveError: i18n.t('nim.noWinningStrategy') });
+        }
+      }, 300);
+      return;
+    }
+
+    // Nim playing phase: use solveNimState for full alternating sequence
+    if (isNim) {
+      set({ solverStatus: 'running', solveError: null });
+      setTimeout(() => {
+        const sol = solveNimState(gameState as Parameters<typeof solveNimState>[0]);
+        if (sol.solvable && sol.moves.length > 0) {
+          set({ solution: sol, solverStatus: 'done', solvePlayback: true, solveStepIndex: 0, prePlaybackHistoryIndex: get().historyIndex, hintMove: null });
+        } else {
+          set({ solution: sol, solverStatus: 'done', solveError: i18n.t('nim.noWinningStrategy') });
+        }
+      }, 50);
+      return;
+    }
+
     set({ solverStatus: 'running', solveError: null });
 
     // 延迟让 'running' 状态有机会 render（BFS 会阻塞主线程）
@@ -351,6 +415,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { plugin, gameState } = get();
     if (!plugin || !gameState) return;
 
+    // Nim choosing phase: set hintMove to recommend hand (pileIndex=-1, removeCount=0→先手, 1→后手)
+    const ns = gameState as unknown as { piles?: number[]; phase?: string } | null;
+    if (plugin.metadata.id === 'nim' && ns?.phase === 'choosing' && ns?.piles) {
+      const nimSum = ns.piles.reduce((a: number, b: number) => a ^ b, 0);
+      // nimSum=0 (P) → choose AI-first (后手); nimSum≠0 (N) → choose player-first (先手)
+      set({ solverStatus: 'done', hintMove: { pileIndex: -1, removeCount: nimSum === 0 ? 1 : 0 } as Move });
+      return;
+    }
+
     set({ solverStatus: 'running' });
     // setTimeout 让 'running' 状态有机会 render（BFS 会阻塞主线程）
     setTimeout(() => {
@@ -360,7 +433,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       if (solution.solvable && solution.moves.length > 0) {
         set({
           hintMove: solution.moves[0]!,
-          currentOptimalSteps: solution.moves.length,
+          currentOptimalSteps: solution.stats.solutionLength > 0 ? solution.stats.solutionLength : null,
           solution,
           solverStatus: 'done',
         });
@@ -370,6 +443,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           currentOptimalSteps: null,
           solution,
           solverStatus: 'done',
+          // Nim: P-position — inform player there is no winning move
+          solveError: plugin.metadata.id === 'nim' ? i18n.t('nim.noWinningMove') : null,
         });
       }
     }, 50);

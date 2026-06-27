@@ -284,7 +284,6 @@ export function EducationPanel({
             </div>
             {isNI && niState?.piles && (
               <div className="space-y-2 mt-2">
-                <h4 className="text-xs font-semibold text-warm-stone-600 uppercase tracking-wide">{t('game.nim.name')}</h4>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="bg-warm-stone-50 rounded-lg p-2">
                     <div className="text-warm-stone-500 text-xs">{t('nim.piles')}</div>
@@ -326,51 +325,56 @@ export function EducationPanel({
           </Suspense>
         )}
 
-        {/* Nim：XOR 游戏树可视化 — 随游戏进展实时更新 */}
+        {/* Nim：XOR 游戏树可视化 — key 强制 React Flow 随 piles 变化重新挂载 */}
         {isNI && niState?.piles && (
           <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
-            <NimTreeViz trace={solution?.trace} state={niState} />
+            <NimTreeViz key={niState.piles.join(',')} trace={solution?.trace} state={niState} />
           </Suspense>
         )}
 
-        {/* 最优解步骤列表 */}
-        {solution?.solvable && solution.moves.length > 0 && (
-          <KnowledgeCard title={t('education.optimalSolution', { count: solution.moves.length })} icon="👆">
-            <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
-              {solution.moves.map((m, i) => {
-                const isCurrentStep = solvePlayback && i === solveStepIndex;
-                const isPastStep = solvePlayback && i < solveStepIndex;
+        {/* 最优解步骤列表 — Nim 空 moves 时显示 P-position 提示 */}
+        {solution?.solvable && (solution.moves.length > 0 || isNI) && (
+          <KnowledgeCard title={solution.moves.length > 0 ? t('education.optimalSolution', { count: solution.moves.length }) : t('nim.pPosition')} icon={solution.moves.length > 0 ? '👆' : '⏳'}>
+            {solution.moves.length > 0 ? (
+              <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
+                {solution.moves.map((m, i) => {
+                  const isCurrentStep = solvePlayback && i === solveStepIndex;
+                  const isPastStep = solvePlayback && i < solveStepIndex;
 
-                // Render move description based on game type
-                let moveLabel: string;
-                if (isLO) {
-                  const move = m as { row: number; col: number };
-                  moveLabel = t('education.pressCell', { row: move.row + 1, col: move.col + 1 });
-                } else if (isSU) {
-                  const move = m as { row: number; col: number; value: number };
-                  moveLabel = t('education.sudokuCell', { row: move.row + 1, col: move.col + 1, value: move.value });
-                } else if (isNI) {
-                  const move = m as { pileIndex: number; removeCount: number };
-                  moveLabel = t('education.nimMove', { pile: move.pileIndex + 1, count: move.removeCount });
-                } else {
-                  const move = m as { direction: string };
-                  moveLabel = t(`education.move.${move.direction}`, move.direction);
-                }
+                  // Render move description based on game type
+                  let moveLabel: string;
+                  if (isLO) {
+                    const move = m as { row: number; col: number };
+                    moveLabel = t('education.pressCell', { row: move.row + 1, col: move.col + 1 });
+                  } else if (isSU) {
+                    const move = m as { row: number; col: number; value: number };
+                    moveLabel = t('education.sudokuCell', { row: move.row + 1, col: move.col + 1, value: move.value });
+                  } else if (isNI) {
+                    const move = m as { pileIndex: number; removeCount: number };
+                    const isPlayerMove = i % 2 === 0;
+                    moveLabel = (isPlayerMove ? '🧑 ' : '🤖 ') + t('education.nimMove', { pile: move.pileIndex + 1, count: move.removeCount });
+                  } else {
+                    const move = m as { direction: string };
+                    moveLabel = t(`education.move.${move.direction}`, move.direction);
+                  }
 
-                return (
-                  <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
-                    text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
-                    ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
-                      isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
-                      'text-warm-stone-600'}
-                  `}>
-                    <span className="w-5 text-right tabular-nums">{i + 1}.</span>
-                    <span>{moveLabel}</span>
-                    {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
-                  </div>
-                );
-              })}
-            </div>
+                  return (
+                    <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
+                      text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
+                      ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
+                        isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
+                        'text-warm-stone-600'}
+                    `}>
+                      <span className="w-5 text-right tabular-nums">{i + 1}.</span>
+                      <span>{moveLabel}</span>
+                      {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-logic-indigo-500">{t('nim.pPositionHint')}</p>
+            )}
           </KnowledgeCard>
         )}
 

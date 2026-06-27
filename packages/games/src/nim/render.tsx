@@ -28,7 +28,7 @@ const SHADOW = '0 1px 3px rgba(0,0,0,0.2), inset 0 -2px 3px rgba(0,0,0,0.1)';
 export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand }: Props) {
   // Per-pile hover: only stones in the hovered pile react
   const [hover, setHover] = useState<{ pile: number; removeCount: number } | null>(null);
-  const { piles, currentPlayer, initialPiles, phase } = state;
+  const { piles, currentPlayer, phase } = state;
   const isPlayerTurn = currentPlayer === 0 && phase === 'playing';
   const isGameOver = piles.every(v => v === 0);
   const isChoosing = phase === 'choosing';
@@ -78,7 +78,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
       let boxShadow = SHADOW;
       let z = idx;
 
-      if (isHintStone && canInteract) {
+      if (isHintStone) {
         extraClass = 'ring-[3px] ring-game-amber-400 scale-110';
         boxShadow = '0 0 0 4px rgba(232,168,56,0.5), ' + SHADOW;
         z = 50;
@@ -130,12 +130,22 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
 
   // ── Choosing phase ──
   if (isChoosing) {
+    const recommendPlayer = highlightCell?.row === 0 && highlightCell.col === 0;
+    const recommendAI = highlightCell?.row === 0 && highlightCell.col === 1;
+
+    const btnPlayerCls = recommendPlayer
+      ? 'ring-[3px] ring-game-amber-400 scale-105 shadow-[0_0_0_4px_rgba(232,168,56,0.5)]'
+      : '';
+    const btnAICls = recommendAI
+      ? 'ring-[3px] ring-game-amber-400 scale-105 shadow-[0_0_0_4px_rgba(232,168,56,0.5)]'
+      : '';
+
     return (
       <div className="flex flex-col items-center gap-8 select-none">
         <div className="text-xl font-bold text-warm-stone-700">{t('nim.chooseHand')}</div>
-        <div className="flex flex-wrap justify-center gap-6">
+        <div className="flex flex-wrap justify-center gap-3">
           {piles.map((count, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
+            <div key={i} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-warm-stone-50 min-w-[80px]">
               <div className="relative" style={{ width: STONE_W, height: maxContainerH(10) }}>
                 {renderPile(count, i, false, false, 10)}
               </div>
@@ -148,11 +158,11 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
         </div>
         <div className="flex gap-4">
           <motion.button type="button" onClick={() => onChooseHand?.(true)} whileTap={{ scale: 0.95 }}
-            className="px-8 py-3 rounded-xl bg-logic-indigo-600 text-white font-bold text-lg hover:bg-logic-indigo-700 transition-colors shadow-lg">
+            className={`px-8 py-3 rounded-xl bg-logic-indigo-600 text-white font-bold text-lg hover:bg-logic-indigo-700 transition-all shadow-lg ${btnPlayerCls}`}>
             {t('nim.playFirst')}
           </motion.button>
           <motion.button type="button" onClick={() => onChooseHand?.(false)} whileTap={{ scale: 0.95 }}
-            className="px-8 py-3 rounded-xl bg-warm-stone-200 text-warm-stone-700 font-bold text-lg hover:bg-warm-stone-300 transition-colors shadow-md">
+            className={`px-8 py-3 rounded-xl bg-warm-stone-200 text-warm-stone-700 font-bold text-lg hover:bg-warm-stone-300 transition-all shadow-md ${btnAICls}`}>
             {t('nim.aiFirst')}
           </motion.button>
         </div>
@@ -179,7 +189,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
         )}
       </AnimatePresence>
 
-      <div className="flex flex-wrap justify-center gap-8">
+      <div className="flex flex-wrap justify-center gap-3">
         {piles.map((count, i) => {
           const isEmpty = count === 0;
           const isHinted = hintPileIndex === i && isPlayerTurn;
@@ -187,8 +197,8 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand 
 
           return (
             <motion.div key={i} layout
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl min-w-[110px] transition-all duration-200
-                ${isHinted && isPlayerTurn ? 'bg-game-amber-50 ring-2 ring-game-amber-400 shadow-lg' : 'bg-warm-stone-50'}
+              className={`flex flex-col items-center gap-2 p-3 rounded-2xl min-w-[80px] transition-all duration-200
+                ${isHinted ? 'bg-game-amber-50 ring-2 ring-game-amber-400 shadow-lg' : 'bg-warm-stone-50'}
                 ${!isPlayerTurn || disabled || isGameOver || isEmpty ? 'opacity-50' : ''}
               `}
             >

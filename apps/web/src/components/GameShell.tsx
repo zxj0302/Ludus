@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import type { Move } from '@ludus/core';
+import type { GameState, Move } from '@ludus/core';
 import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, chooseHand } from '@ludus/games';
 import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove } from '@ludus/games';
 import { generateNimLevelByPreset } from '@ludus/core';
@@ -121,6 +121,7 @@ export function GameShell({ gameId }: Props) {
   const [selectedCollection, setSelectedCollection] = useState('builtin');
   const [selectedLevelIdx, setSelectedLevelIdx] = useState(0);
   const loadCustomState = useGameStore(s => s.loadCustomState);
+  const [nimDifficulty, setNimDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
   const currentLevels = collections.find(c => c.name === selectedCollection)?.levels ?? [];
   const totalInCollection = currentLevels.length;
 
@@ -185,6 +186,8 @@ export function GameShell({ gameId }: Props) {
     }
     if (gameId === 'nim') {
       const m = move as NimMove;
+      // Special: choosing-phase hint (pileIndex=-1 → recommend hand button)
+      if (m.pileIndex === -1) return { row: 0, col: m.removeCount }; // col=0→先手, col=1→后手
       if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
     }
     return null;
@@ -232,6 +235,7 @@ export function GameShell({ gameId }: Props) {
           </div>
 
           <GameStatusBar
+            gameId={gameId}
             stepCount={stepCount} isSolved={isWin} isSolving={solverStatus === 'running'}
             optimalSteps={optimalSteps} remainingSteps={remainingSteps} elapsed={elapsed}
             solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
@@ -258,20 +262,24 @@ export function GameShell({ gameId }: Props) {
                 onLevelSelect={handleLevelSelect}
               />
             ) : gameId === 'nim' ? (
-              <div className="flex gap-1">
-                {(['easy', 'medium', 'hard'] as const).map(p => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => {
-                      const level = generateNimLevelByPreset(p);
-                      useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
-                    }}
-                    className="text-xs px-2 py-1 rounded-md bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 transition-colors font-medium"
-                  >
-                    {t(`difficulty.${p}`)}
-                  </button>
-                ))}
+              <div className="flex gap-1.5 items-center">
+                <button
+                  type="button"
+                  onClick={() => setNimDifficulty(d => d === 'easy' ? 'medium' : d === 'medium' ? 'hard' : 'easy')}
+                  className="text-xs px-2.5 py-1.5 rounded-md bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 transition-colors font-medium"
+                >
+                  {t(`difficulty.${nimDifficulty}`)} ▾
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const level = generateNimLevelByPreset(nimDifficulty);
+                    useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
+                  }}
+                  className="text-xs px-2.5 py-1.5 rounded-md bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 transition-colors font-medium"
+                >
+                  + {t('game.toolbar.new')}
+                </button>
               </div>
             ) : undefined}
           />
@@ -300,8 +308,14 @@ export function GameShell({ gameId }: Props) {
                   disabled={isWin || solvePlayback}
                   highlightCell={highlightCell}
                   onChooseHand={(playerFirst) => {
+                    const choosingState = niState;
                     const newState = chooseHand(niState, playerFirst);
                     useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
+                    // Prepend choosing state so reset returns to hand selection
+                    useGameStore.setState(s => ({
+                      history: [choosingState as unknown as GameState, ...s.history],
+                      historyIndex: s.historyIndex + 1,
+                    }));
                   }}
                 />
               ) : (

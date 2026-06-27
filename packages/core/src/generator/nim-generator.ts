@@ -16,33 +16,12 @@ function mapRangeToMaxStone(range: [number, number]): number {
   return 8 + Math.floor(Math.random() * 5);                   // 8-12
 }
 
-function generatePPosition(pileCount: number, maxStone: number): number[] {
-  // Generate piles ensuring nim-sum = 0 and all values in [1, maxStone]
-  // Retry loop: ~99.6% success within 100 attempts for typical (piles, maxStone)
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const piles: number[] = [];
-    let runningXor = 0;
-    for (let i = 0; i < pileCount - 1; i++) {
-      const stone = 1 + Math.floor(Math.random() * maxStone);
-      piles.push(stone);
-      runningXor ^= stone;
-    }
-    // runningXor needs to be in [1, maxStone] for a valid last pile
-    if (runningXor >= 1 && runningXor <= maxStone) {
-      piles.push(runningXor);
-      return piles;
-    }
-    // runningXor is 0 or > maxStone — retry with different random values
+function generateRandomPiles(pileCount: number, maxStone: number): number[] {
+  const piles: number[] = [];
+  for (let i = 0; i < pileCount; i++) {
+    piles.push(1 + Math.floor(Math.random() * maxStone));
   }
-  // Fallback: deterministic P-position [1,2,3,...,xor] with correct pileCount
-  const fallback: number[] = [];
-  let xor = 0;
-  for (let i = 0; i < pileCount - 1; i++) {
-    fallback.push(i + 1);
-    xor ^= (i + 1);
-  }
-  fallback.push(xor > 0 ? xor : 1);
-  return fallback;
+  return piles;
 }
 
 export type NimPreset = 'easy' | 'medium' | 'hard';
@@ -71,33 +50,7 @@ export function generateNimLevel(config: LevelConfig): Level {
 }
 
 function buildNimLevel(pileCount: number, maxStone: number): Level {
-  // Generate P-position then walk 1 step to N-position
-  let pPiles = generatePPosition(pileCount, maxStone);
-  // Walk 1 step: pick a pile with ≥2 stones, remove 1..(count-1) leaving at least 1
-  let walkable = pPiles.map((v, i) => v >= 2 ? i : -1).filter(i => i >= 0);
-  for (let safety = 0; safety < 1000 && walkable.length === 0; safety++) {
-    pPiles = generatePPosition(pileCount, maxStone);
-    walkable = pPiles.map((v, i) => v >= 2 ? i : -1).filter(i => i >= 0);
-  }
-  // Ultimate fallback: deterministic P-position matching pileCount
-  if (walkable.length === 0) {
-    pPiles = [];
-    let xor = 0;
-    for (let i = 0; i < pileCount - 1; i++) {
-      pPiles.push(i + 1);
-      xor ^= (i + 1);
-    }
-    pPiles.push(xor > 0 ? xor : 1); // last pile makes XOR=0, at least 1
-    // Ensure at least one pile has ≥2 stones for walking
-    if (pPiles.every(v => v === 1)) pPiles = [2, 2]; // minimal valid P-position
-    walkable = pPiles.map((v, i) => v >= 2 ? i : -1).filter(i => i >= 0);
-  }
-  const piles = [...pPiles];
-  const walkPile = walkable[Math.floor(Math.random() * walkable.length)]!;
-  const maxRemove = piles[walkPile]! - 1; // leave at least 1
-  const removeCount = 1 + Math.floor(Math.random() * maxRemove);
-  piles[walkPile]! -= removeCount;
-
+  const piles = generateRandomPiles(pileCount, maxStone);
   const difficulty = computeNimDifficulty(pileCount, maxStone);
 
   return {
@@ -113,7 +66,7 @@ function buildNimLevel(pileCount: number, maxStone: number): Level {
     difficulty,
     optimalSteps: null,
     uniqueSolution: false,
-    generatedBy: 'p-distance-walk',
+    generatedBy: 'random-piles',
     createdAt: new Date().toISOString(),
   };
 }

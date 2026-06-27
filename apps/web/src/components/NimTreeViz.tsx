@@ -23,6 +23,7 @@ interface TreeNodeData {
   piles: number[];
   nimSum: number;
   isP: boolean;
+  depth: number;
   move?: string;
 }
 
@@ -39,7 +40,7 @@ function expandTree(piles: number[], depth: number, maxDepth: number, maxNodes =
 
     const nimSum = computeNimSum(item.piles);
     const nodeIdx = nodes.length;
-    nodes.push({ piles: [...item.piles], nimSum, isP: nimSum === 0, move: item.moveLabel || undefined });
+    nodes.push({ piles: [...item.piles], nimSum, isP: nimSum === 0, depth: item.depth, move: item.moveLabel || undefined });
 
     if (item.parentIdx !== null) {
       edges.push({ from: item.parentIdx, to: nodeIdx, label: item.moveLabel });
@@ -59,14 +60,14 @@ function expandTree(piles: number[], depth: number, maxDepth: number, maxNodes =
   return { nodes, edges };
 }
 
-function layoutDagre(nodes: TreeNodeData[], edges: { from: number; to: number; label: string }[]) {
+function layoutDagre(nodes: TreeNodeData[], edges: { from: number; to: number; label: string }[], currentPlayer: 0 | 1) {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({ rankdir: 'TB', nodesep: 20, ranksep: 60 });
 
   nodes.forEach((_, i) => {
     const w = 80;
-    const h = 40;
+    const h = 48;
     g.setNode(String(i), { width: w, height: h });
   });
 
@@ -79,11 +80,13 @@ function layoutDagre(nodes: TreeNodeData[], edges: { from: number; to: number; l
   const rfNodes: Node[] = nodes.map((n, i) => {
     const dagNode = g.node(String(i)) as { x: number; y: number } | undefined;
     const x = (dagNode?.x ?? 0) - 40;
-    const y = (dagNode?.y ?? 0) - 20;
+    const y = (dagNode?.y ?? 0) - 24;
+    const isPlayerTurn = (n.depth + currentPlayer) % 2 === 0;
+    const turnIcon = isPlayerTurn ? '🧑' : '🤖';
     return {
       id: String(i),
       position: { x, y },
-      data: { label: `${n.piles.join(',')}\n${n.nimSum} ${n.isP ? 'P' : 'N'}` },
+      data: { label: `${turnIcon} ${n.piles.join(',')}\n${n.nimSum} ${n.isP ? 'P' : 'N'}` },
       style: {
         background: n.isP ? '#fef2f2' : '#eff6ff',
         border: `2px solid ${n.isP ? '#e05d5d' : '#4a90d9'}`,
@@ -116,8 +119,8 @@ export function NimTreeViz({ trace, state }: Props) {
 
   const tree = useMemo(() => {
     const { nodes, edges } = expandTree(state.piles, 0, 3);
-    return layoutDagre(nodes, edges);
-  }, [state.piles]);
+    return layoutDagre(nodes, edges, state.currentPlayer);
+  }, [state.piles, state.currentPlayer]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(tree.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(tree.edges);
@@ -138,18 +141,13 @@ export function NimTreeViz({ trace, state }: Props) {
   const isP = traceData ? traceData.pValue === 0 : nimSum === 0;
 
   return (
-    <div className="bento-card p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-warm-stone-700">{t('nim.gameTree')}</h3>
-      <div className="text-xs text-warm-stone-500 space-y-1">
+    <div className="bg-logic-indigo-50/60 border border-logic-indigo-200/60 rounded-card p-4 space-y-3">
+      <h3 className="text-sm font-semibold text-logic-indigo-800">{t('nim.gameTree')}</h3>
+      <div className="text-xs text-logic-indigo-700 space-y-1">
         <p>
           {t('nim.nimSum')} = {traceData?.xorExpr ?? state.piles.join(' ^ ') + ' = ' + nimSum}
           {' '}({isP ? t('nim.pPosition') : t('nim.nPosition')})
         </p>
-        {traceData && traceData.pValue !== 0 && (
-          <p className="text-warm-stone-400">
-            {t('nim.nPosition')} — {t('nim.winningMoveExists')}
-          </p>
-        )}
       </div>
       <div style={{ width: '100%', height: 400 }}>
         <ReactFlow

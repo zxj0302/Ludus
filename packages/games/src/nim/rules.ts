@@ -8,9 +8,9 @@ export type { NimState, NimMove };
 
 export function createInitialState(): NimState {
   return {
-    piles: [3, 4, 5],
+    piles: [1, 2, 3],
     currentPlayer: 0,
-    initialPiles: [3, 4, 5],
+    initialPiles: [1, 2, 3],
     phase: 'choosing',
   };
 }
@@ -105,6 +105,7 @@ export function solveNimState(state: NimState): Solution {
     });
   }
 
+  const playerMoves = moves.filter((_, i) => i % 2 === 0).length;
   const nimSum = computeNimSum(state.piles);
   const timeMs = Math.round(performance.now() - startTime);
 
@@ -117,9 +118,9 @@ export function solveNimState(state: NimState): Solution {
       visualizationData: { nimSum, piles: [...state.piles], pValue: nimSum === 0 ? 0 : 1, xorExpr: state.piles.join(' ^ ') + ' = ' + nimSum },
     },
     stats: {
-      nodesExplored: moves.length,
+      nodesExplored: playerMoves,
       timeMs,
-      solutionLength: moves.length,
+      solutionLength: playerMoves,
       solverName: 'Nim-sum (Bouton 1901) — optimal play sequence',
       terminated: moves.length > 0 ? 'solved' : 'exhausted',
     },

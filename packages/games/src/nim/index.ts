@@ -13,6 +13,7 @@ import type { NimState, NimMove } from './rules';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
 export { NimBoard } from './render';
 export { chooseHand };
+export { solveNimState } from './rules';
 
 const metadata = {
   id: 'nim',
