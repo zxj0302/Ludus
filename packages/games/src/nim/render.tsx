@@ -69,9 +69,11 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
     const visible = Math.min(count, maxVisible);
     if (visible === 0) return null;
 
+    const containerH = maxContainerH(maxVisible);
     const stones: React.ReactNode[] = [];
-    for (let idx = 0; idx < visible; idx++) {
-      const top = (visible - 1 - idx) * STONE_STEP;
+    for (let idx = visible - 1; idx >= 0; idx--) {
+      // Bottom stone (idx=0) sits at bottom of container
+      const top = containerH - STONE_H - idx * STONE_STEP;
       const removeCount = count - idx;
       const hoveredThisPile = hover?.pile === pileIndex && hover.removeCount >= removeCount;
       const isHintStone = isHinted && removeCount === hintRemoveCount;
@@ -140,13 +142,13 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
         </div>
         <div className="flex flex-wrap justify-center gap-6">
           {piles.map((count, i) => (
-            <div key={i} className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
+            <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
+              <div className="relative" style={{ width: STONE_W, height: maxContainerH(8) }}>
+                {renderPile(count, i, false, false, 8)}
+              </div>
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}
               </span>
-              <div className="relative" style={{ width: STONE_W, minHeight: maxContainerH(8) }}>
-                {renderPile(count, i, false, false, 8)}
-              </div>
               <span className="text-xl font-bold font-mono text-warm-stone-800">{count}</span>
             </div>
           ))}
@@ -209,17 +211,17 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
 
           return (
             <motion.div key={i} layout
-              className={`flex flex-col items-center gap-3 p-4 rounded-2xl min-w-[110px] transition-all duration-200
+              className={`flex flex-col items-center gap-2 p-4 rounded-2xl min-w-[110px] transition-all duration-200
                 ${isHinted && isPlayerTurn ? 'bg-game-amber-50 ring-2 ring-game-amber-400 shadow-lg' : 'bg-warm-stone-50'}
                 ${!isPlayerTurn || disabled || isGameOver || isEmpty ? 'opacity-50' : ''}
               `}
             >
-              <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
-                {t('nim.pile', { index: i + 1 })}
-              </span>
               <div className="relative" style={{ width: STONE_W, height: maxContainerH(10) }}>
                 {renderPile(count, i, isHinted, canInteract, 10)}
               </div>
+              <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
+                {t('nim.pile', { index: i + 1 })}
+              </span>
               <span className={`text-xl font-bold font-mono tabular-nums ${isEmpty ? 'text-warm-stone-300' : 'text-warm-stone-800'}`}>
                 {count}
               </span>
