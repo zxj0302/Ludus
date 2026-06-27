@@ -16,12 +16,12 @@ import { NimToolbarSlot } from './toolbar';
 
 import type { GamePluginEntry } from '../types';
 import { NimBoard } from './render';
-export { nimI18n } from './i18n';
+import { nimI18n } from './i18n';
+export { nimI18n };
 
 export { NimBoard };
 export { computeNimSum, isPPosition };
 export { generateNimLevelByPreset };
-export { chooseHand };
 export { solveNimState } from './rules';
 
 const metadata = {
@@ -109,11 +109,12 @@ export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   isOwnState: (state): state is NimState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as NimState).piles),
   moveToHighlight: (move) => {
+    if (!move) return null;
     if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
     if (move.pileIndex != null) return { row: move.pileIndex, col: 0, value: move.removeCount };
     return null;
   },
-  i18n: { namespace: 'nim', zhCN: {}, en: {} },
+  i18n: { namespace: 'nim', zhCN: nimI18n.zhCN, en: nimI18n.en },
   education: { content: {} },
   ui: { toolbarSlot: NimToolbarSlot as any },
 };

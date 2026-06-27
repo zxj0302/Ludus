@@ -16,80 +16,67 @@
 │                           (Capacitor)                        │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                packages/ui                            │   │
-│  │  GameShell  ProgressiveDisclosure  Layout  Controls   │   │
-│  │  GameCard   I18nProvider  Theme  a11y                 │   │
+│  │  GameShell  GameToolbar  GameStatusBar                │   │
+│  │  ProgressiveDisclosure  MarkdownRenderer              │   │
+│  │  ErrorBoundary                                        │   │
 │  └──────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                packages/viz                           │   │
-│  │  ReactFlow: SearchTree GameTree Automaton Constraint  │   │
-│  │  D3: MatrixTransform ProbabilityDistribution ...      │   │
-│  │  (lazy-loaded, not in critical path)                 │   │
-│  └──────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │                packages/i18n                          │   │
-│  │  zh-CN.json  en.json  (UI strings)                   │   │
-│  │  useTranslation  I18nContext                         │   │
-│  └──────────────────────────────────────────────────────┘   │
+│  (viz 组件在 apps/web 按 trace.type 懒加载，不独立成包)     │
+│  (i18n 字符串归入各游戏目录，共享 key 在 apps/web)          │
 ├─────────────────────────────────────────────────────────────┤
 │                    EDUCATION LAYER                           │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              packages/education                       │   │
-│  │  ContentRenderer  (schema 实际定义在 core，见下)     │   │
-│  │  games/lights-out/{l2,l3}.{zh,en}.md                 │   │
-│  │  games/sudoku/{l2,l3}.{zh,en}.md                     │   │
-│  │  games/nim/{l2,l3}.{zh,en}.md                        │   │
+│  │  ContentRenderer  — 渐进式揭示容器                    │   │
+│  │  content/  — 各游戏教学内容 .md 文件                  │   │
+│  │  lights-out/  sudoku/  nim/  wythoff/  sokoban/      │   │
 │  └──────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
 │                    GAME MODULE LAYER                         │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              packages/games                           │   │
-│  │  GamePlugin interface (defined in core, see §3)       │   │
-│  │  ├── lights-out/    (规则 + 渲染 + manifest)          │   │
-│  │  ├── sudoku/                                          │   │
-│  │  └── nim/                                              │   │
-│  │  registry.ts  (动态注册/发现)                          │   │
+│  │  GamePluginEntry interface — 全自包含插件入口          │   │
+│  │  每游戏 = 一个自包含目录 (types/rules/solver/         │   │
+│  │  generator/difficulty/render/manifest/i18n)            │   │
+│  │  ├── lights-out/  sokoban/  sudoku/  nim/  wythoff/   │   │
+│  │  registry.ts  — 动态注册/发现, 新增游戏=加一行        │   │
 │  └──────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
 │                    CORE LOGIC LAYER                          │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              packages/core                            │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐     │   │
-│  │  │  rules/   │ │ solver/  │ │  generator/      │     │   │
-│  │  │  move     │ │  BFS     │ │  reverseSolve    │     │   │
-│  │  │  state    │ │  DFS     │ │  carve+verify    │     │   │
-│  │  │  win      │ │  A*/IDA* │ │  difficulty      │     │   │
-│  │  └──────────┘ │  Minimax │ └──────────────────┘     │   │
-│  │               │  GF(2)   │                           │   │
-│  │               │  DLX     │  ┌──────────────────┐     │   │
-│  │               │  SAT     │  │  types/           │     │   │
-│  │               └──────────┘  │  GamePlugin       │     │   │
-│  │                             │  Level Schema     │     │   │
-│  │  ┌──────────┐               │  State Schema     │     │   │
-│  │  │  worker/  │               │  Solution         │     │   │
-│  │  │  pool     │               └──────────────────┘     │   │
-│  │  │  task     │                                         │   │
-│  │  └──────────┘                                         │   │
+│  │  ┌──────────────────┐  ┌──────────────────┐          │   │
+│  │  │  types/           │  │  schemas/         │          │   │
+│  │  │  GamePlugin       │  │  LevelSchema      │          │   │
+│  │  │  Solution         │  │  StateSchema      │          │   │
+│  │  │  Difficulty       │  │  EducationSchema  │          │   │
+│  │  └──────────────────┘  │  Migrator         │          │   │
+│  │                         └──────────────────┘          │   │
+│  │  ┌──────────────────┐                                │   │
+│  │  │  worker/          │                                │   │
+│  │  │  messages         │                                │   │
+│  │  └──────────────────┘                                │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
 │  框架无关 · 零 UI 依赖 · 纯 TS · Node/Worker 可运行        │
+│  零游戏专属代码 — 求解器/生成器/难度全部在各游戏目录       │
 └─────────────────────────────────────────────────────────────┘
 
 依赖方向（严格单向）：
-  Presentation ──→ Education ──→ Game Module ──→ Core
-       │                 │             │
-       └─────────────────┴─────────────┘  (可直接引用 Core 类型)
+  Presentation ──→ Game Module ──→ Core
+       │               │
+       └───────────────┘  (可直接引用 Core 类型)
+  Education 层为纯内容(.md)，被 Presentation 静态 import
 ```
 
 ### 依赖规则
 
-| 规则                                           | 说明                                                                  |
-| ---------------------------------------------- | --------------------------------------------------------------------- |
-| **Core → 无**                           | Core 不依赖任何其他包，纯 TS + 零外部运行时依赖（除 zod 用于 schema） |
-| **Game Module → Core**                  | 每个游戏实现 GamePlugin 接口，调用 Core 的 solver/generator 框架      |
-| **Education → Core**                    | 引用 Core 的 Level/State schema 类型，内容数据独立于代码              |
-| **UI → Game Module + Core**             | 渲染组件调用 GamePlugin，直接引用 Core 类型                           |
-| **Viz → Core**                          | 可视化组件消费 Core solver 输出的步骤轨迹数据                         |
-| **Apps → UI + Viz + Games + Education** | 组装层，不含业务逻辑                                                  |
+| 规则                                     | 说明                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| **Core → 无**                     | Core 不依赖任何其他包，纯 TS + 零外部运行时依赖（除 zod 用于 schema） |
+| **Game Module → Core**            | 每个游戏实现 Core 定义的 GamePlugin 接口，引用 Core 类型/Schema       |
+| **Education → Core**              | 纯内容(.md 文件)，被 web 层静态 import，与代码解耦                    |
+| **UI → Game Module + Core**       | 共享布局组件调用 GamePluginEntry，直接引用 Core 类型                  |
+| **Apps → UI + Games + Education** | 组装层，注册游戏、合并 i18n、加载可视化、不含业务逻辑                 |
 
 ---
 
@@ -104,14 +91,9 @@
            ┌───────────────┼───────────────┐
            │               │               │
     ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
-    │    @ludus/  │ │   @ludus/   │ │   @ludus/   │
-    │      ui     │ │     viz     │ │     i18n    │
+    │   @ludus/   │ │   @ludus/   │ │   @ludus/   │
+    │     ui      │ │    games    │ │  education  │
     └──────┬──────┘ └──────┬──────┘ └─────────────┘
-           │               │
-    ┌──────▼──────┐ ┌──────▼──────┐
-    │   @ludus/   │ │   @ludus/   │
-    │    games    │ │  education  │
-    └──────┬──────┘ └──────┬──────┘
            │               │
            └───────┬───────┘
                    │
@@ -131,15 +113,15 @@ packages:
 
 ### 2.3 包清单与职责
 
-| 包名                 | 目录                   | 职责                                                                                                                                     | 依赖                              |
-| -------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `@ludus/core`      | `packages/core`      | 类型定义(GamePlugin/Level/State/Solution)、Zod Schema、版本化 Migrator、Worker 消息协议。**零游戏专属代码**。                               | 仅 zod                            |
-| `@ludus/games`     | `packages/games`     | 各游戏模块（每游戏自包含 types/rules/solver/generator/difficulty/render/manifest/i18n）、GamePluginEntry 注册表、共享类型 BoardProps       | `@ludus/core`、react、framer-motion |
-| `@ludus/education` | `packages/education` | 教学内容文件（.md）、ContentRenderer                                                                                                       | `@ludus/core`                   |
-| `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、ProgressiveDisclosure、ErrorBoundary、MarkdownRenderer                                            | `@ludus/core`、react             |
-| `ludus-web`        | `apps/web`           | Vite + React SPA，静态部署入口。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/SokobanToolbar                                   | 所有 packages                     |
-| `ludus-desktop`    | `apps/desktop`       | Tauri 壳，内嵌 Web，可选原生 API 调用（阶段 6）                                                                                            | `ludus-web` (复用)              |
-| `ludus-mobile`     | `apps/mobile`        | Capacitor 壳，内嵌 Web（阶段 6）                                                                                                           | `ludus-web` (复用)              |
+| 包名                 | 目录                   | 职责                                                                                                                                 | 依赖                                  |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `@ludus/core`      | `packages/core`      | 类型定义(GamePlugin/Level/State/Solution)、Zod Schema、版本化 Migrator、Worker 消息协议。**零游戏专属代码**。                  | 仅 zod                                |
+| `@ludus/games`     | `packages/games`     | 各游戏模块（每游戏自包含 types/rules/solver/generator/difficulty/render/manifest/i18n）、GamePluginEntry 注册表、共享类型 BoardProps | `@ludus/core`、react、framer-motion |
+| `@ludus/education` | `packages/education` | 教学内容文件（.md）、ContentRenderer                                                                                                 | `@ludus/core`                       |
+| `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、ProgressiveDisclosure、ErrorBoundary、MarkdownRenderer                                     | `@ludus/core`、react                |
+| `ludus-web`        | `apps/web`           | Vite + React SPA，静态部署入口。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/SokobanToolbar                            | 所有 packages                         |
+| `ludus-desktop`    | `apps/desktop`       | Tauri 壳，内嵌 Web，可选原生 API 调用（阶段 6）                                                                                      | `ludus-web` (复用)                  |
+| `ludus-mobile`     | `apps/mobile`        | Capacitor 壳，内嵌 Web（阶段 6）                                                                                                     | `ludus-web` (复用)                  |
 
 > **2026-06-27 更新**：`packages/i18n`、`packages/viz` 已移除（空壳包）。i18n 字符串归入各游戏目录，viz 组件在 web 层按 trace.type 懒加载。
 
@@ -352,6 +334,14 @@ export interface GamePlugin<S extends GameState = GameState, M extends Move = Mo
   /** 评估当前状态的难度 */
   getDifficulty(state: S): Difficulty;
 
+  // -- 对抗游戏 AI（可选，Nim/Wythoff 等双人对弈游戏） --
+  ai?: {
+    /** 当前是否 AI 的回合 */
+    isAITurn(state: S): boolean;
+    /** 获取 AI 走子 + 建议延迟，null = AI 不动作 */
+    getAIMove(state: S): { move: M; delay: number } | null;
+  };
+
   // -- 渲染 hooks（各游戏自行决定如何渲染棋盘） --
   /** 渲染后端声明（与 metadata.renderBackend 一致） */
   renderBackend: RenderBackend;
@@ -363,6 +353,23 @@ export interface GamePlugin<S extends GameState = GameState, M extends Move = Mo
   // -- 可视化 --
   /** 算法可视化清单 */
   visualizationManifest: VisualizationManifest;
+}
+
+// ============================================================
+// GamePluginEntry — 全自包含插件入口（packages/games/src/types.ts）
+// ============================================================
+
+/** 扩展的插件条目，包含 Core 的 GamePlugin + 渲染/UI/i18n/教育/可视化自描述 */
+export interface GamePluginEntry<S extends GameState = GameState, M extends Move = Move> {
+  plugin: GamePlugin<S, M>;
+  BoardComponent: React.ComponentType<BoardProps<S, M>>;
+  isOwnState(state: GameState): state is S;
+  moveToHighlight?(move: M, state: S): HighlightCell | null;
+  i18n: { namespace: string; zhCN: Record<string, string>; en: Record<string, string> };
+  ui?: { toolbarSlot?: React.ComponentType<ToolbarSlotProps>; statusExtension?: React.ComponentType<StatusExtensionProps> };
+  levelSelector?: React.ComponentType<LevelSelectorSlotProps>;
+  education: { content: Record<string, string> };
+  visualization?: { matchTrace(trace: SolverTrace): boolean; Component: React.ComponentType<VisualizationProps> };
 }
 ```
 
@@ -531,21 +538,22 @@ export function migrateData<T>(
 
 ## 6. Monorepo 目录骨架
 
-> **图例**：`★` 已实现 / `☆` 阶段 4 实现 / `○` 阶段 5+ 实现。骨架中未标注的文件均待后续阶段创建。
+> **图例**：`★` 已实现 / `○` 阶段 5+ 实现。所有标注 `★` 的文件当前均存在。
 
 ```
 Ludus/
 ├── pnpm-workspace.yaml
-├── package.json              # root: scripts, devDeps (TypeScript, ESLint, Prettier)
+├── package.json              # root: scripts, devDeps
 ├── tsconfig.base.json        # 共享 TS 配置
 ├── vitest.workspace.ts       # Vitest workspace 配置
 ├── .gitignore
 ├── CLAUDE.md
 ├── README.md
 │
-├── docs/                     # 所有文档（已存在）
+├── docs/                     # 所有文档
 │   ├── PROGRESS.md
 │   ├── DECISIONS.md
+│   ├── lessons-learned.md
 │   └── phases/
 │       ├── 00-backlog.md
 │       ├── 00-alignment.md
@@ -561,101 +569,97 @@ Ludus/
 │   │   └── src/
 │   │       ├── index.ts      # barrel export ★
 │   │       ├── types/
-│   │       │   ├── plugin.ts       # GamePlugin interface (§3) ★
-│   │       │   ├── level.ts        # LevelConfig；Level 类型由 schemas/level.ts zod 推导 ★
-│   │       │   ├── state.ts        # re-export GameState/Move (定义在 plugin.ts) ★
+│   │       │   ├── plugin.ts       # GamePlugin interface + ai 字段 (§3) ★
+│   │       │   ├── level.ts        # LevelConfig 类型 ★
 │   │       │   └── solution.ts     # Solution, SolverTrace, SolutionStats ★
 │   │       ├── schemas/
 │   │       │   ├── level.ts        # LevelSchema (zod) ★
 │   │       │   ├── state.ts        # GameStateSnapshotSchema ★
 │   │       │   ├── education.ts    # EducationContentSchema ★
 │   │       │   └── migrator.ts     # SchemaMigrator, migrateData ★
-│   │       ├── solver/
-│   │       │   ├── types.ts        # Solver interface ☆
-│   │       │   ├── bfs.ts ○
-│   │       │   ├── dfs.ts ○
-│   │       │   ├── astar.ts ○
-│   │       │   ├── idastar.ts ○
-│   │       │   ├── gf2.ts          # GF(2) 高斯消元 ☆
-│   │       │   ├── dlx.ts          # Dancing Links ○
-│   │       │   └── sat.ts          # SAT solver wrapper ○
-│   │       ├── generator/
-│   │       │   ├── types.ts        # Generator interface ☆
-│   │       │   ├── reverse.ts      # 反向生成 ☆
-│   │       │   ├── carve.ts        # 挖空+验证 ○
-│   │       │   └── difficulty.ts   # 难度度量 ☆
 │   │       └── worker/
-│   │           ├── pool.ts         # Worker pool ○
-│   │           └── solver-task.ts  # Task definition ☆
+│   │           └── messages.ts     # Worker 消息协议 ★
 │   │
 │   ├── games/
 │   │   ├── package.json      # @ludus/games
 │   │   ├── tsconfig.json
 │   │   └── src/
-│   │       ├── index.ts      # barrel + registry ☆
-│   │       ├── registry.ts   # GameRegistry: 注册/发现/列表 ☆
+│   │       ├── index.ts      # barrel + registry + getGameEntry ★
+│   │       ├── types.ts      # GamePluginEntry<S,M> + BoardProps + 辅助类型 ★
 │   │       ├── lights-out/
-│   │       │   ├── index.ts        # LightsOutPlugin implements GamePlugin ☆
-│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, initialState ☆
-│   │       │   ├── solver.ts       # GF(2) 求解器 ☆
-│   │       │   ├── generator.ts    # 关卡生成器 ☆
-│   │       │   ├── render.tsx      # React 组件 (DOM) ☆
-│   │       │   └── manifest.ts     # educationManifest + visualizationManifest ☆
-│   │       ├── sudoku/             # 同上结构 ○
-│   │       └── nim/                # 同上结构 ○
+│   │       │   ├── index.ts        # lightsOutEntry: GamePluginEntry ★
+│   │       │   ├── types.ts        # LightsOutState, LightsOutMove ★
+│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, initialState, getDifficulty ★
+│   │       │   ├── solver.ts       # GF(2) 高斯消元 ★
+│   │       │   ├── generator.ts    # 反向求解关卡生成器 ★
+│   │       │   ├── render.tsx      # LightsOutBoard ★
+│   │       │   └── manifest.ts     # metadata + educationManifest + visualizationManifest ★
+│   │       ├── sokoban/
+│   │       │   ├── index.ts        # sokobanEntry: GamePluginEntry ★
+│   │       │   ├── types.ts        # SokobanState, SokobanMove ★
+│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, getDifficulty ★
+│   │       │   ├── solver.ts       # BFS 求解器 ★
+│   │       │   ├── solver-utils.ts # 死锁检测/状态比较工具 ★
+│   │       │   ├── generator.ts    # Microban 选关生成器 ★
+│   │       │   ├── levels.ts       # Microban 经典关卡集 ★
+│   │       │   ├── render.tsx      # SokobanBoard ★
+│   │       │   └── manifest.ts     # metadata + manifest ★
+│   │       ├── sudoku/
+│   │       │   ├── index.ts        # sudokuEntry: GamePluginEntry ★
+│   │       │   ├── types.ts        # SudokuState, SudokuMove ★
+│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, getDifficulty ★
+│   │       │   ├── solver.ts       # DLX 精确覆盖求解器 ★
+│   │       │   ├── generator.ts    # dig-with-DLX 生成器 ★
+│   │       │   ├── difficulty.ts   # clues-based 难度公式 ★
+│   │       │   ├── render.tsx      # SudokuBoard ★
+│   │       │   └── manifest.ts     # metadata + i18n keys ★
+│   │       ├── nim/
+│   │       │   ├── index.tsx       # nimEntry: GamePluginEntry (含 Board wrapper) ★
+│   │       │   ├── types.ts        # NimState, NimMove ★
+│   │       │   ├── rules.ts        # legalMoves, applyMove, isSolved, getDifficulty ★
+│   │       │   ├── solver.ts       # XOR Nim-sum 求解器 ★
+│   │       │   ├── generator.ts    # P-position/N-position 随机生成器 ★
+│   │       │   ├── difficulty.ts   # pile-count 难度公式 ★
+│   │       │   ├── render.tsx      # NimBoard ★
+│   │       │   ├── manifest.ts     # metadata + manifest ★
+│   │       │   ├── i18n.ts         # 游戏专属 i18n 字符串 ★
+│   │       │   └── toolbar.tsx     # 先后手选择 ★
+│   │       └── wythoff/
+│   │           ├── index.tsx       # wythoffEntry: GamePluginEntry (含 Board wrapper) ★
+│   │           ├── types.ts        # WythoffState, WythoffMove ★
+│   │           ├── rules.ts        # legalMoves, applyMove, isSolved, getDifficulty ★
+│   │           ├── solver.ts       # Beatty 序列求解器 ★
+│   │           ├── generator.ts    # 随机生成器 ★
+│   │           ├── difficulty.ts   # maxStone 难度公式 ★
+│   │           ├── render.tsx      # WythoffBoard ★
+│   │           ├── manifest.ts     # metadata + manifest ★
+│   │           ├── i18n.ts         # 游戏专属 i18n 字符串 ★
+│   │           └── toolbar.tsx     # 先后手选择 ★
 │   │
 │   ├── education/
 │   │   ├── package.json      # @ludus/education
 │   │   ├── tsconfig.json
 │   │   └── src/
 │   │       ├── index.ts ★
-│   │       ├── ContentRenderer.tsx  # 渐进式揭示容器组件 ★
-│   │       ├── ContentLoader.ts    # 加载 .md 文件 ○
+│   │       ├── ContentRenderer.tsx  # 渐进式揭示容器 ★
 │   │       └── content/
-│   │           ├── lights-out/
-│   │           │   ├── l2.zh-CN.md ★
-│   │           │   ├── l2.en.md ★
-│   │           │   ├── l3.zh-CN.md ★
-│   │           │   └── l3.en.md ★
-│   │           ├── sudoku/         # 同上 ○
-│   │           └── nim/            # 同上 ○
+│   │           ├── lights-out/     # L2/L3 × zh-CN/en (4 个 .md) ★
+│   │           ├── sokoban/        # 同上 ★
+│   │           ├── sudoku/         # 同上 ★
+│   │           ├── nim/            # 同上 ★
+│   │           └── wythoff/        # 同上 ★
 │   │
-│   ├── i18n/                          # ○ 阶段 4 不实现；阶段 4 在 apps/web/src/i18n/ 内（ADR-022）
-│   │   ├── package.json      # @ludus/i18n
-│   │   ├── tsconfig.json
-│   │   └── src/                       # ○ 阶段 5+ 提取
-│   │       ├── index.ts      # initI18n, useTranslation, I18nProvider
-│   │       ├── detect.ts     # 语言检测（浏览器 navigator.language）
-│   │       └── locales/
-│   │           ├── zh-CN.json # { "ui.play": "开始游戏", "ui.solve": "求解", ... }
-│   │           └── en.json    # { "ui.play": "Play", "ui.solve": "Solve", ... }
-│   │
-│   ├── ui/                            # ○ 阶段 4 不实现；阶段 4 组件放 apps/web/src/components/（ADR-022）
-│   │   ├── package.json      # @ludus/ui
-│   │   ├── tsconfig.json
-│   │   └── src/                       # ○ 阶段 5+ 提取（≥2 款游戏共享时）
-│   │       ├── index.ts
-│   │       ├── GameShell.tsx       # 游戏容器（撤销/重做/重置/胜利判定/Worker 集成）
-│   │       ├── GameCard.tsx        # 合集主页卡片
-│   │       ├── ProgressiveDisclosure.tsx  # L1/L2/L3 渐进揭示容器
-│   │       ├── Layout.tsx          # 合集主页布局
-│   │       ├── Controls.tsx        # 通用控件（Button, Select, Slider）
-│   │       └── KeyboardNav.tsx     # 键盘导航
-│   │
-│   └── viz/                          # ○ 阶段 4 不实现；阶段 4 用 apps/web 内基础 MatrixViz 替代（ADR-022）
-│       ├── package.json      # @ludus/viz
+│   └── ui/
+│       ├── package.json      # @ludus/ui
 │       ├── tsconfig.json
-│       └── src/                       # ○ 阶段 5+ 实现
-│           ├── index.ts
-│           ├── ReactFlow/
-│           │   ├── SearchTree.tsx       # 搜索树可视化
-│           │   ├── GameTree.tsx         # 博弈树可视化
-│           │   ├── Automaton.tsx        # 自动机可视化
-│           │   └── ConstraintGraph.tsx  # 约束图可视化
-│           └── D3/
-│               ├── MatrixTransform.tsx  # 矩阵行变换(高斯消元)
-│               ├── ProbabilityChart.tsx # 概率分布
-│               └── EntropyChart.tsx     # 信息熵演化
+│       └── src/
+│           ├── index.ts ★
+│           ├── GameShell.tsx       # 游戏框架（board + toolbar + statusBar + sidebar）★
+│           ├── GameToolbar.tsx     # 通用工具栏（撤销/重做/重置/求解/提示/新关卡）★
+│           ├── GameStatusBar.tsx   # 状态栏（步数/最优/用时/求解状态）★
+│           ├── ProgressiveDisclosure.tsx  # L1/L2/L3 渐进揭示容器 ★
+│           ├── MarkdownRenderer.tsx # KaTeX + Markdown 渲染 ★
+│           └── ErrorBoundary.tsx   # 错误边界 ★
 │
 ├── apps/
 │   ├── web/
@@ -664,26 +668,28 @@ Ludus/
 │   │   ├── vite.config.ts
 │   │   ├── index.html
 │   │   └── src/
-│   │       ├── main.tsx
-│   │       ├── App.tsx       # Router + GameRegistry 加载
-│   │       ├── routes/
-│   │       │   ├── Home.tsx        # 合集主页
-│   │       │   └── GamePage.tsx    # 单个游戏页（动态路由 /game/:gameId）
+│   │       ├── main.tsx       # 入口：i18n init + Router ★
+│   │       ├── App.tsx        # Router + entrySetup ★
+│   │       ├── entrySetup.ts  # Web 层 entry 增强（Sokoban toolbar 注入等）★
+│   │       ├── i18n/          # 共享 UI i18n 资源 + init ★
+│   │       ├── stores/
+│   │       │   └── gameStore.ts  # Zustand store（零游戏专属引用）★
+│   │       ├── components/
+│   │       │   ├── EducationPanel.tsx  # 侧边栏（五段式 + 可视化 + 步骤列表）★
+│   │       │   ├── KnowledgeCard.tsx   # Bento 知识卡 ★
+│   │       │   ├── SokobanToolbar.tsx  # Sokoban 关卡选择器 ★
+│   │       │   └── ...                # HubPage, GamePage 等 ★
+│   │       ├── vizComponents.tsx  # trace.type → Viz 组件懒加载 ★
+│   │       ├── educationContent.ts # .md 文件导入 + getEducationContent ★
+│   │       ├── statusCards.tsx    # 游戏状态卡片（按 gameId 渲染）★
 │   │       └── workers/
-│   │           └── solver.worker.ts  # 求解器 Web Worker 入口
+│   │           └── solver.worker.ts  # 求解器 Web Worker 入口 ★
 │   │
-│   ├── desktop/              # Tauri 壳（○ 阶段 6 实现；ADR-022 不在阶段 4 验证）
-│   │   ├── package.json
-│   │   ├── src-tauri/
-│   │   │   ├── Cargo.toml
-│   │   │   └── src/
-│   │   │       └── main.rs
-│   │   └── index.html        # 引用 apps/web 构建产物
+│   ├── desktop/              # Tauri 壳（○ 阶段 6）
+│   │   └── ...
 │   │
-│   └── mobile/               # Capacitor 壳（○ 阶段 6 实现；ADR-022 不在阶段 4 验证）
-│       ├── package.json
-│       ├── capacitor.config.ts
-│       └── index.html        # 引用 apps/web 构建产物
+│   └── mobile/               # Capacitor 壳（○ 阶段 6）
+│       └── ...
 │
 └── tests/                    # E2E / 集成测试（阶段 7）
     └── ...
@@ -704,19 +710,19 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 ### 7.3 Worker 策略
 
 - `packages/core/src/worker/` 定义 Worker task 抽象
-- `apps/web/src/workers/solver.worker.ts` 是 Web Worker 入口，import Core solver
-- `packages/ui/GameShell.tsx`（目标路径）负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker。阶段 4 实际路径：`apps/web/src/components/GameShell.tsx`（见 ADR-022）
+- `apps/web/src/workers/solver.worker.ts` 是 Web Worker 入口，import 各游戏 solver
+- `packages/ui/src/GameShell.tsx` 负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker
 
 ---
 
 ## 📌 阶段 2 小结
 
 - 四层架构：Core → Game Module → Education → Presentation（严格单向依赖）。
-- 9 个包：1 个 core + 5 个 packages + 3 个 apps，pnpm workspace 管理。
-- GamePlugin 接口 v1.0：覆盖 metadata/state/moves/solve/generate/difficulty/render/education/viz 全生命周期。
+- **4 个包**：core / games / education / ui + 1 个 app (web)，pnpm workspace 管理。i18n 字符串归入各游戏目录，viz 组件在 web 层按 trace.type 懒加载。
+- GamePlugin 接口 v1.0 + **GamePluginEntry**（全自包含插件入口）：覆盖 metadata/state/moves/solve/generate/difficulty/ai/BoardComponent/i18n/education/viz 全生命周期。
 - 3 个 zod schema：Level、GameStateSnapshot、EducationContent，均含 `schemaVersion` 字段 + migrator 框架。
 - 平台 × 能力矩阵：Web/Desktop/Mobile 各有 9 项能力标注（Full/Degraded/Unavailable），含降级策略。
-- 目录骨架包含所有源文件路径，可直接创建。
+- **每款游戏自包含**：types/rules/solver/generator/difficulty/render/manifest/i18n。新增游戏 = 加目录 + registry 一行，零改动已有代码。
 
 ---
 

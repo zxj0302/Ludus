@@ -87,10 +87,10 @@
 
 ### ADR-006 Monorepo 工具链
 
-- **状态**：✅ ACCEPTED
-- **决策**：pnpm workspaces（轻量、快、Lockfile 稳定）。包划分：`packages/core` / `packages/games` / `packages/education` / `packages/i18n` / `packages/ui` / `packages/viz` / `apps/web` / `apps/desktop`(Tauri) / `apps/mobile`(Capacitor)。
-- **理由**：团队规模小、包边界清晰，尚不需要 Turborepo/Nx 的分布式缓存。若未来性能瓶颈出现可迁移到 Turborepo（同为 pnpm 生态，迁移成本低）。
-- **确认日期**：2026-06-25（阶段 0 确认）。
+- **状态**：⚠️ SUPERSEDED（包清单已被 ADR-023 取代）
+- **原决策**：pnpm workspaces。包划分：`packages/core` / `packages/games` / `packages/education` / `packages/i18n` / `packages/ui` / `packages/viz` / `apps/web` / `apps/desktop` / `apps/mobile`。
+- **现包结构（ADR-023）**：`packages/core` / `packages/games` / `packages/education` / `packages/ui` / `apps/web`。i18n 字符串归入各游戏目录，viz 组件在 web 层按 trace.type 懒加载（`packages/i18n`、`packages/viz` 已移除）。
+- **确认日期**：2026-06-25（阶段 0）；2026-06-27 被 ADR-023 取代。
 
 ### ADR-007 数学公式渲染方案（KaTeX vs MathJax）
 

@@ -429,11 +429,12 @@ packages/ui/                        ← 通用 UI 组件
 ├── DifficultyMeter.tsx             ← 难度指示计
 └── I18nProvider.tsx                ← 语言切换 Provider
 
-packages/viz/                       ← 算法可视化组件
-├── MatrixTransform.tsx             ← 矩阵行变换动画（D3）
-├── SearchTree.tsx                  ← 搜索树/博弈树（React Flow）
-├── ConstraintGraph.tsx             ← 约束图（React Flow）
-└── StepPlayer.tsx                  ← 步骤回放控制器
+apps/web/src/                      ← 算法可视化组件（按 trace.type 懒加载）
+├── MatrixViz.tsx                   ← 矩阵行变换动画（D3）
+├── BFSTreeViz.tsx                  ← 搜索树（custom SVG）
+├── DLXMatrixViz.tsx                ← 约束传播（custom SVG）
+├── NimTreeViz.tsx                  ← 博弈树（React Flow）
+└── WythoffTreeViz.tsx              ← Beatty 对（React Flow）
 
 packages/games/<game-id>/           ← 各游戏模块
 └── render.tsx                      ← 游戏棋盘渲染（DOM 或 Canvas）
@@ -1033,7 +1034,7 @@ packages/ui/src/                        ← 目标路径（阶段 5+ 提取后�
 
 - **B.4.1 分层架构**：`packages/ui` 中的所有组件**不依赖** Core 层逻辑。它们通过 props 接收数据。GameShell 接收 `GamePlugin.render` 传入的棋盘组件，自身只负责布局容器。
 - **B.4.3 渲染后端**：GameShell 的 `renderBackend` prop 决定棋盘区是 `<div ref={domRef}>` 还是 `<canvas ref={canvasRef}>`。游戏模块的 `render.tsx` 据此返回对应实现。
-- **ADR-011**：算法可视化（React Flow / D3）在 `packages/viz` 中实现，通过 `SolverVizPanel` 挂载到 GameShell 侧面板。两者均按需懒加载。
+- **ADR-011**：算法可视化（React Flow / D3 / custom SVG）在 `apps/web/src/` 中实现，按 `trace.type` 懒加载匹配的 Viz 组件，挂载到 EducationPanel 侧边栏。
 - **ADR-003**：`ProgressiveDisclosure` 组件确保 L1 层（纯游戏）始终是默认渲染状态，L2/L3 从属。
 
 ### 10.5 实施顺序（阶段 4 内）

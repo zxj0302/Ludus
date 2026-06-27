@@ -13,7 +13,8 @@ import {
 import { sokobanEducationManifest, sokobanVisualizationManifest } from './manifest';
 import type { GamePluginEntry } from '../types';
 import { SokobanBoard } from './render';
-export { sokobanI18n } from './i18n';
+import { sokobanI18n } from './i18n';
+export { sokobanI18n };
 import { DIRECTION_DELTA } from './types';
 import {
   stateHash,
@@ -100,6 +101,6 @@ export const sokobanEntry: GamePluginEntry<SokobanState, SokobanMove> = {
     }
     return null;
   },
-  i18n: { namespace: 'sokoban', zhCN: {}, en: {} },
+  i18n: { namespace: 'sokoban', zhCN: sokobanI18n.zhCN, en: sokobanI18n.en },
   education: { content: {} },
 };

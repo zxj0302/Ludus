@@ -1,19 +1,21 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { Solution, GameState, Move } from '@ludus/core';
+import type { Solution, GameState, Move, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
 import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove } from '@ludus/games';
+import { getGameEntry } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
-import { getEducationContent, extractBody } from '../educationContent';
-import { getVizComponent } from '../vizComponents';
 import { StatusCard } from '../statusCards';
 
 type Stage = 'play' | 'think' | 'reveal' | 'solve' | 'create';
 
-function formatMove(gameId: string, move: Move, index: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
+function formatMove(
+  gameId: string, move: Move, index: number, playersFirst: boolean,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string {
   switch (gameId) {
     case 'lights-out': {
       const m = move as LightsOutMove;
@@ -29,12 +31,12 @@ function formatMove(gameId: string, move: Move, index: number, t: (key: string, 
     }
     case 'nim': {
       const m = move as NimMove;
-      const isPlayer = index % 2 === 0;
+      const isPlayer = playersFirst ? index % 2 === 0 : index % 2 === 1;
       return (isPlayer ? '🧑 ' : '🤖 ') + t('education.nimMove', { pile: m.pileIndex + 1, count: m.removeCount });
     }
     case 'wythoff': {
       const m = move as WythoffMove;
-      const isPlayer = index % 2 === 0;
+      const isPlayer = playersFirst ? index % 2 === 0 : index % 2 === 1;
       const icon = isPlayer ? '🧑 ' : '🤖 ';
       if (m.type === 'both') return icon + t('education.wythoffMoveBoth', { count: m.removeCount });
       return icon + t('education.wythoffMoveSingle', { pile: (m.pileIndex ?? 0) + 1, count: m.removeCount });
@@ -89,8 +91,13 @@ export function EducationPanel({
   }, [solveStepIndex, solvePlayback]);
 
   const depth = disclosureLevel >= 3 ? 'L3' : 'L2';
-  const rawMd = getEducationContent(gameId, language, depth);
-  const bodyMd = useMemo(() => extractBody(rawMd), [rawMd]);
+  const rawMd = useMemo(() => {
+    const entry = getGameEntry(gameId);
+    const md = entry?.education.content[`${depth}.${language}`] ?? '';
+    const parts = md.split(/^---$/m);
+    return parts.length >= 3 ? parts.slice(2).join('---').trim() : md;
+  }, [gameId, language, depth]);
+  const bodyMd = rawMd;
 
   const getSectionId = (english: string) =>
     'section-' + english.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 32);
@@ -189,34 +196,62 @@ export function EducationPanel({
         <div id="solver-viz-top" className="scroll-mt-28" />
 
         {solution?.trace && (() => {
-          const Viz = getVizComponent(solution.trace as any);
-          return Viz ? <Viz solution={solution} solveStepIndex={solveStepIndex} gameState={gameState} trace={solution.trace} /> : null;
+          const entry = getGameEntry(gameId);
+          const VizComponent = entry?.visualization?.Component;
+          const matchTrace = entry?.visualization?.matchTrace;
+          if (!VizComponent || !matchTrace || !matchTrace(solution.trace as SolverTrace)) return null;
+          return <VizComponent trace={solution.trace as SolverTrace} solution={solution} gameState={gameState!} solveStepIndex={solveStepIndex} solvePlayback={solvePlayback} />;
         })()}
 
-        {/* 最优解步骤列表 */}
-        {solution?.solvable && solution.moves.length > 0 && (
-          <KnowledgeCard title={t('education.optimalSolution', { count: solution.moves.length })} icon="👆">
-            <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
-              {solution.moves.map((m, i) => {
-                const isCurrentStep = solvePlayback && i === solveStepIndex;
-                const isPastStep = solvePlayback && i < solveStepIndex;
-                const label = formatMove(gameId, m, i, t);
-                return (
-                  <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
-                    text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
-                    ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
-                      isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
-                      'text-warm-stone-600'}
-                  `}>
-                    <span className="w-5 text-right tabular-nums">{i + 1}.</span>
-                    <span>{label}</span>
-                    {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </KnowledgeCard>
-        )}
+        {/* 最优解 / 终局 / P-position — 同一容器，仅内容切换，避免卸载重装闪烁 */}
+        {solution?.solvable && (() => {
+          const entry = getGameEntry(gameId);
+          const isGameOver = gameState && entry?.plugin.isSolved(gameState);
+          const hasMoves = solution.moves.length > 0;
+
+          let title: string; let icon: string; let body: React.ReactNode;
+
+          if (hasMoves) {
+            title = t('education.optimalSolution', { count: solution.moves.length });
+            icon = '👆';
+            body = (
+              <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
+                {solution.moves.map((m, i) => {
+                  const isCurrentStep = solvePlayback && i === solveStepIndex;
+                  const isPastStep = solvePlayback && i < solveStepIndex;
+                  const playersFirst = (solution.trace?.visualizationData as any)?.playerStarts ?? true;
+                  const label = formatMove(gameId, m, i, playersFirst, t);
+                  return (
+                    <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
+                      text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
+                      ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
+                        isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
+                        'text-warm-stone-600'}
+                    `}>
+                      <span className="w-5 text-right tabular-nums">{i + 1}.</span>
+                      <span>{label}</span>
+                      {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          } else if (isGameOver) {
+            title = t('education.gameOver');
+            icon = '🏁';
+            body = <p className="text-xs text-warm-stone-600">{t('education.gameOverHint')}</p>;
+          } else {
+            title = t('education.noWinningMove');
+            icon = '⚠️';
+            body = <p className="text-xs text-warm-stone-600">{t('game.status.noWinningMove')}</p>;
+          }
+
+          return (
+            <KnowledgeCard title={title} icon={icon}>
+              {body}
+            </KnowledgeCard>
+          );
+        })()}
 
         {/* 完整 Markdown 教学内容（所有章节） */}
         {bodyMd && <MarkdownRenderer content={bodyMd} />}

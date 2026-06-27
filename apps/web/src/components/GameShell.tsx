@@ -22,7 +22,7 @@ export function GameShell({ gameId }: Props) {
     applyMove: s.applyMove, undo: s.undo, redo: s.redo, reset: s.reset, newLevel: s.newLevel,
     requestSolve: s.requestSolve, requestHint: s.requestHint,
     solution: s.solution, solverStatus: s.solverStatus, solveError: s.solveError,
-    hintMove: s.hintMove, initialOptimalSteps: s.initialOptimalSteps, currentOptimalSteps: s.currentOptimalSteps,
+    hintMove: s.hintMove, hintHighlight: s.hintHighlight, initialOptimalSteps: s.initialOptimalSteps, currentOptimalSteps: s.currentOptimalSteps,
     solvePlayback: s.solvePlayback, solveStepIndex: s.solveStepIndex,
     nextPlaybackStep: s.nextPlaybackStep, prevPlaybackStep: s.prevPlaybackStep, stopPlayback: s.stopPlayback,
     disclosureLevel: s.disclosureLevel, setDisclosureLevel: s.setDisclosureLevel,
@@ -116,14 +116,16 @@ export function GameShell({ gameId }: Props) {
 
   // 以下 plugin 和 gameState 均非 null，且 state 与 gameId 匹配
 
+  const hintHighlight = store.hintHighlight;
   let highlightCell: { row: number; col: number; value?: number } | null = null;
 
-  // 从 move 提取高亮坐标（委托给 entry）
-
-  if (solvePlayback && solution?.moves && entry) {
+  // 直接高亮坐标优先（对抗游戏选先后手等无需 moveToHighlight 的场景）
+  if (hintHighlight) {
+    highlightCell = hintHighlight;
+  } else if (solvePlayback && solution?.moves && entry) {
     highlightCell = entry.moveToHighlight?.(solution.moves[solveStepIndex]! as Move, gameState) ?? null;
-  } else if (hintMove && entry) {
-    highlightCell = entry.moveToHighlight?.(hintMove, gameState) ?? null;
+  } else if (store.hintMove && entry) {
+    highlightCell = entry.moveToHighlight?.(store.hintMove, gameState) ?? null;
   }
 
   return (
@@ -162,12 +164,12 @@ export function GameShell({ gameId }: Props) {
           </div>
 
           <GameStatusBar
-            gameId={gameId}
             stepCount={stepCount} isSolved={isWin} isSolving={solverStatus === 'running'}
             optimalSteps={optimalSteps} remainingSteps={remainingSteps} elapsed={elapsed}
             solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
             totalSolveSteps={solution?.moves.length ?? 0}
             solveError={solveError}
+            hideSolvedBadge={!!plugin?.ai}
           />
 
           <GameToolbar

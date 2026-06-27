@@ -4,13 +4,12 @@ export * from './lights-out';
 export * from './sokoban';
 export * from './sudoku';
 export * from './nim';
+export * from './wythoff';
+
+// Board components — Lights Out doesn't re-export from its index, export explicitly
 export { LightsOutBoard } from './lights-out/render';
-export { SokobanBoard } from './sokoban/render';
-export { SudokuBoard } from './sudoku/render';
-export { NimBoard } from './nim/render';
-export { WythoffBoard } from './wythoff/render';
-export { wythoffPlugin, wythoffEntry, solveWythoffState, isWythoffPPosition, generateWythoffLevel, wythoffI18n } from './wythoff';
-export { chooseHand as chooseWythoffHand } from './wythoff';
+
+// Types
 export type { LightsOutState, LightsOutMove } from './lights-out/types';
 export type { SokobanState, SokobanMove } from './sokoban/types';
 export type { SudokuState, SudokuMove } from './sudoku/types';

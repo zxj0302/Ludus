@@ -75,75 +75,103 @@ export function getDifficulty(state: WythoffState): Difficulty {
   return computeWythoffDifficulty(maxStone);
 }
 
-/** Build a complete winning move sequence (player + AI alternating) */
-export function solveWythoffState(state: WythoffState): Solution {
-  const startTime = performance.now();
+function applyWythoffMoveToPiles(piles: [number, number], move: WythoffMove): void {
+  if (move.type === 'single') {
+    piles[move.pileIndex!]! -= move.removeCount;
+  } else {
+    piles[0]! -= move.removeCount;
+    piles[1]! -= move.removeCount;
+  }
+}
+
+function describeWythoffMove(move: WythoffMove): string {
+  if (move.type === 'single') {
+    return `Player takes ${move.removeCount} from pile ${move.pileIndex! + 1}`;
+  }
+  return `Player takes ${move.removeCount} from both piles`;
+}
+
+function describeAIWythoffMove(move: WythoffMove): string {
+  if (move.type === 'single') {
+    return `AI takes ${move.removeCount} from pile ${move.pileIndex! + 1}`;
+  }
+  return `AI takes ${move.removeCount} from both piles`;
+}
+
+function simulateWythoffGame(
+  piles: [number, number],
+  playerStarts: boolean,
+  state: WythoffState,
+): { moves: WythoffMove[]; traceSteps: { description: string; data: unknown }[]; playerMoveCount: number } {
   const moves: WythoffMove[] = [];
-  const piles: [number, number] = [...state.piles];
   const traceSteps: { description: string; data: unknown }[] = [];
-  let playerMovesCount = 0;
+  let isPlayerTurn = playerStarts;
+  let playerMoveCount = 0;
 
   while (!(piles[0] === 0 && piles[1] === 0)) {
-    // Player's turn: find winning move
     const wm = findWythoffWinningMove({ ...state, piles });
-    if (!wm) {
-      // P-position: no guaranteed win, stop
-      break;
-    }
-    moves.push(wm);
-    playerMovesCount++;
-    if (wm.type === 'single') {
-      const idx = wm.pileIndex!;
-      piles[idx]! -= wm.removeCount;
-      traceSteps.push({
-        description: `Player takes ${wm.removeCount} from pile ${idx + 1}`,
-        data: { type: 'single', pileIndex: idx, removeCount: wm.removeCount, remaining: [...piles] },
-      });
-    } else {
-      piles[0]! -= wm.removeCount;
-      piles[1]! -= wm.removeCount;
-      traceSteps.push({
-        description: `Player takes ${wm.removeCount} from both piles`,
-        data: { type: 'both', removeCount: wm.removeCount, remaining: [...piles] },
-      });
-    }
 
-    if (piles[0] === 0 && piles[1] === 0) break; // Player won
-
-    // AI's turn: try winning move first, otherwise take 1 from the larger pile
-    const aiWm = findWythoffWinningMove({ ...state, piles });
-    let aiMove: WythoffMove;
-    if (aiWm) {
-      aiMove = aiWm;
+    if (isPlayerTurn) {
+      if (!wm) break; // P-position — no guaranteed win
+      moves.push(wm);
+      playerMoveCount++;
+      applyWythoffMoveToPiles(piles, wm);
+      traceSteps.push({
+        description: describeWythoffMove(wm),
+        data: { ...wm, remaining: [...piles] },
+      });
+      if (piles[0] === 0 && piles[1] === 0) break;
     } else {
-      // P-position: any move goes to N, pick the one that leaves most stones
-      if (piles[0]! >= piles[1]! && piles[0]! > 0) {
-        aiMove = { type: 'single', pileIndex: 0, removeCount: 1 };
-      } else if (piles[1]! > 0) {
-        aiMove = { type: 'single', pileIndex: 1, removeCount: 1 };
+      // AI's turn: try winning move first
+      let aiMove: WythoffMove;
+      if (wm) {
+        aiMove = wm;
       } else {
-        break;
+        // P-position: any move, take 1 from larger pile
+        if (piles[0]! >= piles[1]! && piles[0]! > 0) {
+          aiMove = { type: 'single', pileIndex: 0, removeCount: 1 };
+        } else if (piles[1]! > 0) {
+          aiMove = { type: 'single', pileIndex: 1, removeCount: 1 };
+        } else {
+          break;
+        }
       }
-    }
-    moves.push(aiMove);
-    if (aiMove.type === 'single') {
-      piles[aiMove.pileIndex!]! -= aiMove.removeCount;
+      moves.push(aiMove);
+      applyWythoffMoveToPiles(piles, aiMove);
       traceSteps.push({
-        description: `AI takes ${aiMove.removeCount} from pile ${aiMove.pileIndex! + 1}`,
-        data: { type: 'single', pileIndex: aiMove.pileIndex!, removeCount: aiMove.removeCount, remaining: [...piles] },
-      });
-    } else {
-      piles[0]! -= aiMove.removeCount;
-      piles[1]! -= aiMove.removeCount;
-      traceSteps.push({
-        description: `AI takes ${aiMove.removeCount} from both piles`,
-        data: { type: 'both', removeCount: aiMove.removeCount, remaining: [...piles] },
+        description: describeAIWythoffMove(aiMove),
+        data: { ...aiMove, remaining: [...piles] },
       });
     }
+    isPlayerTurn = !isPlayerTurn;
   }
 
+  return { moves, traceSteps, playerMoveCount };
+}
+
+/**
+ * 构建完整博弈序列（玩家+AI 交替）。
+ * 选先后手阶段：N-position 玩家先手，P-position AI 先手。
+ */
+export function solveWythoffState(state: WythoffState): Solution {
+  const startTime = performance.now();
   const [a, b] = state.piles;
   const isP = isWythoffPPosition(a, b);
+
+  let playerStarts: boolean;
+  if (state.phase === 'choosing') {
+    // N-position → 先手必胜；P-position → 后手必胜（让 AI 先走）
+    playerStarts = !isP;
+  } else if (state.phase === 'playing' && state.currentPlayer === 1) {
+    playerStarts = false;
+  } else {
+    playerStarts = true;
+  }
+
+  const { moves, traceSteps, playerMoveCount } = simulateWythoffGame(
+    [a, b] as [number, number], playerStarts, state,
+  );
+
   const k = Math.abs(b - a);
   const timeMs = Math.round(performance.now() - startTime);
 
@@ -153,12 +181,12 @@ export function solveWythoffState(state: WythoffState): Solution {
     trace: {
       type: 'wythoff-beatty',
       steps: traceSteps,
-      visualizationData: { piles: [a, b], isP, k, phi: (1 + Math.sqrt(5)) / 2 },
+      visualizationData: { piles: [a, b], isP, k, phi: (1 + Math.sqrt(5)) / 2, playerStarts },
     },
     stats: {
-      nodesExplored: playerMovesCount,
+      nodesExplored: playerMoveCount,
       timeMs,
-      solutionLength: playerMovesCount,
+      solutionLength: playerMoveCount,
       solverName: "Wythoff's Beatty sequence (1907) — optimal play sequence",
       terminated: moves.length > 0 ? 'solved' : 'exhausted',
     },

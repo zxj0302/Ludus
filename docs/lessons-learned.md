@@ -1,29 +1,25 @@
 ---
-name: Lights Out 开发经验总结
-description: 从 Lights Out 端到端样板开发中积累的坑、惯例、偏好——后续游戏开发必读
+name: Ludus 开发经验总结
+description: 从 Lights Out 端到端样板及后续 4 款游戏、架构重构中积累的坑、惯例、偏好——后续游戏开发必读
 type: reference
 originSessionId: 2e40e0e3-e977-4b67-8ad6-d599f64981a9
 ---
-# Lights Out 开发经验总结 — 后续游戏开发参考
+# Ludus 开发经验总结 — 后续游戏开发参考
 
-> 从阶段 4 垂直切片（Lights Out）中积累的所有教训、惯例与偏好。
+> 从阶段 4（Lights Out）到阶段 5（Sokoban/Sudoku/Nim/Wythoff）及 ADR-023 架构重构中积累的教训、惯例与偏好。
 > 新游戏的开发者应在动工前通读本文。
 
 ---
 
 ## 1. 架构与文件组织
 
-### 1.1 Core 层 vs Game 层的类型重复不可避免
+### 1.1 类型定义归于各游戏目录
 
-`LightsOutState` / `LightsOutMove` 在 `packages/core/src/generator/` 和 `packages/games/src/lights-out/rules.ts` 各定义了一份。
-这是合理的——Core 层不能依赖 Game 层。**不要试图消除这种重复**，但要确保两边定义结构一致。
+Post ADR-023，每款游戏自包含 `types.ts`（如 `LightsOutState`/`LightsOutMove`）。Core 层只保留通用的 `GameState`/`Move` 类型别名和 `GamePlugin` 接口。**不要**在 Core 层定义游戏专属类型。
 
-### 1.2 共享工具函数放对位置
+### 1.2 求解器/生成器/难度均归游戏目录
 
-`applyMoveToGrid` 最初写在 `lights-out-generator.ts`，但 `rules.ts` 也需要用它。正确做法：
-- 放在 Core 层的共享工具文件中（如 `core/src/solver/gf2.ts`）
-- 或新建 `core/src/games/lights-out-utils.ts`
-- **不要**放在 generator 文件里（职责不符）
+Post ADR-023，solver.ts / generator.ts / difficulty.ts 全部在各游戏目录下。Core 不再包含 `solver/`、`generator/`、`difficulty/` 子目录。即使两个游戏的算法相似（如 Nim XOR、Wythoff Beatty），也各自独立实现——策略重合度不足以为"通用框架"提供理由。
 
 ### 1.3 Plugin 接口的使用模式
 
@@ -256,15 +252,18 @@ Worker 基础设施已就绪但 **store 尚未实际分流**。新游戏如果�
 
 ## 9. 下次开发新游戏时的检查清单
 
-- [ ] Core 层求解器（纯 TS，框架无关，带 trace）
-- [ ] Core 层生成器（构造法优先，保可解 + 验证唯一/最优）
-- [ ] Game 层 rules/solver/generator/manifest/render/plugin 完整 7 件套
+- [ ] 游戏目录自包含：types/rules/solver/generator/difficulty/render/manifest/i18n（solver + generator 在游戏目录内，不依赖 core）
+- [ ] `GamePluginEntry` 导出（BoardComponent / isOwnState / moveToHighlight / i18n / education / 可选 ui / 可选 ai / 可选 visualization）
+- [ ] solver 纯 TS、框架无关、带 trace（`SolverTrace` 类型注册在 `vizComponents.tsx`）
+- [ ] generator 构造法优先，保可解 + 验证唯一/最优
 - [ ] `GameMetadata` 所有字段齐备（含 `icon`、i18n key 化）
-- [ ] i18n key 中英双份添加完毕
-- [ ] 五段式教学内容 L2/L3 × zh/en（4 个 .md）
-- [ ] Web 渲染组件（board + 教学面板内容）
+- [ ] i18n key 中英双份（i18n.ts 导出或在 manifest.ts 中定义）
+- [ ] 五段式教学内容 L2/L3 × zh/en（4 个 .md，放在 `packages/education/src/content/<game>/`）
+- [ ] registry 注册：`registry.set(entry.plugin.metadata.id, entry)`
+- [ ] Web 层注册入口（entrySetup.ts 注入 web 专属组件如 Sokoban toolbar）
 - [ ] 单元测试：求解器正确性 + 生成器唯一解/最优解验证 + 规则引擎
 - [ ] 所有字符串走 `t()`，无硬编码
 - [ ] 动画用 `transform`/`opacity`，不用 `width` transition
 - [ ] 重面板用 latch pattern 保持挂载
 - [ ] `getDifficulty` 与 `computeDifficulty` 公式一致
+- [ ] **验证零改动**：新增游戏 = 加目录 + registry 一行，不改任何已有文件

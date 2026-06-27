@@ -11,7 +11,7 @@
 - **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，196 个测试（全过），Vite 构建成功。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。
 - **测试覆盖**：18 个测试文件，196 测试全过。
-- **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。新增游戏 = 加目录 + registry 一行。
+- **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
 
@@ -96,6 +96,11 @@
   - 测试: Wythoff 规则 20 测 + 求解器 16 测 + 生成器 5 测 + 难度 6 测 = 47 新测试, **199 全过**
   - 构建: v1.0 成功, WythoffTreeViz 懒加载分包 (~3.3KB gzip ~1.6KB)
   - 新增 16 个文件, 修改 13 个文件
+- **架构重构：游戏即插件（ADR-023）** ✅：
+  - 10 步全部完成：GamePluginEntry 接口 + GamePlugin.ai 字段 + 26 文件从 core 迁回各游戏 + gameStore 去游戏化（590→455 行）+ packages/ui 填充（5 个共享组件）+ GameShell 去游戏化（418→260 行）+ Core barrel 清理 + i18n 拆分 + EducationPanel 解耦
+  - 最终包结构：4 包（core/games/education/ui）+ apps/web。i18n/viz 包已移除。
+  - 每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。新增游戏 = 加目录 + registry 一行。
+  - 196 测试全过，typecheck 零错误，vite build 成功
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
@@ -110,21 +115,11 @@
 
 ## 🚧 IN PROGRESS
 
-- **架构重构：游戏即插件 — ✅ 全部完成（10/10 步）**：
-  1. ✅ GamePluginEntry 接口 + GamePlugin.ai 字段
-  2. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移）
-  3. ✅ Nim/Wythoff 插件实现 ai 字段
-  4. ✅ gameStore 去游戏化（590→455 行）
-  5. ✅ packages/ui 填充（5 个共享组件）
-  6. ✅ GamePluginEntry wrappers + GameShell 状态校验/高亮去游戏化（418→379 行）
-  7. ✅ Core barrel 清理 + 全部游戏专属导出从 core 剥离
-  8. ✅ Worker + 所有 web 组件迁移到 @ludus/games 导入
-  9. ✅ i18n 拆分 — 游戏专属字符串归入各游戏目录（5 个 i18n.ts，~120 key）
-  10. ✅ EducationPanel 教育内容提取到 `educationContent.ts`（消除 20 个静态 import + CONTENT_MAPS）
+（无进行中工件）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-架构重构全部完成。下一步回归游戏开发：
+架构重构全部完成，docs 已全面更新。下一步回归游戏开发：
 
 1. 15-puzzle (A*) 或下一款增量游戏
 2. 或 Sokoban 生成器升级（反向行走/模板/进化算法）
@@ -138,7 +133,6 @@
 - Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
-- Lights Out + Sokoban 的 difficulty 逻辑在 rules.ts / solver-utils.ts 中，无独立 difficulty.ts（其他 3 款游戏有）
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
@@ -316,3 +310,49 @@
   - GameShell: 418 → 379 行
   - 314 测试全过，games/web typecheck 全绿
   - 重构进度：10 步完成 6 步
+- [2026-06-28] **Docs 全面更新**：审计并修复 `docs/` 下所有过时内容：
+  - `02-architecture.md`：更新 §1 分层架构图（移除 viz/i18n 包、Core solver/generator 子目录）、§1 依赖规则表、§2.1 包依赖关系图、§3 GamePlugin 接口（新增 ai 字段 + GamePluginEntry）、§6 目录骨架（完整重写为当前实际状态）、§7.3 Worker 策略、§2 小结（9 包 → 4 包）
+  - `DECISIONS.md`：ADR-006 标记 ⚠️ SUPERSEDED（包清单被 ADR-023 取代）
+  - `lessons-learned.md`：标题更新为多游戏范围，§1.1/§1.2 更新为 ADR-023 后架构，§9 检查清单加入 GamePluginEntry/零改动验证
+  - `PROGRESS.md`：架构重构移入 DONE，IN PROGRESS 清空，NEXT ACTION 更新
+  - `04-ui-design-system.md`：更新 viz 包路径为 apps/web 实际路径
+  - `packages/education/`：删除死代码 ContentRenderer.tsx（TODO 骨架，无外部引用）
+- [2026-06-28] **packages/games 全面修复**：
+  - **i18n 自描述**：5 款游戏 entry.i18n 填入实际翻译数据（不再为空对象 `{zhCN:{},en:{}}`）
+  - **难度分离**：Lights Out + Sokoban 新增 `difficulty.ts`，`getDifficulty` 从 rules.ts 移入独立文件
+  - **Barrel 清理**：添加 `export * from './wythoff'`，移除冗余 Board 重导出，Wythoff 不再特殊处理。`chooseHand` 从 Nim/Wythoff 的 public export 移除（仅内部使用），消除命名冲突
+  - **registry**：新增 `getAllEntries()` 函数
+  - **VisualizationProps**：字段名对齐实际调用（`solveStepIndex`/`solvePlayback` 替代 `stepIndex`/`isPlaying`）
+- [2026-06-28] **apps/web 消费者解耦**：
+  - **entrySetup.tsx**：集中注入 web 专属依赖（education .md ?raw import + viz lazy 组件 + Sokoban toolbar），所有 entry 的 education.content 和 visualization 在此填充
+  - **i18n/index.ts**：不再直接 import 游戏 i18n，改为遍历 `getAllEntries()` 动态合并翻译
+  - **EducationPanel.tsx**：不再 import `educationContent.ts`/`vizComponents.tsx`，改为从 `entry.education.content` 和 `entry.visualization` 读取
+  - **删除死代码**：`educationContent.ts`（集中式 .md import 映射）、`vizComponents.tsx`（集中式 viz 组件映射）
+  - **新增游戏改动量**：从修改 3 个集中文件 → 仅需在 `entrySetup.tsx` 添加 1 个区块
+- [2026-06-28] **packages/ui 全面修复**：
+  - **ErrorBoundary.tsx**：硬编码英文字符串 "Something went wrong" / "Reload" → `t('app.error.title')` / `t('app.error.reload')`（类组件通过 ErrorFallback 函数组件桥接 useTranslation）
+  - **GameStatusBar.tsx**：移除硬编码 gameId 检查（`gameId !== 'nim' && gameId !== 'wythoff'`），改为通用 prop `hideSolvedBadge`。GameShell 根据 `!!plugin?.ai` 传入
+  - **package.json**：移除未使用的依赖 `react-dom`、`framer-motion` 及对应 `@types`；更新描述为实际组件列表
+  - **i18n**：zh-CN.ts / en.ts 新增 `app.error.title`、`app.error.reload` key
+- [2026-06-28] **对抗游戏 Solve 按钮修复**：
+  - Nim/Wythoff 的 solver（solveNimState / solveWythoffState）返回玩家+AI 交替走子序列
+  - `requestSolve` 原逻辑对所有游戏启动完整预计算播放，对抗游戏中 solver 模拟的 AI 走子与真实 AI（plugin.ai.getAIMove）不一致
+  - 修复：新增 `adversarialPlayback` 状态 + `adversarialSolveStep` 逐步求解引擎
+    - 每步动态调用 `plugin.solve()` 计算玩家最佳走子
+    - AI 走子通过 `plugin.ai.getAIMove()` 真实计算（不再用 solver 的模拟值）
+    - 玩家走子 → 600ms 后 AI 响应 → 600ms 后下一轮玩家走子 → 循环至终局或 P-position
+    - 播放期间禁用 ◀▶ 手动步进按钮
+  - **选先后手阶段支持**：
+    - 新增 `hintHighlight` 字段（绕过 moveToHighlight 的直接高亮坐标）
+    - Hint 选先后手阶段：求解 N/P-position → N 高亮"我先走"按钮，P 高亮"AI 先走"按钮
+    - Solve 选先后手阶段：自动选择最优先后手 → 进入 playing 状态 → 启动逐步博弈播放
+    - Nim/Wythoff render 已内置 highlightCell.row/col 选先后手高亮（row=0,col=0=先手, col=1=后手）
+  - **选先后手时的高亮提示**：Solve 自动选择先后手后，先高亮按钮 800ms 展示选择，再开始播放
+  - **最优解卡片实时更新**：
+    - 对抗游戏中 solver 视角固定为"玩家先手"，但走子后轮到 AI，此时重求解会从错误视角得出空结果 → 卡片消失
+    - 修复：`applyMove`/`undo`/`redo` 对抗游戏跳过自动重求解（`!plugin.ai`）
+    - AI 走子后轮到玩家时，`scheduleAI` 自动重求解（视角一致），并更新 `solution` + `currentOptimalSteps`
+    - 效果：卡片在每次 AI 响应后自动刷新为当前棋盘状态的最优解
+  - **P-position 防御**：
+    - `moveToHighlight` 添加 `!move` 空值守卫（Nim + Wythoff）
+    - 博弈阶段 P-position 点击 Solve：不启动播放，仅返回求解结果（避免 `moves[0]` 为 undefined 导致崩溃）

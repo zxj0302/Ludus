@@ -15,12 +15,12 @@ import { findWythoffWinningMove, isWythoffPPosition } from './solver';
 import type { GamePluginEntry } from '../types';
 import { WythoffBoard } from './render';
 import { WythoffToolbarSlot } from './toolbar';
-export { wythoffI18n } from './i18n';
+import { wythoffI18n } from './i18n';
+export { wythoffI18n };
 
 export { WythoffBoard };
 export { isWythoffPPosition };
 export { generateWythoffLevel };
-export { chooseHand };
 export { solveWythoffState } from './rules';
 
 const metadata = {
@@ -107,12 +107,13 @@ export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
   isOwnState: (state): state is WythoffState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as WythoffState).piles),
   moveToHighlight: (move) => {
+    if (!move) return null;
     if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
     if (move.type === 'both') return { row: 0, col: 2, value: move.removeCount };
     if (move.pileIndex != null) return { row: move.pileIndex, col: 0, value: move.removeCount };
     return null;
   },
-  i18n: { namespace: 'wythoff', zhCN: {}, en: {} },
+  i18n: { namespace: 'wythoff', zhCN: wythoffI18n.zhCN, en: wythoffI18n.en },
   education: { content: {} },
   ui: { toolbarSlot: WythoffToolbarSlot as any },
 };

@@ -13,7 +13,8 @@ import type { SudokuState, SudokuMove } from './types';
 import { sudokuEducationManifest, sudokuVisualizationManifest } from './manifest';
 import type { GamePluginEntry } from '../types';
 import { SudokuBoard } from './render';
-export { sudokuI18n } from './i18n';
+import { sudokuI18n } from './i18n';
+export { sudokuI18n };
 
 export { SudokuBoard };
 
@@ -72,6 +73,6 @@ export const sudokuEntry: GamePluginEntry<SudokuState, SudokuMove> = {
   isOwnState: (state): state is SudokuState =>
     state != null && 'grid' in state && 'givenMask' in state && 'n' in state && (state as SudokuState).n === 9,
   moveToHighlight: (move) => ({ row: move.row, col: move.col, value: move.value }),
-  i18n: { namespace: 'sudoku', zhCN: {}, en: {} },
+  i18n: { namespace: 'sudoku', zhCN: sudokuI18n.zhCN, en: sudokuI18n.en },
   education: { content: {} },
 };

@@ -1,7 +1,7 @@
 export const sudokuI18n = {
   zhCN: {
     'game.sudoku.name': '数独',
-    'game.sudoku.description': '在 9×9 网格中填入 1-9，利用 DLX 精确覆盖算法求解与生成唯一解关卡',
+    'game.sudoku.description': '在 9×9 网格中填入 1-9——利用 DLX 精确覆盖算法求解与生成唯一解关卡',
     'category.constraint-satisfaction': '约束满足',
     'education.sudokuEmpty': '空格数',
     'education.sudokuGivens': '给定数',
@@ -19,7 +19,7 @@ export const sudokuI18n = {
   },
   en: {
     'game.sudoku.name': 'Sudoku',
-    'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 — solved with DLX exact cover algorithm, generated with unique solutions',
+    'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 - solved with DLX exact cover algorithm, generated with unique solutions',
     'category.constraint-satisfaction': 'Constraint Satisfaction',
     'education.sudokuEmpty': 'Empty Cells',
     'education.sudokuGivens': 'Givens',

@@ -1,5 +1,4 @@
-import type { GameState, Move, Difficulty } from '@ludus/core';
-import { buildLightsOutMatrix, solveGF2, solveGF2WithTrace, optimalSolution, hammingWeight, applyMoveToGrid } from './solver';
+import { buildLightsOutMatrix, solveGF2WithTrace, optimalSolution, applyMoveToGrid } from './solver';
 import type { LightsOutState, LightsOutMove } from './types';
 
 // ---- 状态创建 ----
@@ -40,39 +39,7 @@ export function isSolved(state: LightsOutState): boolean {
 
 // ---- 难度 ----
 
-export function getDifficulty(state: LightsOutState): Difficulty {
-  const N = state.n * state.n;
-  const A = buildLightsOutMatrix(state.n);
-  const sol = solveGF2(A, state.grid);
-  const optimal = optimalSolution(sol);
-  const optimalSteps = optimal ? hammingWeight(optimal) : null;
-
-  // 难度主要基于最优解步数，辅以尺寸因子（与 generator 的 computeDifficulty 一致）
-  if (optimalSteps === 0) {
-    return { score: 0, factors: { size: state.n, optimalSteps: 0, nullity: sol.nullity }, labelKey: 'difficulty.easy' };
-  }
-
-  const moveFactor = optimalSteps != null ? Math.min(optimalSteps / 30, 1) : 0.5;
-  const sizeFactor = (state.n - 3) / 7; // 0 at 3×3, 1 at 10×10
-  const uniqueBonus = sol.nullity === 0 ? 0 : 5; // 多解略微降低难度
-
-  const score = Math.round(sizeFactor * 25 + moveFactor * 50 + (1 - uniqueBonus / 100) * 25);
-  const clamped = Math.max(0, Math.min(100, score));
-
-  const labelKey = clamped <= 20 ? 'difficulty.easy'
-    : clamped <= 50 ? 'difficulty.medium'
-    : 'difficulty.hard';
-
-  return {
-    score: clamped,
-    factors: {
-      size: state.n,
-      optimalSteps: optimalSteps ?? -1,
-      nullity: sol.nullity,
-    },
-    labelKey,
-  };
-}
+export { getDifficulty } from './difficulty';
 
 // ---- 求解器 ----
 
@@ -97,7 +64,7 @@ export function solveLightsOut(state: LightsOutState) {
     trace: {
       type: 'matrix-transform' as const,
       steps: sol.eliminationSteps.map(s => ({
-        description: s.description,
+        description: s.descriptionKey,
         data: s,
       })),
       visualizationData: {

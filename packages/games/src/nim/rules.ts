@@ -62,50 +62,84 @@ export function getDifficulty(state: NimState): Difficulty {
   return computeNimDifficulty(pileCount, maxStones);
 }
 
-/** Build a complete winning move sequence (player + AI alternating) */
-export function solveNimState(state: NimState): Solution {
-  const startTime = performance.now();
+function simulateNimGame(
+  piles: number[],
+  playerStarts: boolean,
+  startTime: number,
+  nimSum: number,
+): { moves: NimMove[]; traceSteps: { description: string; data: unknown }[]; playerMoveCount: number } {
   const moves: NimMove[] = [];
-  const piles = [...state.piles];
   const traceSteps: { description: string; data: unknown }[] = [];
+  let isPlayerTurn = playerStarts;
 
   while (!piles.every(v => v === 0)) {
-    // Player's turn: find winning move
-    const wm = findWinningMove(piles);
-    if (!wm) {
-      // P-position: no guaranteed win, stop here
-      break;
-    }
-    moves.push(wm);
-    piles[wm.pileIndex]! -= wm.removeCount;
-    traceSteps.push({
-      description: `Player takes ${wm.removeCount} from pile ${wm.pileIndex + 1}`,
-      data: { pileIndex: wm.pileIndex, removeCount: wm.removeCount, remaining: [...piles] },
-    });
-
-    if (piles.every(v => v === 0)) break; // Player won
-
-    // AI's turn: leave 1 in last pile, otherwise take 1 from first non-empty
-    const nonEmpty = piles.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0);
-    let aiMove: NimMove;
-    if (nonEmpty.length === 1) {
-      const idx = nonEmpty[0]!;
-      const take = piles[idx]! - 1; // Leave exactly 1 for player to finish
-      aiMove = { pileIndex: idx, removeCount: Math.max(1, take) };
+    if (isPlayerTurn) {
+      const wm = findWinningMove(piles);
+      if (!wm) break; // P-position — no guaranteed win
+      moves.push(wm);
+      piles[wm.pileIndex]! -= wm.removeCount;
+      traceSteps.push({
+        description: `Player takes ${wm.removeCount} from pile ${wm.pileIndex + 1}`,
+        data: { pileIndex: wm.pileIndex, removeCount: wm.removeCount, remaining: [...piles] },
+      });
+      if (piles.every(v => v === 0)) break; // Player won
     } else {
-      const idx = nonEmpty[0]!;
-      aiMove = { pileIndex: idx, removeCount: 1 };
+      const aiWm = findWinningMove(piles);
+      let aiMove: NimMove;
+      if (aiWm) {
+        aiMove = aiWm;
+      } else {
+        // P-position for AI — any move goes to N, just take 1 from first non-empty
+        const nonEmpty = piles.map((v, i) => v > 0 ? i : -1).filter(i => i >= 0);
+        if (nonEmpty.length === 0) break;
+        if (nonEmpty.length === 1) {
+          const idx = nonEmpty[0]!;
+          const take = piles[idx]! - 1;
+          aiMove = { pileIndex: idx, removeCount: Math.max(1, take) };
+        } else {
+          aiMove = { pileIndex: nonEmpty[0]!, removeCount: 1 };
+        }
+      }
+      moves.push(aiMove);
+      piles[aiMove.pileIndex]! -= aiMove.removeCount;
+      traceSteps.push({
+        description: `AI takes ${aiMove.removeCount} from pile ${aiMove.pileIndex + 1}`,
+        data: { pileIndex: aiMove.pileIndex, removeCount: aiMove.removeCount, remaining: [...piles] },
+      });
     }
-    moves.push(aiMove);
-    piles[aiMove.pileIndex]! -= aiMove.removeCount;
-    traceSteps.push({
-      description: `AI takes ${aiMove.removeCount} from pile ${aiMove.pileIndex + 1}`,
-      data: { pileIndex: aiMove.pileIndex, removeCount: aiMove.removeCount, remaining: [...piles] },
-    });
+    isPlayerTurn = !isPlayerTurn;
   }
 
-  const playerMoves = moves.filter((_, i) => i % 2 === 0).length;
+  const playerMoveCount = moves.filter((_, i) =>
+    playerStarts ? i % 2 === 0 : i % 2 === 1,
+  ).length;
+
+  return { moves, traceSteps, playerMoveCount };
+}
+
+/**
+ * 构建完整博弈序列（玩家+AI 交替）。
+ * 选先后手阶段：N-position 玩家先手，P-position AI 先手。
+ */
+export function solveNimState(state: NimState): Solution {
+  const startTime = performance.now();
   const nimSum = computeNimSum(state.piles);
+
+  let playerStarts: boolean;
+  if (state.phase === 'choosing') {
+    // N-position → 先手必胜；P-position → 后手必胜（让 AI 先走）
+    playerStarts = nimSum !== 0;
+  } else if (state.phase === 'playing' && state.currentPlayer === 1) {
+    // AI 的回合（不应常见，但作为防御）
+    playerStarts = false;
+  } else {
+    playerStarts = true;
+  }
+
+  const { moves, traceSteps, playerMoveCount } = simulateNimGame(
+    [...state.piles], playerStarts, startTime, nimSum,
+  );
+
   const timeMs = Math.round(performance.now() - startTime);
 
   return {
@@ -114,12 +148,12 @@ export function solveNimState(state: NimState): Solution {
     trace: {
       type: 'nim-xor',
       steps: traceSteps,
-      visualizationData: { nimSum, piles: [...state.piles], pValue: nimSum === 0 ? 0 : 1, xorExpr: state.piles.join(' ^ ') + ' = ' + nimSum },
+      visualizationData: { nimSum, piles: [...state.piles], pValue: nimSum === 0 ? 0 : 1, xorExpr: state.piles.join(' ^ ') + ' = ' + nimSum, playerStarts },
     },
     stats: {
-      nodesExplored: playerMoves,
+      nodesExplored: playerMoveCount,
       timeMs,
-      solutionLength: playerMoves,
+      solutionLength: playerMoveCount,
       solverName: 'Nim-sum (Bouton 1901) — optimal play sequence',
       terminated: moves.length > 0 ? 'solved' : 'exhausted',
     },

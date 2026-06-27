@@ -137,7 +137,7 @@ export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
             <KnowledgeCard title={t('matrix.elimination.title', { step: elimStepIdx + 1, total: maxElimSteps })} icon="🔍">
               {/* Step description */}
               <p className="text-xs text-warm-stone-700 mb-2 font-medium">
-                {currentElimStep.description}
+                {t(currentElimStep.descriptionKey, currentElimStep.descriptionParams as Record<string, string | number>)}
               </p>
 
               {/* Phase indicator */}

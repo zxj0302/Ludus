@@ -243,8 +243,10 @@ export interface EliminationStep {
   pivotCol: number;
   /** 被消去的行索引列表 */
   eliminatedRows: number[];
-  /** 描述文本 */
-  description: string;
+  /** i18n 描述键，供 UI 层翻译 */
+  descriptionKey: string;
+  /** i18n 描述参数 */
+  descriptionParams?: Record<string, string | number>;
 }
 
 export interface GF2SolutionWithTrace extends GF2Solution {
@@ -283,7 +285,8 @@ export function solveGF2WithTrace(A: number[][], b: number[]): GF2SolutionWithTr
     pivotRow: -1,
     pivotCol: -1,
     eliminatedRows: [],
-    description: `初始增广矩阵 [A | b]，${rows}×${cols + 1}`,
+    descriptionKey: 'matrix.elimination.desc.initial',
+    descriptionParams: { rows, cols: cols + 1 },
   });
 
   const pivotCols: (number | null)[] = new Array(rows).fill(null);
@@ -309,7 +312,8 @@ export function solveGF2WithTrace(A: number[][], b: number[]): GF2SolutionWithTr
         pivotRow: -1,
         pivotCol: col,
         eliminatedRows: [],
-        description: `第 ${col + 1} 列无主元，跳过（自由变量）`,
+        descriptionKey: 'matrix.elimination.desc.noPivot',
+        descriptionParams: { col: col + 1 },
       });
       continue;
     }
@@ -338,9 +342,12 @@ export function solveGF2WithTrace(A: number[][], b: number[]): GF2SolutionWithTr
       pivotRow: currentRow,
       pivotCol: col,
       eliminatedRows: eliminated,
-      description: eliminated.length > 0
-        ? `主元 (${currentRow + 1}, ${col + 1})，消去第 ${eliminated.map(i => i + 1).join(', ')} 行`
-        : `主元 (${currentRow + 1}, ${col + 1})，该列已无其他 1`,
+      descriptionKey: eliminated.length > 0
+        ? 'matrix.elimination.desc.pivotEliminated'
+        : 'matrix.elimination.desc.pivotOnly',
+      descriptionParams: eliminated.length > 0
+        ? { row: currentRow + 1, col: col + 1, elimRows: eliminated.map(i => i + 1).join(', ') }
+        : { row: currentRow + 1, col: col + 1 },
     });
 
     currentRow++;
@@ -363,7 +370,8 @@ export function solveGF2WithTrace(A: number[][], b: number[]): GF2SolutionWithTr
         pivotRow: -1,
         pivotCol: -1,
         eliminatedRows: [],
-        description: `无解：第 ${r + 1} 行系数全 0 但 b=1`,
+        descriptionKey: 'matrix.elimination.desc.noSolution',
+        descriptionParams: { row: r + 1 },
       });
       const result: GF2Solution = { particular: null, nullSpace: [], rank, nullity, rows, cols };
       return { ...result, eliminationSteps: steps };
@@ -412,9 +420,12 @@ export function solveGF2WithTrace(A: number[][], b: number[]): GF2SolutionWithTr
     pivotRow: -1,
     pivotCol: -1,
     eliminatedRows: [],
-    description: nullity === 0
-      ? `消元完成 — 行最简形，解唯一`
-      : `消元完成 — 秩=${rank}，零化度=${nullity}，${1 << nullity} 个解`,
+    descriptionKey: nullity === 0
+      ? 'matrix.elimination.desc.doneUnique'
+      : 'matrix.elimination.desc.doneMultiple',
+    descriptionParams: nullity === 0
+      ? undefined
+      : { rank, nullity, count: 1 << nullity },
   });
 
   return {

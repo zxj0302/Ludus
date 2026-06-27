@@ -49,8 +49,8 @@ export interface VisualizationProps {
   trace: SolverTrace;
   solution: Solution;
   gameState: GameState;
-  isPlaying: boolean;
-  stepIndex: number;
+  solveStepIndex: number;
+  solvePlayback: boolean;
 }
 
 // ---- GamePluginEntry — 完整插件条目 ----

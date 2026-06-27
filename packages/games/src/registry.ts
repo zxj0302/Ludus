@@ -40,6 +40,11 @@ export function getGameEntry(id: string): GamePluginEntry<any, any> | undefined 
   return entryRegistry.get(id);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getAllEntries(): GamePluginEntry<any, any>[] {
+  return Array.from(entryRegistry.values());
+}
+
 // -- Re-exports --
 
 export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin };

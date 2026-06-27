@@ -109,7 +109,8 @@ export type { EliminationStep, GF2SolutionWithTrace } from './solver';
 
 import type { GamePluginEntry } from '../types';
 import { LightsOutBoard } from './render';
-export { lightsOutI18n } from './i18n';
+import { lightsOutI18n } from './i18n';
+export { lightsOutI18n };
 
 export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
   plugin: lightsOutPlugin,
@@ -117,6 +118,6 @@ export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
   isOwnState: (state): state is LightsOutState =>
     state != null && 'grid' in state && 'n' in state && Array.isArray((state as LightsOutState).grid),
   moveToHighlight: (move) => ({ row: move.row, col: move.col }),
-  i18n: { namespace: 'lights-out', zhCN: {}, en: {} },
+  i18n: { namespace: 'lights-out', zhCN: lightsOutI18n.zhCN, en: lightsOutI18n.en },
   education: { content: {} },
 };
