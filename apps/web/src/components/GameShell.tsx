@@ -3,15 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
 import { getGame, getGameEntry } from '@ludus/games';
-import type { SokobanState, SokobanMove } from '@ludus/games';
-import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
-import { useSokobanLevels } from '../hooks/useSokobanLevels';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { EducationPanel } from './EducationPanel';
-import { LevelSelector } from './LevelSelector';
-import { stateHash } from '@ludus/games';
+import { SokobanToolbar } from './SokobanToolbar';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }
@@ -45,8 +41,6 @@ export function GameShell({ gameId }: Props) {
     historyIndex, history, startTime, elapsed, tick,
   } = store;
 
-  // Sokoban 关卡同步需要类型化 state（待 LevelSelector 迁移到 entry 后移除）
-  const soState = gameState as unknown as SokobanState | null;
   const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
@@ -123,54 +117,6 @@ export function GameShell({ gameId }: Props) {
 
   // 以下 plugin 和 gameState 均非 null，且 state 与 gameId 匹配
 
-  // Sokoban 关卡合集（仅 Sokoban 时加载，避免 Lights Out 等游戏浪费解析）
-  const collections = useSokobanLevels(gameId === 'sokoban');
-  const [selectedCollection, setSelectedCollection] = useState('builtin');
-  const [selectedLevelIdx, setSelectedLevelIdx] = useState(0);
-  const loadCustomState = useGameStore(s => s.loadCustomState);
-  const [nimDifficulty, setNimDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const currentLevels = collections.find(c => c.name === selectedCollection)?.levels ?? [];
-  const totalInCollection = currentLevels.length;
-
-  // 标记"本次状态变更来自关卡选择器"，避免 sync effect 回写覆盖
-  const fromSelector = useRef(false);
-
-  const handleCollectionChange = useCallback((name: string) => {
-    setSelectedCollection(name);
-    setSelectedLevelIdx(0);
-    const coll = collections.find(c => c.name === name);
-    if (coll && coll.levels.length > 0) {
-      fromSelector.current = true;
-      loadCustomState(coll.levels[0] as unknown as Record<string, unknown>);
-    }
-  }, [collections, loadCustomState]);
-
-  // 将 LevelSelector 与 loadGame / newLevel 产生的随机状态同步（仅首次或非选择器触发）
-  useEffect(() => {
-    if (gameId !== 'sokoban' || !soState?.boxes) return;
-    if (fromSelector.current) { fromSelector.current = false; return; }
-    const currentHash = stateHash(soState as SokobanState);
-    for (const coll of collections) {
-      const idx = coll.levels.findIndex(l => {
-        try { return stateHash(l as unknown as SokobanState) === currentHash; }
-        catch { return false; }
-      });
-      if (idx !== -1) {
-        if (coll.name !== selectedCollection) setSelectedCollection(coll.name);
-        if (idx !== selectedLevelIdx) setSelectedLevelIdx(idx);
-        return;
-      }
-    }
-  }, [gameId, gameState, collections]);
-
-  const handleLevelSelect = useCallback((index: number) => {
-    setSelectedLevelIdx(index);
-    if (currentLevels[index]) {
-      fromSelector.current = true;
-      loadCustomState(currentLevels[index] as unknown as Record<string, unknown>);
-    }
-  }, [currentLevels, loadCustomState]);
-
   let highlightCell: { row: number; col: number; value?: number } | null = null;
 
   // 从 move 提取高亮坐标（委托给 entry）
@@ -234,47 +180,11 @@ export function GameShell({ gameId }: Props) {
             isSolving={solverStatus === 'running'} isSolved={isWin}
             solvePlayback={solvePlayback}
             hasHint={!!hintMove}
-            newLevelSlot={gameId === 'sokoban' ? (
-              <LevelSelector
-                collections={collections}
-                selectedCollection={selectedCollection}
-                selectedLevelIdx={selectedLevelIdx}
-                totalInCollection={totalInCollection}
-                onCollectionChange={handleCollectionChange}
-                onLevelSelect={handleLevelSelect}
-              />
-            ) : gameId === 'nim' ? (
-              <div className="flex gap-1.5 items-center">
-                <button
-                  type="button"
-                  onClick={() => setNimDifficulty(d => d === 'easy' ? 'medium' : d === 'medium' ? 'hard' : 'easy')}
-                  className="text-xs px-2.5 py-1.5 rounded-md bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 transition-colors font-medium"
-                >
-                  {t(`difficulty.${nimDifficulty}`)} ▾
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const level = generateNimLevelByPreset(nimDifficulty);
-                    useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
-                  }}
-                  className="text-xs px-2.5 py-1.5 rounded-md bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 transition-colors font-medium"
-                >
-                  + {t('game.toolbar.new')}
-                </button>
-              </div>
-            ) : gameId === 'wythoff' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const level = generateWythoffLevel();
-                  useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
-                }}
-                className="text-xs px-2.5 py-1.5 rounded-md bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 transition-colors font-medium"
-              >
-                + {t('game.toolbar.new')}
-              </button>
-            ) : undefined}
+            newLevelSlot={
+              gameId === 'sokoban' ? <SokobanToolbar onNewLevel={newLevel} /> :
+              entry?.ui?.toolbarSlot ? <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} /> :
+              undefined
+            }
           />
 
           <div className="bento-card p-6 flex justify-center min-h-[420px]">

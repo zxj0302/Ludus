@@ -102,6 +102,8 @@ const NimBoardEntry = (props: any) => (
   />
 );
 
+import { NimToolbarSlot } from './toolbar';
+
 export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   plugin: nimPlugin,
   BoardComponent: NimBoardEntry as any,
@@ -114,4 +116,5 @@ export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   },
   i18n: { namespace: 'nim', zhCN: {}, en: {} },
   education: { content: {} },
+  ui: { toolbarSlot: NimToolbarSlot as any },
 };

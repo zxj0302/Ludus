@@ -12,8 +12,6 @@
   },
   "dependencies": {
     "@ludus/core": "workspace:*",
-    "@ludus/games": "workspace:*",
-    "@ludus/i18n": "workspace:*",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-i18next": "^15.0.0",

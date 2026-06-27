@@ -14,6 +14,7 @@ import { wythoffEducationManifest, wythoffVisualizationManifest } from './manife
 import { findWythoffWinningMove, isWythoffPPosition } from './solver';
 import type { GamePluginEntry } from '../types';
 import { WythoffBoard } from './render';
+import { WythoffToolbarSlot } from './toolbar';
 export { wythoffI18n } from './i18n';
 
 export { WythoffBoard };
@@ -113,4 +114,5 @@ export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
   },
   i18n: { namespace: 'wythoff', zhCN: {}, en: {} },
   education: { content: {} },
+  ui: { toolbarSlot: WythoffToolbarSlot as any },
 };

@@ -31,6 +31,7 @@ export interface HighlightCell {
 
 export interface ToolbarSlotProps {
   onNewLevel: () => void;
+  dispatch?: (action: { type: string; payload: unknown }) => void;
 }
 
 export interface StatusExtensionProps {
