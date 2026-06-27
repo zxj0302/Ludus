@@ -14,7 +14,7 @@ interface Props {
 
 const STONE_W = 48;
 const STONE_H = 36;
-const STONE_STEP = 26; // visible portion of each stone
+const STONE_STEP = 30; // tight but distinct stacking
 
 const GRADIENTS = [
   'radial-gradient(circle at 35% 30%, #f5f2ee, #c4bdb2 50%, #8c8273 100%)',
@@ -27,7 +27,8 @@ const GRADIENTS = [
 const SHADOW = '0 1px 3px rgba(0,0,0,0.2), inset 0 -2px 3px rgba(0,0,0,0.1)';
 
 export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand, onNewGame }: Props) {
-  const [hoverCount, setHoverCount] = useState<number | null>(null);
+  // Per-pile hover: only stones in the hovered pile react
+  const [hover, setHover] = useState<{ pile: number; removeCount: number } | null>(null);
   const { piles, currentPlayer, initialPiles, phase } = state;
   const isPlayerTurn = currentPlayer === 0 && phase === 'playing';
   const isGameOver = piles.every(v => v === 0);
@@ -40,23 +41,22 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
   const hintPileIndex = highlightCell?.row ?? null;
   const hintRemoveCount = highlightCell?.value ?? null;
 
-  // idx 0 = bottom stone, idx (visible-1) = top stone
-  // Clicking bottom removes all, clicking top removes just the top
   const handleStoneClick = (pileIndex: number, idx: number) => {
     if (!isPlayerTurn || disabled || isGameOver) return;
     const count = piles[pileIndex]!;
     const removeCount = count - idx;
     if (removeCount > 0 && removeCount <= count) {
       onMoveRef.current({ pileIndex, removeCount });
-      setHoverCount(null);
+      setHover(null);
     }
   };
 
   const playerWon = isGameOver && currentPlayer === 1;
   const aiWon = isGameOver && currentPlayer === 0;
 
-  const containerHeight = (visible: number) =>
-    visible > 0 ? (visible - 1) * STONE_STEP + STONE_H : 0;
+  // Max container height (for a full pile) — keeps count number position stable
+  const maxContainerH = (maxVisible: number) =>
+    maxVisible > 0 ? (maxVisible - 1) * STONE_STEP + STONE_H : 0;
 
   const renderPile = (
     count: number,
@@ -71,11 +71,9 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
 
     const stones: React.ReactNode[] = [];
     for (let idx = 0; idx < visible; idx++) {
-      // idx 0 = bottom of pile (drawn at bottom of container)
-      // idx (visible-1) = top of pile (drawn at top of container)
       const top = (visible - 1 - idx) * STONE_STEP;
       const removeCount = count - idx;
-      const isInHover = hoverCount != null && hoverCount >= removeCount;
+      const hoveredThisPile = hover?.pile === pileIndex && hover.removeCount >= removeCount;
       const isHintStone = isHinted && removeCount === hintRemoveCount;
 
       let extraClass = '';
@@ -86,7 +84,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
         extraClass = 'ring-[3px] ring-game-amber-400 scale-110';
         boxShadow = '0 0 0 4px rgba(232,168,56,0.5), ' + SHADOW;
         z = 50;
-      } else if (isInHover && canInteract) {
+      } else if (hoveredThisPile && canInteract) {
         extraClass = 'brightness-75 scale-105';
         z = idx + 20;
       }
@@ -96,8 +94,8 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
           key={idx}
           type="button"
           onClick={() => handleStoneClick(pileIndex, idx)}
-          onMouseEnter={() => canInteract ? setHoverCount(removeCount) : null}
-          onMouseLeave={() => setHoverCount(null)}
+          onMouseEnter={() => canInteract ? setHover({ pile: pileIndex, removeCount }) : null}
+          onMouseLeave={() => setHover(null)}
           disabled={!canInteract}
           className={`absolute rounded-full border border-white/20 transition-all duration-150 cursor-pointer
             ${extraClass}
@@ -146,7 +144,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}
               </span>
-              <div className="relative" style={{ width: STONE_W, height: containerHeight(Math.min(count, 8)) }}>
+              <div className="relative" style={{ width: STONE_W, minHeight: maxContainerH(8) }}>
                 {renderPile(count, i, false, false, 8)}
               </div>
               <span className="text-xl font-bold font-mono text-warm-stone-800">{count}</span>
@@ -219,7 +217,7 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}
               </span>
-              <div className="relative" style={{ width: STONE_W, height: containerHeight(Math.min(count, 10)) }}>
+              <div className="relative" style={{ width: STONE_W, height: maxContainerH(10) }}>
                 {renderPile(count, i, isHinted, canInteract, 10)}
               </div>
               <span className={`text-xl font-bold font-mono tabular-nums ${isEmpty ? 'text-warm-stone-300' : 'text-warm-stone-800'}`}>
