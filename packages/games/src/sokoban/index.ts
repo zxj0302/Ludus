@@ -13,6 +13,7 @@ import {
 import { sokobanEducationManifest, sokobanVisualizationManifest } from './manifest';
 import type { GamePluginEntry } from '../types';
 import { SokobanBoard } from './render';
+export { sokobanI18n } from './i18n';
 import { DIRECTION_DELTA } from './types';
 import {
   stateHash,

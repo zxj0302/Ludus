@@ -9,7 +9,7 @@ export { SokobanBoard } from './sokoban/render';
 export { SudokuBoard } from './sudoku/render';
 export { NimBoard } from './nim/render';
 export { WythoffBoard } from './wythoff/render';
-export { wythoffPlugin, wythoffEntry, solveWythoffState, isWythoffPPosition, generateWythoffLevel } from './wythoff';
+export { wythoffPlugin, wythoffEntry, solveWythoffState, isWythoffPPosition, generateWythoffLevel, wythoffI18n } from './wythoff';
 export { chooseHand as chooseWythoffHand } from './wythoff';
 export type { LightsOutState, LightsOutMove } from './lights-out/types';
 export type { SokobanState, SokobanMove } from './sokoban/types';

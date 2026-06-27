@@ -15,6 +15,7 @@ import { findWinningMove, computeNimSum, isPPosition } from './solver';
 
 import type { GamePluginEntry } from '../types';
 import { NimBoard } from './render';
+export { nimI18n } from './i18n';
 
 export { NimBoard };
 export { computeNimSum, isPPosition };

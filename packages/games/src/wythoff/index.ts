@@ -14,6 +14,7 @@ import { wythoffEducationManifest, wythoffVisualizationManifest } from './manife
 import { findWythoffWinningMove, isWythoffPPosition } from './solver';
 import type { GamePluginEntry } from '../types';
 import { WythoffBoard } from './render';
+export { wythoffI18n } from './i18n';
 
 export { WythoffBoard };
 export { isWythoffPPosition };

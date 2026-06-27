@@ -13,6 +13,7 @@ import type { SudokuState, SudokuMove } from './types';
 import { sudokuEducationManifest, sudokuVisualizationManifest } from './manifest';
 import type { GamePluginEntry } from '../types';
 import { SudokuBoard } from './render';
+export { sudokuI18n } from './i18n';
 
 export { SudokuBoard };
 

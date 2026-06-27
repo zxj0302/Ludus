@@ -109,6 +109,7 @@ export type { EliminationStep, GF2SolutionWithTrace } from './solver';
 
 import type { GamePluginEntry } from '../types';
 import { LightsOutBoard } from './render';
+export { lightsOutI18n } from './i18n';
 
 export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
   plugin: lightsOutPlugin,
