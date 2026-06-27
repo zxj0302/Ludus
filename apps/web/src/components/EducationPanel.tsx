@@ -1,8 +1,9 @@
 import { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { Solution, GameState } from '@ludus/core';
+import type { Solution, GameState, Move } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
+import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
@@ -11,6 +12,37 @@ import { getVizComponent } from '../vizComponents';
 import { StatusCard } from '../statusCards';
 
 type Stage = 'play' | 'think' | 'reveal' | 'solve' | 'create';
+
+function formatMove(gameId: string, move: Move, index: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  switch (gameId) {
+    case 'lights-out': {
+      const m = move as LightsOutMove;
+      return t('education.pressCell', { row: m.row + 1, col: m.col + 1 });
+    }
+    case 'sokoban': {
+      const m = move as SokobanMove;
+      return t(`education.move.${m.direction}`, m.direction as any);
+    }
+    case 'sudoku': {
+      const m = move as SudokuMove;
+      return t('education.sudokuCell', { row: m.row + 1, col: m.col + 1, value: m.value });
+    }
+    case 'nim': {
+      const m = move as NimMove;
+      const isPlayer = index % 2 === 0;
+      return (isPlayer ? '🧑 ' : '🤖 ') + t('education.nimMove', { pile: m.pileIndex + 1, count: m.removeCount });
+    }
+    case 'wythoff': {
+      const m = move as WythoffMove;
+      const isPlayer = index % 2 === 0;
+      const icon = isPlayer ? '🧑 ' : '🤖 ';
+      if (m.type === 'both') return icon + t('education.wythoffMoveBoth', { count: m.removeCount });
+      return icon + t('education.wythoffMoveSingle', { pile: (m.pileIndex ?? 0) + 1, count: m.removeCount });
+    }
+    default:
+      return `${index + 1}. ${JSON.stringify(move)}`;
+  }
+}
 
 const STAGES: { key: Stage; i18nKey: string; english: string }[] = [
   { key: 'play', i18nKey: 'education.section.play', english: 'Play' },
@@ -168,7 +200,7 @@ export function EducationPanel({
               {solution.moves.map((m, i) => {
                 const isCurrentStep = solvePlayback && i === solveStepIndex;
                 const isPastStep = solvePlayback && i < solveStepIndex;
-                const label = `${i + 1}. ${JSON.stringify(m)}`;
+                const label = formatMove(gameId, m, i, t);
                 return (
                   <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
                     text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
