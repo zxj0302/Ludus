@@ -109,15 +109,17 @@
 
 ## 🚧 IN PROGRESS
 
-- **架构重构：游戏即插件**（10 步计划，已完成 6 步）：
+- **架构重构：游戏即插件**（10 步计划，已完成 8 步）：
   1. ✅ GamePluginEntry 接口 + GamePlugin.ai 字段
   2. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移）
   3. ✅ Nim/Wythoff 插件实现 ai 字段
-  4. ✅ gameStore 去游戏化（590→455 行，零游戏专属引用）
+  4. ✅ gameStore 去游戏化（590→455 行）
   5. ✅ packages/ui 填充（5 个共享组件）
   6. ✅ GamePluginEntry wrappers + GameShell 状态校验/高亮去游戏化（418→379 行）
-  7. ⬜ i18n 拆分 — 游戏专属字符串归入各游戏
-  8. ⬜ Core barrel 清理 + Worker 迁移
+  7. ✅ Core barrel 清理 + 全部游戏专属导出从 core 剥离（solver/generator/difficulty）
+  8. ✅ Worker + 所有 web 组件迁移到 @ludus/games 导入
+  9. ⬜ i18n 拆分 — 游戏专属字符串归入各游戏目录
+  10. ⬜ EducationPanel 教育内容从静态 import 迁移到 entry
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
