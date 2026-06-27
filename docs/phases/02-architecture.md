@@ -81,14 +81,14 @@
 
 ### 依赖规则
 
-| 规则 | 说明 |
-|------|------|
-| **Core → 无** | Core 不依赖任何其他包，纯 TS + 零外部运行时依赖（除 zod 用于 schema） |
-| **Game Module → Core** | 每个游戏实现 GamePlugin 接口，调用 Core 的 solver/generator 框架 |
-| **Education → Core** | 引用 Core 的 Level/State schema 类型，内容数据独立于代码 |
-| **UI → Game Module + Core** | 渲染组件调用 GamePlugin，直接引用 Core 类型 |
-| **Viz → Core** | 可视化组件消费 Core solver 输出的步骤轨迹数据 |
-| **Apps → UI + Viz + Games + Education** | 组装层，不含业务逻辑 |
+| 规则                                           | 说明                                                                  |
+| ---------------------------------------------- | --------------------------------------------------------------------- |
+| **Core → 无**                           | Core 不依赖任何其他包，纯 TS + 零外部运行时依赖（除 zod 用于 schema） |
+| **Game Module → Core**                  | 每个游戏实现 GamePlugin 接口，调用 Core 的 solver/generator 框架      |
+| **Education → Core**                    | 引用 Core 的 Level/State schema 类型，内容数据独立于代码              |
+| **UI → Game Module + Core**             | 渲染组件调用 GamePlugin，直接引用 Core 类型                           |
+| **Viz → Core**                          | 可视化组件消费 Core solver 输出的步骤轨迹数据                         |
+| **Apps → UI + Viz + Games + Education** | 组装层，不含业务逻辑                                                  |
 
 ---
 
@@ -130,17 +130,17 @@ packages:
 
 ### 2.3 包清单与职责
 
-| 包名 | 目录 | 职责 | 依赖 |
-|------|------|------|------|
-| `@ludus/core` | `packages/core` | 类型定义(GamePlugin/Level/State/Solution)、搜索框架(BFS/DFS/A*/IDA*)、通用求解器(GF(2)/DLX/SAT)、关卡生成框架、难度度量、Worker 任务抽象 | 仅 zod |
-| `@ludus/games` | `packages/games` | 各游戏模块(每游戏一个子目录)、游戏注册表(registry) | `@ludus/core` |
-| `@ludus/education` | `packages/education` | 教学内容文件（.md）、内容渲染器（ContentRenderer）、Markdown/LaTeX 加载；schema 由 core 提供 | `@ludus/core` (类型+schema) |
-| `@ludus/i18n` | `packages/i18n` | UI 字符串资源(zh-CN/en JSON)、react-i18next 配置、语言检测 | 无内部依赖 |
-| `@ludus/ui` | `packages/ui` | React 组件库：GameShell、ProgressiveDisclosure、GameCard、Layout、通用控件 | `@ludus/games`、`@ludus/i18n` |
-| `@ludus/viz` | `packages/viz` | React Flow / D3 可视化组件，懒加载 | `@ludus/core` (类型) |
-| `ludus-web` | `apps/web` | Vite + React SPA，静态部署入口 | 所有 packages |
-| `ludus-desktop` | `apps/desktop` | Tauri 壳，内嵌 Web，可选原生 API 调用 | `ludus-web` (复用) |
-| `ludus-mobile` | `apps/mobile` | Capacitor 壳，内嵌 Web | `ludus-web` (复用) |
+| 包名                 | 目录                   | 职责                                                                                                                                     | 依赖                              |
+| -------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `@ludus/core`      | `packages/core`      | 类型定义(GamePlugin/Level/State/Solution)、Zod Schema、版本化 Migrator、Worker 消息协议。**零游戏专属代码**。                               | 仅 zod                            |
+| `@ludus/games`     | `packages/games`     | 各游戏模块（每游戏自包含 types/rules/solver/generator/difficulty/render/manifest/i18n）、GamePluginEntry 注册表、共享类型 BoardProps       | `@ludus/core`、react、framer-motion |
+| `@ludus/education` | `packages/education` | 教学内容文件（.md）、ContentRenderer                                                                                                       | `@ludus/core`                   |
+| `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、ProgressiveDisclosure、ErrorBoundary、MarkdownRenderer                                            | `@ludus/core`、react             |
+| `ludus-web`        | `apps/web`           | Vite + React SPA，静态部署入口。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/SokobanToolbar                                   | 所有 packages                     |
+| `ludus-desktop`    | `apps/desktop`       | Tauri 壳，内嵌 Web，可选原生 API 调用（阶段 6）                                                                                            | `ludus-web` (复用)              |
+| `ludus-mobile`     | `apps/mobile`        | Capacitor 壳，内嵌 Web（阶段 6）                                                                                                           | `ludus-web` (复用)              |
+
+> **2026-06-27 更新**：`packages/i18n`、`packages/viz` 已移除（空壳包）。i18n 字符串归入各游戏目录，viz 组件在 web 层按 trace.type 懒加载。
 
 ---
 
@@ -498,17 +498,17 @@ export function migrateData<T>(
 
 ## 5. 平台 × 能力支持矩阵
 
-| 能力 | Web (Chrome/Firefox/Safari) | Desktop (Tauri, 系统 WebView) | Mobile (Capacitor, 原生 WebView) |
-|------|---------------------------|------------------------------|----------------------------------|
-| **可玩性** | ✅ Full — 首屏 ＜ 3s，DOM+Canvas 双轨，触控+键鼠 | ✅ Full — 复用 Web 渲染，Tauri 壳提供文件系统/通知等原生能力 | ✅ Full — 复用 Web 渲染，Capacitor 壳提供触觉/状态栏等原生能力 |
-| **求解器** | ✅ Full — 纯 TS 求解器，>500ms 走 Web Worker | ✅ Full — 同 Web，可选 WASM 加速（Tauri 可加载原生二进制） | ⚠️ Degraded — Web Worker 可用但内存受限（iOS 约 200MB/Worker），大型 SAT/DLX 可能降级为单线程 |
-| **关卡生成器** | ✅ Full — 同求解器，Worker 中运行 | ✅ Full | ⚠️ Degraded — 同移动端 Worker 限制 |
-| **教学(L2/L3)** | ✅ Full — KaTeX 渲染，Markdown 展示 | ✅ Full — 同 Web | ✅ Full — 同 Web，屏幕较小需响应式布局适配 |
-| **算法可视化** | ✅ Full — React Flow(≤500 节点流畅) + D3 | ✅ Full — 同 Web | ⚠️ Degraded — 大型搜索树(>200 节点)交互流畅度下降；建议移动端默认展示简化版 |
-| **性能** | ✅ 基准 — V8/JSCore，JIT 优化 | ✅ 基准+ — 系统 WebView，可选 WASM | ⚠️ 弱于 V8 — iOS WKWebView 无 JIT(Nitro 禁用)，JS 性能约为桌面端 1/3–1/2 |
-| **离线支持** | ✅ PWA — Service Worker 缓存，静态资源全离线 | ✅ 天然离线 — Tauri 壳内置静态资源 | ✅ 天然离线 — Capacitor 壳内置静态资源 |
-| **Worker 支持** | ✅ Dedicated Worker + Shared Worker | ✅ Worker (WebView 支持) | ✅ Worker (iOS 10+, Android 4.4+) |
-| **文件 I/O** | ⚠️ 有限 — File API (导入导出)，localStorage 5MB | ✅ Full — Tauri FS API，本地文件系统 | ⚠️ 有限 — Capacitor Filesystem API，App 沙盒 |
+| 能力                  | Web (Chrome/Firefox/Safari)                        | Desktop (Tauri, 系统 WebView)                                 | Mobile (Capacitor, 原生 WebView)                                                                 |
+| --------------------- | -------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **可玩性**      | ✅ Full — 首屏 ＜ 3s，DOM+Canvas 双轨，触控+键鼠  | ✅ Full — 复用 Web 渲染，Tauri 壳提供文件系统/通知等原生能力 | ✅ Full — 复用 Web 渲染，Capacitor 壳提供触觉/状态栏等原生能力                                  |
+| **求解器**      | ✅ Full — 纯 TS 求解器，>500ms 走 Web Worker      | ✅ Full — 同 Web，可选 WASM 加速（Tauri 可加载原生二进制）   | ⚠️ Degraded — Web Worker 可用但内存受限（iOS 约 200MB/Worker），大型 SAT/DLX 可能降级为单线程 |
+| **关卡生成器**  | ✅ Full — 同求解器，Worker 中运行                 | ✅ Full                                                       | ⚠️ Degraded — 同移动端 Worker 限制                                                            |
+| **教学(L2/L3)** | ✅ Full — KaTeX 渲染，Markdown 展示               | ✅ Full — 同 Web                                             | ✅ Full — 同 Web，屏幕较小需响应式布局适配                                                      |
+| **算法可视化**  | ✅ Full — React Flow(≤500 节点流畅) + D3         | ✅ Full — 同 Web                                             | ⚠️ Degraded — 大型搜索树(>200 节点)交互流畅度下降；建议移动端默认展示简化版                   |
+| **性能**        | ✅ 基准 — V8/JSCore，JIT 优化                     | ✅ 基准+ — 系统 WebView，可选 WASM                           | ⚠️ 弱于 V8 — iOS WKWebView 无 JIT(Nitro 禁用)，JS 性能约为桌面端 1/3–1/2                     |
+| **离线支持**    | ✅ PWA — Service Worker 缓存，静态资源全离线      | ✅ 天然离线 — Tauri 壳内置静态资源                           | ✅ 天然离线 — Capacitor 壳内置静态资源                                                          |
+| **Worker 支持** | ✅ Dedicated Worker + Shared Worker                | ✅ Worker (WebView 支持)                                      | ✅ Worker (iOS 10+, Android 4.4+)                                                                |
+| **文件 I/O**    | ⚠️ 有限 — File API (导入导出)，localStorage 5MB | ✅ Full — Tauri FS API，本地文件系统                         | ⚠️ 有限 — Capacitor Filesystem API，App 沙盒                                                  |
 
 ### 降级策略
 

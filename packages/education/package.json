@@ -11,6 +11,10 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@ludus/core": "workspace:*"
+    "@ludus/core": "workspace:*",
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0"
   }
 }
