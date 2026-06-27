@@ -14,7 +14,7 @@ interface Props {
 
 const STONE_W = 48;
 const STONE_H = 36;
-const STONE_STEP = 22;
+const STONE_STEP = 26; // visible portion of each stone
 
 const GRADIENTS = [
   'radial-gradient(circle at 35% 30%, #f5f2ee, #c4bdb2 50%, #8c8273 100%)',
@@ -24,8 +24,6 @@ const GRADIENTS = [
   'radial-gradient(circle at 35% 30%, #f4f0eb, #c6bcad 50%, #8e8170 100%)',
 ];
 
-// Horizontal offsets so stones in a pile don't align perfectly
-const JIGGLE = [0, -3, 2, -1, 3, -2, 0, 1, -3, 2, -1, 3];
 const SHADOW = '0 1px 3px rgba(0,0,0,0.2), inset 0 -2px 3px rgba(0,0,0,0.1)';
 
 export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand, onNewGame }: Props) {
@@ -42,10 +40,12 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
   const hintPileIndex = highlightCell?.row ?? null;
   const hintRemoveCount = highlightCell?.value ?? null;
 
-  const handleStoneClick = (pileIndex: number, stoneIdx: number) => {
+  // idx 0 = bottom stone, idx (visible-1) = top stone
+  // Clicking bottom removes all, clicking top removes just the top
+  const handleStoneClick = (pileIndex: number, idx: number) => {
     if (!isPlayerTurn || disabled || isGameOver) return;
     const count = piles[pileIndex]!;
-    const removeCount = count - stoneIdx;
+    const removeCount = count - idx;
     if (removeCount > 0 && removeCount <= count) {
       onMoveRef.current({ pileIndex, removeCount });
       setHoverCount(null);
@@ -55,65 +55,82 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
   const playerWon = isGameOver && currentPlayer === 1;
   const aiWon = isGameOver && currentPlayer === 0;
 
-  const renderStone = (
-    pileIndex: number,
-    stoneIdx: number,
-    count: number,
-    opts: {
-      isHinted: boolean;
-      isPlayerTurn: boolean;
-      canInteract: boolean;
-      isInHover: boolean;
-      visible: number;
-      gradient: string;
-    },
-  ) => {
-    const removeCount = count - stoneIdx;
-    const isHintStone = opts.isHinted && removeCount === hintRemoveCount;
-    const left = 4 + JIGGLE[stoneIdx % JIGGLE.length]!;
-    const top = stoneIdx * STONE_STEP;
+  const containerHeight = (visible: number) =>
+    visible > 0 ? (visible - 1) * STONE_STEP + STONE_H : 0;
 
-    let ring = '';
-    let brightness = '';
-    let z = stoneIdx;
-    if (isHintStone && opts.canInteract) {
-      ring = 'ring-[3px] ring-game-amber-400';
-      z = 50;
-    } else if (opts.isInHover && opts.canInteract) {
-      brightness = 'brightness-75';
-      z = stoneIdx + 20;
+  const renderPile = (
+    count: number,
+    pileIndex: number,
+    isHinted: boolean,
+    canInteract: boolean,
+    maxVisible: number,
+  ) => {
+    const gradient = GRADIENTS[pileIndex % GRADIENTS.length]!;
+    const visible = Math.min(count, maxVisible);
+    if (visible === 0) return null;
+
+    const stones: React.ReactNode[] = [];
+    for (let idx = 0; idx < visible; idx++) {
+      // idx 0 = bottom of pile (drawn at bottom of container)
+      // idx (visible-1) = top of pile (drawn at top of container)
+      const top = (visible - 1 - idx) * STONE_STEP;
+      const removeCount = count - idx;
+      const isInHover = hoverCount != null && hoverCount >= removeCount;
+      const isHintStone = isHinted && removeCount === hintRemoveCount;
+
+      let extraClass = '';
+      let boxShadow = SHADOW;
+      let z = idx;
+
+      if (isHintStone && canInteract) {
+        extraClass = 'ring-[3px] ring-game-amber-400 scale-110';
+        boxShadow = '0 0 0 4px rgba(232,168,56,0.5), ' + SHADOW;
+        z = 50;
+      } else if (isInHover && canInteract) {
+        extraClass = 'brightness-75 scale-105';
+        z = idx + 20;
+      }
+
+      stones.push(
+        <button
+          key={idx}
+          type="button"
+          onClick={() => handleStoneClick(pileIndex, idx)}
+          onMouseEnter={() => canInteract ? setHoverCount(removeCount) : null}
+          onMouseLeave={() => setHoverCount(null)}
+          disabled={!canInteract}
+          className={`absolute rounded-full border border-white/20 transition-all duration-150 cursor-pointer
+            ${extraClass}
+            ${canInteract ? 'hover:brightness-90' : ''}
+          `}
+          style={{
+            left: 0,
+            top: `${top}px`,
+            width: `${STONE_W}px`,
+            height: `${STONE_H}px`,
+            background: gradient,
+            boxShadow,
+            zIndex: z,
+          }}
+          aria-label={`Remove ${removeCount} stones from pile ${pileIndex + 1}`}
+        />,
+      );
     }
 
-    return (
-      <button
-        key={stoneIdx}
-        type="button"
-        onClick={() => handleStoneClick(pileIndex, stoneIdx)}
-        onMouseEnter={() => opts.canInteract ? setHoverCount(removeCount) : null}
-        onMouseLeave={() => setHoverCount(null)}
-        disabled={!opts.canInteract}
-        className={`absolute rounded-full border border-white/20 transition-all duration-150 cursor-pointer
-          ${ring} ${brightness}
-          ${opts.canInteract ? 'hover:brightness-90 active:scale-90' : ''}
-        `}
-        style={{
-          left: `${left}px`,
-          top: `${top}px`,
-          width: `${STONE_W}px`,
-          height: `${STONE_H}px`,
-          background: opts.gradient,
-          boxShadow: isHintStone ? '0 0 0 4px rgba(232,168,56,0.5), ' + SHADOW : SHADOW,
-          zIndex: z,
-        }}
-        aria-label={`Remove ${removeCount} stones from pile ${pileIndex + 1}`}
-      />
-    );
-  };
+    if (count > maxVisible) {
+      stones.push(
+        <span
+          key="overflow"
+          className="absolute text-[11px] text-warm-stone-500 font-bold"
+          style={{ left: `${STONE_W / 2 - 12}px`, top: `${(maxVisible - 1) * STONE_STEP - 2}px` }}
+        >
+          +{count - maxVisible}
+        </span>,
+      );
+    }
 
-  const containerStyle = (visible: number) => ({
-    width: `${STONE_W + 10}px`,
-    height: `${Math.max(visible * STONE_STEP + STONE_H, STONE_H)}px`,
-  });
+    return stones;
+  };
 
   // ── Choosing phase ──
   if (isChoosing) {
@@ -124,40 +141,17 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
           Nim-sum = {piles.join(' ^ ')} = {piles.reduce((a, b) => a ^ b, 0)}
         </div>
         <div className="flex flex-wrap justify-center gap-6">
-          {piles.map((count, i) => {
-            const gradient = GRADIENTS[i % GRADIENTS.length]!;
-            const visible = Math.min(count, 8);
-            return (
-              <div key={i} className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
-                <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
-                  {t('nim.pile', { index: i + 1 })}
-                </span>
-                <div className="relative" style={containerStyle(visible)}>
-                  {Array.from({ length: visible }, (_, j) => (
-                    <span
-                      key={j}
-                      className="absolute rounded-full border border-white/20"
-                      style={{
-                        left: `${4 + JIGGLE[j % JIGGLE.length]!}px`,
-                        top: `${j * STONE_STEP}px`,
-                        width: `${STONE_W}px`,
-                        height: `${STONE_H}px`,
-                        background: gradient,
-                        boxShadow: SHADOW,
-                        zIndex: j,
-                      }}
-                    />
-                  ))}
-                  {count > 8 && (
-                    <span className="absolute text-[11px] text-warm-stone-500 font-bold" style={{ left: '20px', top: `${8 * STONE_STEP + 6}px` }}>
-                      +{count - 8}
-                    </span>
-                  )}
-                </div>
-                <span className="text-xl font-bold font-mono text-warm-stone-800">{count}</span>
+          {piles.map((count, i) => (
+            <div key={i} className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
+              <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
+                {t('nim.pile', { index: i + 1 })}
+              </span>
+              <div className="relative" style={{ width: STONE_W, height: containerHeight(Math.min(count, 8)) }}>
+                {renderPile(count, i, false, false, 8)}
               </div>
-            );
-          })}
+              <span className="text-xl font-bold font-mono text-warm-stone-800">{count}</span>
+            </div>
+          ))}
         </div>
         <div className="flex gap-4">
           <motion.button type="button" onClick={() => onChooseHand?.(true)} whileTap={{ scale: 0.95 }}
@@ -213,8 +207,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
         {piles.map((count, i) => {
           const isEmpty = count === 0;
           const isHinted = hintPileIndex === i && isPlayerTurn;
-          const gradient = GRADIENTS[i % GRADIENTS.length]!;
-          const visible = Math.min(count, 10);
           const canInteract = isPlayerTurn && !disabled && !isGameOver;
 
           return (
@@ -227,17 +219,8 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
               <span className="text-[10px] uppercase tracking-wider text-warm-stone-400 font-semibold">
                 {t('nim.pile', { index: i + 1 })}
               </span>
-              <div className="relative" style={containerStyle(visible)}>
-                {Array.from({ length: visible }, (_, j) => {
-                  const removeCount = count - j;
-                  const isInHover = hoverCount != null && hoverCount >= removeCount;
-                  return renderStone(i, j, count, { isHinted, isPlayerTurn, canInteract, isInHover, visible, gradient });
-                })}
-                {count > 10 && (
-                  <span className="absolute text-[11px] text-warm-stone-500 font-bold" style={{ left: '22px', top: `${10 * STONE_STEP + 6}px` }}>
-                    +{count - 10}
-                  </span>
-                )}
+              <div className="relative" style={{ width: STONE_W, height: containerHeight(Math.min(count, 10)) }}>
+                {renderPile(count, i, isHinted, canInteract, 10)}
               </div>
               <span className={`text-xl font-bold font-mono tabular-nums ${isEmpty ? 'text-warm-stone-300' : 'text-warm-stone-800'}`}>
                 {count}
