@@ -45,7 +45,7 @@ export function solveNim(state: NimState): Solution {
     stats: {
       nodesExplored: 1,
       timeMs,
-      solutionLength: winningMove ? 1 : 0,
+      solutionLength: -1, // Nim is incremental — no single optimal sequence length
       solverName: 'Nim-sum (Bouton 1901)',
       terminated: 'solved',
     },

@@ -74,8 +74,8 @@ function scheduleBackgroundSolve(
     if (bgSol.solvable && bgSol.moves.length > 0) {
       set({
         solution: bgSol,
-        initialOptimalSteps: bgSol.stats.solutionLength,
-        currentOptimalSteps: bgSol.stats.solutionLength,
+        initialOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
+        currentOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
       });
     }
   }, 500);
@@ -123,7 +123,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     const isFastGame = plugin.metadata.isFastSolver;
     const sol = isFastGame ? plugin.solve(state) : null;
-    const opt = sol?.solvable ? sol.stats.solutionLength : null;
+    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
 
     set({
       gameId,
@@ -258,7 +258,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
+      currentOptimalSteps: sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null,
       solverStatus: 'idle',
       solvePlayback: false,
       solveStepIndex: 0,
@@ -274,7 +274,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const state = generatePlayableState(plugin);
     const isFastGame = plugin.metadata.isFastSolver;
     const sol = isFastGame ? plugin.solve(state) : null;
-    const opt = sol?.solvable ? sol.stats.solutionLength : null;
+    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
       gameState: state,
       history: [state],
@@ -300,7 +300,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const isFastGame = plugin?.metadata.isFastSolver;
     // Lights Out 瞬时求解；Sokoban 保留旧解避免卡片消失，后台更新
     const sol = isFastGame ? plugin?.solve(state) ?? null : prevSol;
-    const opt = sol?.solvable ? sol.stats.solutionLength : null;
+    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
       gameState: state,
       history: [state],
@@ -391,6 +391,28 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solveStepIndex: isLastStep ? 0 : nextIdx,
       solvePlayback: !isLastStep,
     });
+
+    // Nim: after playback ends, if it's AI's turn, trigger AI auto-response
+    if (isLastStep && get().plugin?.metadata.id === 'nim') {
+      const ns = get().gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 } | null;
+      if (ns && ns.currentPlayer === 1 && !ns.piles.every((v: number) => v === 0)) {
+        setTimeout(() => {
+          const s = get();
+          if (!s.plugin || !s.gameState) return;
+          const cur = s.gameState as unknown as { piles: number[]; currentPlayer: 0 | 1 };
+          if (cur.currentPlayer !== 1) return;
+          const wm = findWinningMove(cur.piles);
+          if (wm) {
+            s.applyMove({ pileIndex: wm.pileIndex, removeCount: wm.removeCount } as Move);
+          } else {
+            const firstNonEmpty = cur.piles.findIndex((v: number) => v > 0);
+            if (firstNonEmpty >= 0) {
+              s.applyMove({ pileIndex: firstNonEmpty, removeCount: 1 } as Move);
+            }
+          }
+        }, 600);
+      }
+    }
   },
 
   prevPlaybackStep: () => {
@@ -424,7 +446,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       set({
         disclosureLevel: level,
         solution: sol,
-        currentOptimalSteps: sol?.solvable ? sol.stats.solutionLength : null,
+        currentOptimalSteps: sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null,
       });
     } else {
       set({ disclosureLevel: level });

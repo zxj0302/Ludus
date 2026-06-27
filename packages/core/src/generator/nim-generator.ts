@@ -3,8 +3,9 @@ import { computeNimDifficulty } from '../difficulty/nim-difficulty';
 
 function mapRangeToPileCount(range: [number, number]): number {
   const mid = (range[0] + range[1]) / 2;
-  if (mid <= 33) return 2;
-  if (mid <= 66) return 3;
+  if (mid <= 20) return 2;
+  if (mid <= 50) return 2 + Math.floor(Math.random() * 2); // 2-3
+  if (mid <= 80) return 3 + Math.floor(Math.random() * 2); // 3-4
   return 4 + Math.floor(Math.random() * 2); // 4-5
 }
 
