@@ -109,26 +109,27 @@
 
 ## 🚧 IN PROGRESS
 
-- **架构重构：游戏即插件**（10 步计划，已完成 5 步）：
+- **架构重构：游戏即插件**（10 步计划，已完成 6 步）：
   1. ✅ GamePluginEntry 接口 + GamePlugin.ai 字段
   2. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移）
   3. ✅ Nim/Wythoff 插件实现 ai 字段
   4. ✅ gameStore 去游戏化（590→455 行，零游戏专属引用）
-  5. ✅ packages/ui 填充（5 个共享组件：ErrorBoundary/ProgressiveDisclosure/GameToolbar/GameStatusBar/MarkdownRenderer）
-  6. ⬜ EducationPanel 去静态 import + GameShell 改用 GamePluginEntry
+  5. ✅ packages/ui 填充（5 个共享组件）
+  6. ✅ GamePluginEntry wrappers + GameShell 状态校验/高亮去游戏化（418→379 行）
   7. ⬜ i18n 拆分 — 游戏专属字符串归入各游戏
-  8. ⬜ Registry 更新 + Core barrel 清理 + Worker 迁移
+  8. ⬜ Core barrel 清理 + Worker 迁移
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-继续架构重构 Step 6：重构 EducationPanel + GameShell。
+继续架构重构 Step 7–8：
 
-1. EducationPanel 消除静态 .md import（改用 GamePluginEntry.education.content）
-2. GameShell 消除游戏专属 Board/State/Move import（改用 GamePluginEntry）
-3. 为每款游戏创建 GamePluginEntry wrapper
-4. 运行 `pnpm typecheck && pnpm test`，验证所有游戏可玩
+1. 拆分 i18n：游戏专属字符串从 `apps/web/src/i18n/` 提取到各游戏目录 `i18n.ts`
+2. Core barrel 清理：删除 solver/generator/difficulty 的 re-export（游戏专属代码已迁出）
+3. Worker 迁移：`solver.worker.ts` 改为从 `@ludus/games` 导入 Lights Out 求解器
+4. 运行 `pnpm typecheck && pnpm test`，314 测试全过
+5. 手动验证全部 5 款游戏可玩
 
-关键文件：`packages/games/src/types.ts`（GamePluginEntry 接口）、`packages/ui/src/GameShell.tsx`（待重构）、`apps/web/src/components/EducationPanel.tsx`
+关键文件：`apps/web/src/i18n/zh-CN.ts`、`packages/core/src/index.ts`、`apps/web/src/workers/solver.worker.ts`
 
 ## 🐛 KNOWN ISSUES
 
@@ -310,3 +311,12 @@
     - 删除 web 中的本地副本（5 个文件）
   - **验证**：314 测试全过（含 core 层旧副本），core / games / ui / web typecheck 全绿
   - 重构进度：10 步完成 5 步
+- [2026-06-27] **架构重构：游戏即插件 — Step 6（续）**：
+  - 5 款游戏新增 `GamePluginEntry` 导出（plugin/BoardComponent/isOwnState/moveToHighlight/i18n/education）
+  - registry 新增 `entryRegistry` + `getGameEntry()` 函数
+  - GameShell 状态校验 → `entry.isOwnState()`（消除 5 分支 if/else）
+  - GameShell moveToCell → `entry.moveToHighlight()`（消除 30 行 switch + DIRECTION_DELTA import）
+  - GameShell handleMove 类型从 5 游戏 union 简化为通用 `Move`
+  - GameShell: 418 → 379 行
+  - 314 测试全过，games/web typecheck 全绿
+  - 重构进度：10 步完成 6 步
