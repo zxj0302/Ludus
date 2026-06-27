@@ -87,9 +87,24 @@ export const nimPlugin: GamePlugin<NimState, NimMove> = {
 // GamePluginEntry
 // ═══════════════════════════════════════════════════════════════
 
+// Board wrapper — 处理 Nim 专属的 onChooseHand
+const NimBoardEntry = (props: any) => (
+  <NimBoard
+    state={props.state}
+    onMove={props.onMove}
+    disabled={props.disabled}
+    highlightCell={props.highlightCell}
+    onChooseHand={(playerFirst: boolean) => {
+      const newState = chooseHand(props.state, playerFirst);
+      props.dispatch?.({ type: 'loadState', payload: newState });
+      props.dispatch?.({ type: 'prependHistory', payload: props.state });
+    }}
+  />
+);
+
 export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   plugin: nimPlugin,
-  BoardComponent: NimBoard as any,
+  BoardComponent: NimBoardEntry as any,
   isOwnState: (state): state is NimState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as NimState).piles),
   moveToHighlight: (move) => {

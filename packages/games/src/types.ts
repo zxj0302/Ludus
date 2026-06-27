@@ -15,6 +15,8 @@ export interface BoardProps<S extends GameState = GameState, M extends Move = Mo
   onMove: (move: M) => void;
   disabled: boolean;
   highlightCell: HighlightCell | null;
+  /** 游戏专属动作分发（loadState, prependHistory 等） */
+  dispatch?: (action: { type: string; payload: unknown }) => void;
 }
 
 // ---- 高亮坐标 ----

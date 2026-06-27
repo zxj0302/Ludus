@@ -2,8 +2,8 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
-import { getGame, getGameEntry, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, WythoffBoard, chooseHand, chooseWythoffHand } from '@ludus/games';
-import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove, WythoffState, WythoffMove } from '@ludus/games';
+import { getGame, getGameEntry } from '@ludus/games';
+import type { SokobanState, SokobanMove } from '@ludus/games';
 import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
@@ -45,12 +45,8 @@ export function GameShell({ gameId }: Props) {
     historyIndex, history, startTime, elapsed, tick,
   } = store;
 
-  // Keep typed state casts for Board rendering (temporary, until Board uses entry)
-  const loState = gameState as unknown as LightsOutState | null;
+  // Sokoban 关卡同步需要类型化 state（待 LevelSelector 迁移到 entry 后移除）
   const soState = gameState as unknown as SokobanState | null;
-  const suState = gameState as unknown as SudokuState | null;
-  const niState = gameState as unknown as NimState | null;
-  const wyState = gameState as unknown as WythoffState | null;
   const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
@@ -84,6 +80,21 @@ export function GameShell({ gameId }: Props) {
     applyMove(move);
     playToggle(); vibrate(5);
   }, [isWin, solvePlayback, applyMove, playToggle, vibrate]);
+
+  // 游戏专属动作分发（Board 组件通过 entry.dispatch 调用）
+  const handleDispatch = useCallback((action: { type: string; payload: unknown }) => {
+    switch (action.type) {
+      case 'loadState':
+        useGameStore.getState().loadCustomState(action.payload as GameState);
+        break;
+      case 'prependHistory':
+        useGameStore.setState(s => ({
+          history: [action.payload as GameState, ...s.history],
+          historyIndex: s.historyIndex + 1,
+        }));
+        break;
+    }
+  }, []);
 
   // 同步侧边栏高度到左侧列，实现底部对齐
   const leftColumnRef = useRef<HTMLDivElement>(null);
@@ -268,53 +279,13 @@ export function GameShell({ gameId }: Props) {
 
           <div className="bento-card p-6 flex justify-center min-h-[420px]">
             <ErrorBoundary>
-              {gameId === 'sokoban' && soState?.walls ? (
-                <SokobanBoard
-                  state={soState} onMove={handleMove}
-                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
-                />
-              ) : gameId === 'sudoku' && suState?.grid ? (
-                <SudokuBoard
-                  state={suState} onMove={handleMove}
-                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
-                />
-              ) : loState?.grid ? (
-                <LightsOutBoard
-                  state={loState} onMove={handleMove}
-                  disabled={isWin || solvePlayback} highlightCell={highlightCell}
-                />
-              ) : gameId === 'nim' && niState?.piles ? (
-                <NimBoard
-                  state={niState}
+              {entry && gameState ? (
+                <entry.BoardComponent
+                  state={gameState}
                   onMove={handleMove}
                   disabled={isWin || solvePlayback}
                   highlightCell={highlightCell}
-                  onChooseHand={(playerFirst) => {
-                    const choosingState = niState;
-                    const newState = chooseHand(niState, playerFirst);
-                    useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
-                    // Prepend choosing state so reset returns to hand selection
-                    useGameStore.setState(s => ({
-                      history: [choosingState as unknown as GameState, ...s.history],
-                      historyIndex: s.historyIndex + 1,
-                    }));
-                  }}
-                />
-              ) : gameId === 'wythoff' && wyState?.piles ? (
-                <WythoffBoard
-                  state={wyState}
-                  onMove={handleMove}
-                  disabled={isWin || solvePlayback}
-                  highlightCell={highlightCell}
-                  onChooseHand={(playerFirst) => {
-                    const choosingState = wyState;
-                    const newState = chooseWythoffHand(wyState, playerFirst);
-                    useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
-                    useGameStore.setState(s => ({
-                      history: [choosingState as unknown as GameState, ...s.history],
-                      historyIndex: s.historyIndex + 1,
-                    }));
-                  }}
+                  dispatch={handleDispatch}
                 />
               ) : (
                 <p className="text-warm-stone-400 text-sm">{t('game.loading')}</p>

@@ -85,9 +85,24 @@ export const wythoffPlugin: GamePlugin<WythoffState, WythoffMove> = {
   },
 };
 
+// Board wrapper — 处理 Wythoff 专属的 onChooseHand
+const WythoffBoardEntry = (props: any) => (
+  <WythoffBoard
+    state={props.state}
+    onMove={props.onMove}
+    disabled={props.disabled}
+    highlightCell={props.highlightCell}
+    onChooseHand={(playerFirst: boolean) => {
+      const newState = chooseHand(props.state, playerFirst);
+      props.dispatch?.({ type: 'loadState', payload: newState });
+      props.dispatch?.({ type: 'prependHistory', payload: props.state });
+    }}
+  />
+);
+
 export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
   plugin: wythoffPlugin,
-  BoardComponent: WythoffBoard as any,
+  BoardComponent: WythoffBoardEntry as any,
   isOwnState: (state): state is WythoffState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as WythoffState).piles),
   moveToHighlight: (move) => {
