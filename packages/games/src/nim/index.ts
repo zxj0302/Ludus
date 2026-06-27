@@ -13,7 +13,10 @@ import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
 import { findWinningMove } from './solver';
 
-export { NimBoard } from './render';
+import type { GamePluginEntry } from '../types';
+import { NimBoard } from './render';
+
+export { NimBoard };
 export { chooseHand };
 export { solveNimState } from './rules';
 
@@ -75,4 +78,22 @@ export const nimPlugin: GamePlugin<NimState, NimMove> = {
       return null;
     },
   },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// GamePluginEntry
+// ═══════════════════════════════════════════════════════════════
+
+export const nimEntry: GamePluginEntry<NimState, NimMove> = {
+  plugin: nimPlugin,
+  BoardComponent: NimBoard as any,
+  isOwnState: (state): state is NimState =>
+    state != null && 'piles' in state && 'phase' in state && Array.isArray((state as NimState).piles),
+  moveToHighlight: (move) => {
+    if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
+    if (move.pileIndex != null) return { row: move.pileIndex, col: 0, value: move.removeCount };
+    return null;
+  },
+  i18n: { namespace: 'nim', zhCN: {}, en: {} },
+  education: { content: {} },
 };

@@ -98,3 +98,20 @@ export const lightsOutPlugin: GamePlugin<LightsOutState, LightsOutMove> = {
   // -- 可视化 --
   visualizationManifest: lightsOutVisualizationManifest,
 };
+
+// ═══════════════════════════════════════════════════════════════
+// GamePluginEntry — 自描述插件条目
+// ═══════════════════════════════════════════════════════════════
+
+import type { GamePluginEntry } from '../types';
+import { LightsOutBoard } from './render';
+
+export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
+  plugin: lightsOutPlugin,
+  BoardComponent: LightsOutBoard as any,
+  isOwnState: (state): state is LightsOutState =>
+    state != null && 'grid' in state && 'n' in state && Array.isArray((state as LightsOutState).grid),
+  moveToHighlight: (move) => ({ row: move.row, col: move.col }),
+  i18n: { namespace: 'lights-out', zhCN: {}, en: {} },
+  education: { content: {} },
+};

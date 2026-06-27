@@ -12,8 +12,10 @@ import {
 import type { WythoffState, WythoffMove } from './types';
 import { wythoffEducationManifest, wythoffVisualizationManifest } from './manifest';
 import { findWythoffWinningMove } from './solver';
+import type { GamePluginEntry } from '../types';
+import { WythoffBoard } from './render';
 
-export { WythoffBoard } from './render';
+export { WythoffBoard };
 export { chooseHand };
 export { solveWythoffState } from './rules';
 
@@ -78,4 +80,19 @@ export const wythoffPlugin: GamePlugin<WythoffState, WythoffMove> = {
       return null;
     },
   },
+};
+
+export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
+  plugin: wythoffPlugin,
+  BoardComponent: WythoffBoard as any,
+  isOwnState: (state): state is WythoffState =>
+    state != null && 'piles' in state && 'phase' in state && Array.isArray((state as WythoffState).piles),
+  moveToHighlight: (move) => {
+    if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
+    if (move.type === 'both') return { row: 0, col: 2, value: move.removeCount };
+    if (move.pileIndex != null) return { row: move.pileIndex, col: 0, value: move.removeCount };
+    return null;
+  },
+  i18n: { namespace: 'wythoff', zhCN: {}, en: {} },
+  education: { content: {} },
 };

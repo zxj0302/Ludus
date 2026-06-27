@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
-import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, WythoffBoard, chooseHand, chooseWythoffHand } from '@ludus/games';
+import { getGame, getGameEntry, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, WythoffBoard, chooseHand, chooseWythoffHand } from '@ludus/games';
 import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove, WythoffState, WythoffMove } from '@ludus/games';
 import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/core';
 import { useShallow } from 'zustand/react/shallow';
@@ -11,7 +11,7 @@ import { useSokobanLevels } from '../hooks/useSokobanLevels';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { EducationPanel } from './EducationPanel';
 import { LevelSelector } from './LevelSelector';
-import { stateHash, DIRECTION_DELTA } from '@ludus/core';
+import { stateHash } from '@ludus/core';
 import { useSound } from '../hooks/useSound';
 
 interface Props { gameId: string }
@@ -20,7 +20,8 @@ export function GameShell({ gameId }: Props) {
   const { t } = useTranslation();
   const { playToggle, playWin, playSolve, playError, playStep, vibrate } = useSound();
 
-  const plugin = getGame(gameId);
+  const entry = getGameEntry(gameId);
+  const plugin = entry?.plugin ?? getGame(gameId);
   const store = useGameStore(useShallow(s => ({
     gameState: s.gameState,
     applyMove: s.applyMove, undo: s.undo, redo: s.redo, reset: s.reset, newLevel: s.newLevel,
@@ -35,7 +36,6 @@ export function GameShell({ gameId }: Props) {
     startTime: s.startTime, elapsed: s.elapsed, tick: s.tick, pauseTimer: s.pauseTimer,
   })));
 
-  // 解构引用（从单一 selector 读取，避免多次订阅）
   const {
     gameState, applyMove, undo, redo, reset, newLevel,
     requestSolve, requestHint, solution, solverStatus, solveError,
@@ -45,6 +45,7 @@ export function GameShell({ gameId }: Props) {
     historyIndex, history, startTime, elapsed, tick,
   } = store;
 
+  // Keep typed state casts for Board rendering (temporary, until Board uses entry)
   const loState = gameState as unknown as LightsOutState | null;
   const soState = gameState as unknown as SokobanState | null;
   const suState = gameState as unknown as SudokuState | null;
@@ -78,7 +79,7 @@ export function GameShell({ gameId }: Props) {
     return () => clearInterval(timer);
   }, [solvePlayback, nextPlaybackStep, playStep]);
 
-  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove | NimMove | WythoffMove) => {
+  const handleMove = useCallback((move: Move) => {
     if (isWin || solvePlayback) return;
     applyMove(move);
     playToggle(); vibrate(5);
@@ -99,12 +100,7 @@ export function GameShell({ gameId }: Props) {
   }, []);
 
   // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
-  const stateMatchesPlugin =
-    (gameId === 'lights-out' && loState?.grid != null) ||
-    (gameId === 'sokoban' && soState?.walls != null) ||
-    (gameId === 'sudoku' && suState?.grid != null && suState.n === 9) ||
-    (gameId === 'nim' && niState?.piles != null) ||
-    (gameId === 'wythoff' && wyState?.piles != null);
+  const stateMatchesPlugin = entry ? entry.isOwnState(gameState as GameState) : false;
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -166,44 +162,12 @@ export function GameShell({ gameId }: Props) {
 
   let highlightCell: { row: number; col: number; value?: number } | null = null;
 
-  // 从 move 提取高亮坐标（不同游戏的 move 结构不同）
-  const moveToCell = (move: Move): { row: number; col: number; value?: number } | null => {
-    if (gameId === 'lights-out') {
-      const m = move as LightsOutMove;
-      if (m.row != null && m.col != null) return { row: m.row, col: m.col };
-    }
-    if (gameId === 'sokoban') {
-      const m = move as SokobanMove;
-      // Sokoban 提示：高亮玩家前进方向的格子
-      if (m.direction && soState) {
-        const d = DIRECTION_DELTA[m.direction];
-        if (d) return { row: soState.player.row + d.dr, col: soState.player.col + d.dc };
-      }
-    }
-    if (gameId === 'sudoku') {
-      const m = move as SudokuMove;
-      if (m.row != null && m.col != null) return { row: m.row, col: m.col, value: m.value };
-    }
-    if (gameId === 'nim') {
-      const m = move as NimMove;
-      // Special: choosing-phase hint (pileIndex=-1 → recommend hand button)
-      if (m.pileIndex === -1) return { row: 0, col: m.removeCount }; // col=0→先手, col=1→后手
-      if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
-    }
-    if (gameId === 'wythoff') {
-      const m = move as WythoffMove;
-      // Special: choosing-phase hint (pileIndex=-1 → recommend hand button)
-      if (m.pileIndex === -1) return { row: 0, col: m.removeCount };
-      if (m.type === 'both') return { row: 0, col: 2, value: m.removeCount };
-      if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
-    }
-    return null;
-  };
+  // 从 move 提取高亮坐标（委托给 entry）
 
-  if (solvePlayback && solution?.moves) {
-    highlightCell = moveToCell(solution.moves[solveStepIndex]!);
-  } else if (hintMove) {
-    highlightCell = moveToCell(hintMove);
+  if (solvePlayback && solution?.moves && entry) {
+    highlightCell = entry.moveToHighlight?.(solution.moves[solveStepIndex]! as Move, gameState) ?? null;
+  } else if (hintMove && entry) {
+    highlightCell = entry.moveToHighlight?.(hintMove, gameState) ?? null;
   }
 
   return (

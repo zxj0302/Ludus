@@ -11,6 +11,10 @@ import {
 } from './rules';
 import type { SudokuState, SudokuMove } from './types';
 import { sudokuEducationManifest, sudokuVisualizationManifest } from './manifest';
+import type { GamePluginEntry } from '../types';
+import { SudokuBoard } from './render';
+
+export { SudokuBoard };
 
 const metadata = {
   id: 'sudoku',
@@ -59,4 +63,14 @@ export const sudokuPlugin: GamePlugin<SudokuState, SudokuMove> = {
   renderBackend: 'dom',
   educationManifest: sudokuEducationManifest,
   visualizationManifest: sudokuVisualizationManifest,
+};
+
+export const sudokuEntry: GamePluginEntry<SudokuState, SudokuMove> = {
+  plugin: sudokuPlugin,
+  BoardComponent: SudokuBoard as any,
+  isOwnState: (state): state is SudokuState =>
+    state != null && 'grid' in state && 'givenMask' in state && 'n' in state && (state as SudokuState).n === 9,
+  moveToHighlight: (move) => ({ row: move.row, col: move.col, value: move.value }),
+  i18n: { namespace: 'sudoku', zhCN: {}, en: {} },
+  education: { content: {} },
 };
