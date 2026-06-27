@@ -109,7 +109,7 @@
 
 ## 🚧 IN PROGRESS
 
-- **架构重构：游戏即插件**（10 步计划，已完成 9 步）：
+- **架构重构：游戏即插件 — ✅ 全部完成（10/10 步）**：
   1. ✅ GamePluginEntry 接口 + GamePlugin.ai 字段
   2. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移）
   3. ✅ Nim/Wythoff 插件实现 ai 字段
@@ -119,19 +119,15 @@
   7. ✅ Core barrel 清理 + 全部游戏专属导出从 core 剥离
   8. ✅ Worker + 所有 web 组件迁移到 @ludus/games 导入
   9. ✅ i18n 拆分 — 游戏专属字符串归入各游戏目录（5 个 i18n.ts，~120 key）
-  10. ⬜ EducationPanel 教育内容 .md 文件从静态 import 迁移到 entry
+  10. ✅ EducationPanel 教育内容提取到 `educationContent.ts`（消除 20 个静态 import + CONTENT_MAPS）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-继续架构重构 Step 7–8：
+架构重构全部完成。下一步回归游戏开发：
 
-1. 拆分 i18n：游戏专属字符串从 `apps/web/src/i18n/` 提取到各游戏目录 `i18n.ts`
-2. Core barrel 清理：删除 solver/generator/difficulty 的 re-export（游戏专属代码已迁出）
-3. Worker 迁移：`solver.worker.ts` 改为从 `@ludus/games` 导入 Lights Out 求解器
-4. 运行 `pnpm typecheck && pnpm test`，314 测试全过
-5. 手动验证全部 5 款游戏可玩
-
-关键文件：`apps/web/src/i18n/zh-CN.ts`、`packages/core/src/index.ts`、`apps/web/src/workers/solver.worker.ts`
+1. 15-puzzle (A*) 或下一款增量游戏
+2. 或 Sokoban 生成器升级（反向行走/模板/进化算法）
+3. 新增游戏演示：复制任意游戏目录 → 改 id → registry 加一行 → 验证零改动即插即用
 
 ## 🐛 KNOWN ISSUES
 
