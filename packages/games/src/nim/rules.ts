@@ -117,7 +117,7 @@ export function solveNimState(state: NimState): Solution {
       visualizationData: { nimSum, piles: [...state.piles], pValue: nimSum === 0 ? 0 : 1, xorExpr: state.piles.join(' ^ ') + ' = ' + nimSum },
     },
     stats: {
-      nodesExplored: 1,
+      nodesExplored: moves.length,
       timeMs,
       solutionLength: moves.length,
       solverName: 'Nim-sum (Bouton 1901) — optimal play sequence',

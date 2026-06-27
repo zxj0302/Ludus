@@ -26,14 +26,14 @@ interface TreeNodeData {
   move?: string;
 }
 
-function expandTree(piles: number[], depth: number, maxDepth: number): { nodes: TreeNodeData[]; edges: { from: number; to: number; label: string }[] } {
+function expandTree(piles: number[], depth: number, maxDepth: number, maxNodes = 500): { nodes: TreeNodeData[]; edges: { from: number; to: number; label: string }[] } {
   const nodes: TreeNodeData[] = [];
   const edges: { from: number; to: number; label: string }[] = [];
   const queue: { piles: number[]; parentIdx: number | null; depth: number; moveLabel: string }[] = [
     { piles, parentIdx: null, depth: 0, moveLabel: '' }
   ];
 
-  while (queue.length > 0) {
+  while (queue.length > 0 && nodes.length < maxNodes) {
     const item = queue.shift()!;
     if (item.depth > maxDepth) continue;
 
@@ -45,9 +45,9 @@ function expandTree(piles: number[], depth: number, maxDepth: number): { nodes: 
       edges.push({ from: item.parentIdx, to: nodeIdx, label: item.moveLabel });
     }
 
-    if (item.depth < maxDepth) {
-      for (let i = 0; i < item.piles.length; i++) {
-        for (let r = 1; r <= item.piles[i]!; r++) {
+    if (item.depth < maxDepth && nodes.length < maxNodes) {
+      for (let i = 0; i < item.piles.length && nodes.length < maxNodes; i++) {
+        for (let r = 1; r <= item.piles[i]! && nodes.length < maxNodes; r++) {
           const newPiles = [...item.piles];
           newPiles[i]! -= r;
           queue.push({ piles: newPiles, parentIdx: nodeIdx, depth: item.depth + 1, moveLabel: `${i + 1}:${r}` });
@@ -145,11 +145,9 @@ export function NimTreeViz({ trace, state }: Props) {
           {t('nim.nimSum')} = {traceData?.xorExpr ?? state.piles.join(' ^ ') + ' = ' + nimSum}
           {' '}({isP ? t('nim.pPosition') : t('nim.nPosition')})
         </p>
-        {traceData && (
+        {traceData && traceData.pValue !== 0 && (
           <p className="text-warm-stone-400">
-            {t('nim.winningMove')}: {traceData.pValue === 0
-              ? t('nim.pPosition')
-              : state.piles.map((_, i) => i + 1).join(', ')}
+            {t('nim.nPosition')} — {t('nim.winningMoveExists')}
           </p>
         )}
       </div>

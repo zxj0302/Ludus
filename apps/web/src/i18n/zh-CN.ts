@@ -37,7 +37,7 @@ const zhCN = {
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 
     'nim.pile': '堆 {{index}}',
-    'nim.piles': '堆数',
+    'nim.piles': '石子',
     'nim.yourTurn': '轮到你了',
     'nim.aiThinking': 'AI 思考中...',
     'nim.removeAll': '取走全部({{count}}颗)',
@@ -52,7 +52,7 @@ const zhCN = {
     'nim.nPosition': 'N 位置（必胜）',
     'nim.pPosition': 'P 位置（必输）',
     'nim.nimSum': 'Nim-sum',
-    'nim.winningMove': '必胜走法',
+    'nim.winningMoveExists': '存在必胜走法',
     'nim.gameTree': '博弈树',
     'education.nimMove': '取堆{{pile}} {{count}}颗',
 

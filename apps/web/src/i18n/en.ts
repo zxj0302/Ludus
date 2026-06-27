@@ -37,7 +37,7 @@ const en = {
     'education.sudokuCell': '({{row}}, {{col}}) = {{value}}',
 
     'nim.pile': 'Pile {{index}}',
-    'nim.piles': 'Piles',
+    'nim.piles': 'Stones',
     'nim.yourTurn': 'Your turn',
     'nim.aiThinking': 'AI thinking...',
     'nim.removeAll': 'Remove All ({{count}})',
@@ -52,7 +52,7 @@ const en = {
     'nim.nPosition': 'N-position (winning)',
     'nim.pPosition': 'P-position (losing)',
     'nim.nimSum': 'Nim-sum',
-    'nim.winningMove': 'Winning move',
+    'nim.winningMoveExists': 'Winning move exists',
     'nim.gameTree': 'Game tree',
     'education.nimMove': 'Remove {{count}} from pile {{pile}}',
 
