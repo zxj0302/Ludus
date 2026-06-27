@@ -137,9 +137,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
     return (
       <div className="flex flex-col items-center gap-8 select-none">
         <div className="text-xl font-bold text-warm-stone-700">{t('nim.chooseHand')}</div>
-        <div className="text-sm text-warm-stone-500 font-mono">
-          Nim-sum = {piles.join(' ^ ')} = {piles.reduce((a, b) => a ^ b, 0)}
-        </div>
         <div className="flex flex-wrap justify-center gap-6">
           {piles.map((count, i) => (
             <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-warm-stone-50 min-w-[90px]">
