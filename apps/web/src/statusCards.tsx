@@ -10,6 +10,24 @@ import type {
 } from '@ludus/games';
 import { KnowledgeCard } from './components/KnowledgeCard';
 
+function StatCell({ label, value, colorClass = 'text-game-amber-700' }: { label: string; value: string | number; colorClass?: string }) {
+  return (
+    <div className="bg-white rounded-btn p-2.5 text-center border border-warm-stone-200">
+      <div className="text-[10px] text-warm-stone-500">{label}</div>
+      <div className={`text-lg font-bold ${colorClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function StatBlock({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="bg-warm-stone-50 rounded-lg p-2">
+      <div className="text-warm-stone-500 text-xs">{label}</div>
+      <div className="font-mono font-semibold">{value}</div>
+    </div>
+  );
+}
+
 interface Props {
   gameId: string;
   gameState: GameState | null;
@@ -28,17 +46,10 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
       const totalCells = s ? s.n * s.n : 0;
       return (
         <KnowledgeCard title={t('education.currentState')} icon="🎯">
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.litCells')}</div>
-              <div className="text-lg font-bold text-game-amber-700">{onCount}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.litRatio')}</div>
-              <div className="text-lg font-bold text-game-amber-700">
-                {totalCells > 0 ? Math.round((onCount / totalCells) * 100) : 0}%
-              </div>
-            </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('education.litCells')} value={onCount} />
+            <StatCell label={t('education.optimalSteps')} value={solution?.solvable ? solution.stats.solutionLength : '—'} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('education.litRatio')} value={totalCells > 0 ? `${Math.round((onCount / totalCells) * 100)}%` : '0%'} colorClass="text-logic-indigo-700" />
           </div>
         </KnowledgeCard>
       );
@@ -53,17 +64,10 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
       );
       return (
         <KnowledgeCard title={t('education.currentState')} icon="📦">
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.boxesPlaced')}</div>
-              <div className="text-lg font-bold text-clarity-teal-700">{onGoals}/{boxes.length}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.nodesExplored')}</div>
-              <div className="text-lg font-bold text-clarity-teal-700">
-                {solution?.stats.nodesExplored ?? 0}
-              </div>
-            </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('education.boxesPlaced')} value={`${onGoals}/${boxes.length}`} />
+            <StatCell label={t('education.optimalSteps')} value={solution?.solvable ? solution.stats.solutionLength : '—'} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('education.nodesExplored')} value={solution?.stats.nodesExplored ?? 0} colorClass="text-logic-indigo-700" />
           </div>
         </KnowledgeCard>
       );
@@ -74,15 +78,10 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
       const givenCount = s?.givenMask?.filter(Boolean).length ?? 0;
       return (
         <KnowledgeCard title={t('education.currentState')} icon="🧩">
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.sudokuEmpty')}</div>
-              <div className="text-lg font-bold text-logic-indigo-700">{emptyCount}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('education.sudokuGivens')}</div>
-              <div className="text-lg font-bold text-logic-indigo-700">{givenCount}</div>
-            </div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('education.sudokuEmpty')} value={emptyCount} />
+            <StatCell label={t('education.sudokuGivens')} value={givenCount} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('education.sudokuSolver')} value="DLX" colorClass="text-logic-indigo-700" />
           </div>
         </KnowledgeCard>
       );
@@ -92,17 +91,9 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
       const nimSum = s?.piles ? computeNimSum(s.piles) : 0;
       return (
         <KnowledgeCard title={t('education.currentState')} icon="🪨">
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('nim.piles')}</div>
-              <div className="text-lg font-bold text-warm-stone-800">
-                {s?.piles?.join(', ') ?? '—'}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('nim.nimSum')}</div>
-              <div className="text-lg font-bold text-warm-stone-800">{nimSum}</div>
-            </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <StatBlock label={t('nim.piles')} value={s?.piles?.join(', ') ?? '—'} />
+            <StatBlock label={t('nim.nimSum')} value={nimSum} />
           </div>
         </KnowledgeCard>
       );
@@ -110,21 +101,12 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
     case 'wythoff': {
       const s = gameState as WythoffState | null;
       const isP = s?.piles && s.piles.length >= 2 ? isWythoffPPosition(s.piles[0]!, s.piles[1]!) : false;
+      const k = s?.piles ? Math.abs(s.piles[1]! - s.piles[0]!) : 0;
       return (
         <KnowledgeCard title={t('education.currentState')} icon="⚖️">
-          <div className="space-y-3">
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('wythoff.piles')}</div>
-              <div className="text-lg font-bold text-warm-stone-800">
-                {s?.piles?.join(', ') ?? '—'}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-warm-stone-500">{t('wythoff.beattyPair')}</div>
-              <div className="text-lg font-bold text-warm-stone-800">
-                {isP ? t('wythoff.pPosition') : t('wythoff.nPosition')}
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <StatBlock label={t('wythoff.piles')} value={s?.piles ? `${s.piles[0]}, ${s.piles[1]}` : '—'} />
+            <StatBlock label={t('wythoff.beattyPair')} value={`k=${k}, ${isP ? 'P' : 'N'}`} />
           </div>
         </KnowledgeCard>
       );
