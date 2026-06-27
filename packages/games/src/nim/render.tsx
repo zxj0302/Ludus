@@ -195,14 +195,6 @@ export function NimBoard({ state, onMove, disabled, highlightCell, onChooseHand,
         )}
       </AnimatePresence>
 
-      <div className="text-sm text-warm-stone-500 font-mono">
-        {piles.join('  ')} &nbsp;→&nbsp; XOR = {piles.reduce((a, b) => a ^ b, 0)}
-        {piles.reduce((a, b) => a ^ b, 0) === 0
-          ? <span className="ml-2 text-red-500 font-semibold">{t('nim.pPosition')}</span>
-          : <span className="ml-2 text-blue-600 font-semibold">{t('nim.nPosition')}</span>
-        }
-      </div>
-
       <div className="flex flex-wrap justify-center gap-8">
         {piles.map((count, i) => {
           const isEmpty = count === 0;
