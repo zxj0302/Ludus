@@ -2,9 +2,9 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
-import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, chooseHand } from '@ludus/games';
-import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove } from '@ludus/games';
-import { generateNimLevelByPreset } from '@ludus/core';
+import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, WythoffBoard, chooseHand, chooseWythoffHand } from '@ludus/games';
+import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove, WythoffState, WythoffMove } from '@ludus/games';
+import { generateNimLevelByPreset, generateWythoffLevel } from '@ludus/core';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
@@ -51,6 +51,7 @@ export function GameShell({ gameId }: Props) {
   const soState = gameState as unknown as SokobanState | null;
   const suState = gameState as unknown as SudokuState | null;
   const niState = gameState as unknown as NimState | null;
+  const wyState = gameState as unknown as WythoffState | null;
   const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
@@ -79,7 +80,7 @@ export function GameShell({ gameId }: Props) {
     return () => clearInterval(timer);
   }, [solvePlayback, nextPlaybackStep, playStep]);
 
-  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove | NimMove) => {
+  const handleMove = useCallback((move: LightsOutMove | SokobanMove | SudokuMove | NimMove | WythoffMove) => {
     if (isWin || solvePlayback) return;
     applyMove(move);
     playToggle(); vibrate(5);
@@ -104,7 +105,8 @@ export function GameShell({ gameId }: Props) {
     (gameId === 'lights-out' && loState?.grid != null) ||
     (gameId === 'sokoban' && soState?.walls != null) ||
     (gameId === 'sudoku' && suState?.grid != null && suState.n === 9) ||
-    (gameId === 'nim' && niState?.piles != null);
+    (gameId === 'nim' && niState?.piles != null) ||
+    (gameId === 'wythoff' && wyState?.piles != null);
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -188,6 +190,13 @@ export function GameShell({ gameId }: Props) {
       const m = move as NimMove;
       // Special: choosing-phase hint (pileIndex=-1 → recommend hand button)
       if (m.pileIndex === -1) return { row: 0, col: m.removeCount }; // col=0→先手, col=1→后手
+      if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
+    }
+    if (gameId === 'wythoff') {
+      const m = move as WythoffMove;
+      // Special: choosing-phase hint (pileIndex=-1 → recommend hand button)
+      if (m.pileIndex === -1) return { row: 0, col: m.removeCount };
+      if (m.type === 'both') return { row: 0, col: 2, value: m.removeCount };
       if (m.pileIndex != null) return { row: m.pileIndex, col: 0, value: m.removeCount };
     }
     return null;
@@ -281,6 +290,17 @@ export function GameShell({ gameId }: Props) {
                   + {t('game.toolbar.new')}
                 </button>
               </div>
+            ) : gameId === 'wythoff' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const level = generateWythoffLevel();
+                  useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
+                }}
+                className="text-xs px-2.5 py-1.5 rounded-md bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 transition-colors font-medium"
+              >
+                + {t('game.toolbar.new')}
+              </button>
             ) : undefined}
           />
 
@@ -312,6 +332,22 @@ export function GameShell({ gameId }: Props) {
                     const newState = chooseHand(niState, playerFirst);
                     useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
                     // Prepend choosing state so reset returns to hand selection
+                    useGameStore.setState(s => ({
+                      history: [choosingState as unknown as GameState, ...s.history],
+                      historyIndex: s.historyIndex + 1,
+                    }));
+                  }}
+                />
+              ) : gameId === 'wythoff' && wyState?.piles ? (
+                <WythoffBoard
+                  state={wyState}
+                  onMove={handleMove}
+                  disabled={isWin || solvePlayback}
+                  highlightCell={highlightCell}
+                  onChooseHand={(playerFirst) => {
+                    const choosingState = wyState;
+                    const newState = chooseWythoffHand(wyState, playerFirst);
+                    useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
                     useGameStore.setState(s => ({
                       history: [choosingState as unknown as GameState, ...s.history],
                       historyIndex: s.historyIndex + 1,

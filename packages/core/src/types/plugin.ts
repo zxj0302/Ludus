@@ -85,7 +85,7 @@ export interface Solution {
 }
 
 export interface SolverTrace {
-  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'custom';
+  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'wythoff-beatty' | 'custom';
   steps: TraceStep[];
   /** 附加的可视化数据，各游戏的 visualizationManifest 定义其格式 */
   visualizationData?: unknown;

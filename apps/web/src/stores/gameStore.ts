@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import type { GamePlugin, GameState, Move, Solution } from '@ludus/core';
-import { getGame, solveNimState } from '@ludus/games';
+import { getGame, solveNimState, solveWythoffState } from '@ludus/games';
 import { findWinningMove } from '@ludus/core';
+import { findWythoffWinningMove, isWythoffPPosition } from '@ludus/core';
 import i18n from '../i18n';
 
 export type DisclosureLevel = 1 | 2 | 3;
@@ -24,6 +25,28 @@ function scheduleNimAI(get: () => GameStore) {
     }
   }, 600);
 }
+
+function scheduleWythoffAI(get: () => GameStore) {
+  setTimeout(() => {
+    const s = get();
+    if (!s.plugin || s.plugin.metadata.id !== 'wythoff' || s.solvePlayback) return;
+    const ws = s.gameState as unknown as { piles: [number, number]; currentPlayer: 0 | 1; phase: string } | null;
+    if (!ws || ws.currentPlayer !== 1 || ws.phase !== 'playing') return;
+    if (ws.piles[0] === 0 && ws.piles[1] === 0) return;
+    const wm = findWythoffWinningMove({ piles: ws.piles, currentPlayer: 1, initialPiles: ws.piles, phase: 'playing' });
+    if (wm) {
+      s.applyMove(wm as Move);
+    } else {
+      // P-position: take 1 from the larger pile (consistent with solveWythoffState)
+      if (ws.piles[0]! >= ws.piles[1]! && ws.piles[0]! > 0) {
+        s.applyMove({ type: 'single', pileIndex: 0, removeCount: 1 } as Move);
+      } else if (ws.piles[1]! > 0) {
+        s.applyMove({ type: 'single', pileIndex: 1, removeCount: 1 } as Move);
+      }
+    }
+  }, 600);
+}
+
 type SolverStatus = 'idle' | 'running' | 'done';
 
 interface GameStore {
@@ -141,7 +164,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const state = generatePlayableState(plugin);
 
     const isFastGame = plugin.metadata.isFastSolver;
-    const isNim = gameId === 'nim';
+    const isAdversarial = gameId === 'nim' || gameId === 'wythoff';
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
 
@@ -155,8 +178,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: isNim ? null : opt,
-      currentOptimalSteps: isNim ? null : opt,
+      initialOptimalSteps: isAdversarial ? null : opt,
+      currentOptimalSteps: isAdversarial ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -166,7 +189,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (isNim) scheduleNimAI(get);
+    else if (gameId === 'nim') scheduleNimAI(get);
+    else if (gameId === 'wythoff') scheduleWythoffAI(get);
   },
 
   applyMove: (move) => {
@@ -202,6 +226,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     if (plugin.metadata.id === 'nim' && !solvePlayback) {
       scheduleNimAI(get);
+    } else if (plugin.metadata.id === 'wythoff' && !solvePlayback) {
+      scheduleWythoffAI(get);
     }
   },
 
@@ -223,6 +249,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintMove: null,
       });
       if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
+      else if (plugin?.metadata.id === 'wythoff') scheduleWythoffAI(get);
     }
   },
 
@@ -243,6 +270,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintMove: null,
       });
       if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
+      else if (plugin?.metadata.id === 'wythoff') scheduleWythoffAI(get);
     }
   },
 
@@ -275,7 +303,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!plugin) return;
     const state = generatePlayableState(plugin);
     const isFastGame = plugin.metadata.isFastSolver;
-    const isNim = plugin.metadata.id === 'nim';
+    const isAdversarial = plugin.metadata.id === 'nim' || plugin.metadata.id === 'wythoff';
     const sol = isFastGame ? plugin.solve(state) : null;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
@@ -286,8 +314,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: isNim ? null : opt,
-      currentOptimalSteps: isNim ? null : opt,
+      initialOptimalSteps: isAdversarial ? null : opt,
+      currentOptimalSteps: isAdversarial ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -296,13 +324,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (isNim) scheduleNimAI(get);
+    else if (plugin.metadata.id === 'nim') scheduleNimAI(get);
+    else if (plugin.metadata.id === 'wythoff') scheduleWythoffAI(get);
   },
 
   loadCustomState: (state: GameState) => {
     const { plugin, solution: prevSol } = get();
     const isFastGame = plugin?.metadata.isFastSolver;
-    const isNim = plugin?.metadata.id === 'nim';
+    const isAdversarial = plugin?.metadata.id === 'nim' || plugin?.metadata.id === 'wythoff';
     const sol = isFastGame ? plugin?.solve(state) ?? null : prevSol;
     const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
     set({
@@ -313,8 +342,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution: sol,
       solveError: null,
       hintMove: null,
-      initialOptimalSteps: isNim ? null : opt,
-      currentOptimalSteps: isNim ? null : opt,
+      initialOptimalSteps: isAdversarial ? null : opt,
+      currentOptimalSteps: isAdversarial ? null : opt,
       solvePlayback: false,
       solveStepIndex: 0,
       prePlaybackHistoryIndex: 0,
@@ -323,34 +352,44 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    else if (isNim) scheduleNimAI(get);
+    else if (plugin?.metadata.id === 'nim') scheduleNimAI(get);
+    else if (plugin?.metadata.id === 'wythoff') scheduleWythoffAI(get);
   },
 
   requestSolve: () => {
     const { plugin, gameState } = get();
     if (!plugin || !gameState) return;
 
-    const isNim = plugin.metadata.id === 'nim';
+    const isAdversarial = plugin.metadata.id === 'nim' || plugin.metadata.id === 'wythoff';
     const ns = gameState as unknown as { piles?: number[]; phase?: string; currentPlayer?: number } | null;
 
-    // Nim choosing phase: highlight recommendation then auto-choose and play
-    if (isNim && ns?.phase === 'choosing' && ns?.piles) {
+    // Adversarial choosing phase: highlight recommendation then auto-choose and play
+    if (isAdversarial && ns?.phase === 'choosing' && ns?.piles) {
       const piles = ns.piles;
-      const nimSum = piles.reduce((a: number, b: number) => a ^ b, 0);
-      const playerFirst = nimSum !== 0;
-      // Highlight the chosen button first
+      const isNim = plugin.metadata.id === 'nim';
+      // Nim: N-position if nimSum ≠ 0 (XOR ALL piles). Wythoff: N-position if not a P-position
+      const isNPosition = isNim
+        ? piles.reduce((a: number, b: number) => a ^ b, 0) !== 0
+        : !isWythoffPPosition(piles[0]!, piles[1]!);
+      const playerFirst = isNPosition;
       set({ solverStatus: 'running', solveError: null, hintMove: { pileIndex: -1, removeCount: playerFirst ? 0 : 1 } as Move });
-      // Brief delay to show the highlight, then auto-choose and start playback
       setTimeout(() => {
         let state: Record<string, unknown> = {
           ...ns, currentPlayer: playerFirst ? 0 : 1, phase: 'playing',
           piles: [...piles], initialPiles: [...piles],
         };
         if (!playerFirst) {
-          const wm = findWinningMove(piles);
+          const wm = isNim
+            ? findWinningMove(piles as number[])
+            : findWythoffWinningMove({ piles: piles as [number, number], currentPlayer: 1, initialPiles: piles as [number, number], phase: 'playing' });
           if (wm) {
             const newPiles = [...piles];
-            newPiles[wm.pileIndex]! -= wm.removeCount;
+            if ('pileIndex' in wm && wm.pileIndex != null) {
+              newPiles[wm.pileIndex]! -= wm.removeCount;
+            } else {
+              newPiles[0]! -= wm.removeCount;
+              newPiles[1]! -= wm.removeCount;
+            }
             state.piles = newPiles;
           } else {
             const idx = piles.findIndex((v: number) => v > 0);
@@ -363,25 +402,32 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           state.currentPlayer = 0;
         }
         set({ gameState: state as GameState, hintMove: null });
-        const sol = solveNimState(state as Parameters<typeof solveNimState>[0]);
+        const sol = isNim
+          ? solveNimState(state as Parameters<typeof solveNimState>[0])
+          : solveWythoffState(state as Parameters<typeof solveWythoffState>[0]);
         if (sol.solvable && sol.moves.length > 0) {
           set({ solution: sol, solverStatus: 'done', solvePlayback: true, solveStepIndex: 0, prePlaybackHistoryIndex: 0, hintMove: null });
         } else {
-          set({ solution: sol, solverStatus: 'done', solveError: i18n.t('nim.noWinningStrategy') });
+          const errKey = isNim ? 'nim.noWinningStrategy' : 'wythoff.noWinningStrategy';
+          set({ solution: sol, solverStatus: 'done', solveError: i18n.t(errKey) });
         }
       }, 300);
       return;
     }
 
-    // Nim playing phase: use solveNimState for full alternating sequence
-    if (isNim) {
+    // Adversarial playing phase: use game-specific alternating solver
+    if (isAdversarial) {
       set({ solverStatus: 'running', solveError: null });
       setTimeout(() => {
-        const sol = solveNimState(gameState as Parameters<typeof solveNimState>[0]);
+        const gameId = plugin.metadata.id;
+        const sol = gameId === 'nim'
+          ? solveNimState(gameState as Parameters<typeof solveNimState>[0])
+          : solveWythoffState(gameState as Parameters<typeof solveWythoffState>[0]);
         if (sol.solvable && sol.moves.length > 0) {
           set({ solution: sol, solverStatus: 'done', solvePlayback: true, solveStepIndex: 0, prePlaybackHistoryIndex: get().historyIndex, hintMove: null });
         } else {
-          set({ solution: sol, solverStatus: 'done', solveError: i18n.t('nim.noWinningStrategy') });
+          const errKey = plugin.metadata.id === 'nim' ? 'nim.noWinningStrategy' : 'wythoff.noWinningStrategy';
+          set({ solution: sol, solverStatus: 'done', solveError: i18n.t(errKey) });
         }
       }, 50);
       return;
@@ -415,12 +461,19 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { plugin, gameState } = get();
     if (!plugin || !gameState) return;
 
-    // Nim choosing phase: set hintMove to recommend hand (pileIndex=-1, removeCount=0→先手, 1→后手)
+    // Adversarial choosing phase: set hintMove to recommend hand
     const ns = gameState as unknown as { piles?: number[]; phase?: string } | null;
-    if (plugin.metadata.id === 'nim' && ns?.phase === 'choosing' && ns?.piles) {
-      const nimSum = ns.piles.reduce((a: number, b: number) => a ^ b, 0);
-      // nimSum=0 (P) → choose AI-first (后手); nimSum≠0 (N) → choose player-first (先手)
-      set({ solverStatus: 'done', hintMove: { pileIndex: -1, removeCount: nimSum === 0 ? 1 : 0 } as Move });
+    const isAdversarial = plugin.metadata.id === 'nim' || plugin.metadata.id === 'wythoff';
+    if (isAdversarial && ns?.phase === 'choosing' && ns?.piles) {
+      const piles = ns.piles;
+      // P-position → choose AI-first (后手, removeCount=1); N-position → choose player-first (先手, removeCount=0)
+      let isP: boolean;
+      if (plugin.metadata.id === 'nim') {
+        isP = (piles as number[]).reduce((a: number, b: number) => a ^ b, 0) === 0;
+      } else {
+        isP = isWythoffPPosition(piles[0]!, piles[1]!);
+      }
+      set({ solverStatus: 'done', hintMove: { pileIndex: -1, removeCount: isP ? 1 : 0 } as Move });
       return;
     }
 
@@ -443,8 +496,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           currentOptimalSteps: null,
           solution,
           solverStatus: 'done',
-          // Nim: P-position — inform player there is no winning move
-          solveError: plugin.metadata.id === 'nim' ? i18n.t('nim.noWinningMove') : null,
+          // Adversarial: P-position — inform player there is no winning move
+          solveError: plugin.metadata.id === 'nim' ? i18n.t('nim.noWinningMove')
+            : plugin.metadata.id === 'wythoff' ? i18n.t('wythoff.noWinningMove')
+            : null,
         });
       }
     }, 50);
@@ -467,7 +522,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solvePlayback: !isLastStep,
     });
 
-    if (isLastStep) scheduleNimAI(get);
+    if (isLastStep) {
+      if (get().plugin?.metadata.id === 'wythoff') scheduleWythoffAI(get);
+      else scheduleNimAI(get);
+    }
   },
 
   prevPlaybackStep: () => {

@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）进行中— Nim 已完整实现**。下一步：下一款游戏（Wythoff 或 15-puzzle）或 Sokoban 生成器升级
-- **MVP 范围**：4 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅）。
+- **当前阶段**：**阶段 5（增量游戏）进行中— Wythoff 已完整实现**。下一步：下一款游戏（15-puzzle 或 Sokoban 生成器升级）
+- **MVP 范围**：5 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），90+ 个源文件，152 个测试（全过），Vite 构建成功，React Flow + Dagre + React Flow 懒加载。
-- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 / Nim 求解器 15 测 + 规则 16 测 + 生成器 6 测 + 难度 5 测 = **152 测试全过**。
+- **代码库状态**：3 包 monorepo（core / games / web），100+ 个源文件，196 个测试（全过），Vite 构建成功。
+- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 / Nim 求解器 15 测 + 规则 16 测 + 生成器 6 测 + 难度 5 测 / Wythoff 求解器 16 测 + 规则 20 测 + 生成器 2 测 + 难度 6 测 = **196 测试全过**。
 
 ## ✅ DONE
 
@@ -82,6 +82,18 @@
   - 测试: Nim 规则 16 测 + 求解器 15 测 + 生成器 6 测 + 难度 5 测 = 42 新测试, **152 全过**
   - 构建: v1.0 成功, NimTreeViz 懒加载分包 (~268KB gzip ~90KB)
   - 新增 ~11 个文件, 修改 8 个文件 (规则改为双人对弈, 支持 AI 通过 applyMove 走子)
+- **阶段 5d — Wythoff (Beatty 序列 / Wythoff 1907)** ✅:
+  - Core: Wythoff 状态类型 + isWythoffPPosition (O(1) 黄金比例判定) + findWythoffWinningMove (O(maxPile) 枚举) + solveWythoff + 随机生成器 + 难度公式
+  - Core: Wythoff-solver 16 测 + Wythoff-generator 5 测 + Wythoff-difficulty 6 测
+  - Game: 完整插件 (rules/manifest/index/render) + WythoffBoard 渲染 (两堆石子 + "同时取两堆"按钮列 + 选择先后手机制)
+  - Web: GameShell 动态 Board 选择 (wyState 分支) + EducationPanel 状态卡片 (Beatty 对/黄金比例) + WythoffTreeViz 懒加载 (React Flow + Dagre)
+  - AI: scheduleWythoffAI 内建 (复用 Nim 的 4 层防护 + 600ms 延迟模式)
+  - 架构：store 中 Nim/Wythoff 共享 `isAdversarial` 分支，最优步数/通关文案对两款对战游戏统一隐藏
+  - i18n: 中英翻译 key (wythoff.* 完整覆盖, 27 keys × 2 languages)
+  - 教学: 四份 markdown (L2/L3 × zh/en)，五段式结构，含 Beatty 定理推导与 Nim 对比表
+  - 测试: Wythoff 规则 20 测 + 求解器 16 测 + 生成器 5 测 + 难度 6 测 = 47 新测试, **199 全过**
+  - 构建: v1.0 成功, WythoffTreeViz 懒加载分包 (~3.3KB gzip ~1.6KB)
+  - 新增 16 个文件, 修改 13 个文件
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
@@ -100,19 +112,15 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-Nim 已完成全面优化（详见下方 session log）。下一款游戏待定。
+Wythoff 已完成。下次可推进：
 
-### 选项 A：Wythoff（博弈论姐妹篇）
+### 选项 A：15-puzzle (A*)
 
-见 `docs/phases/00-backlog.md` §4 博弈论单元。Wythoff 与 Nim 共享 NimState 基础 —— 扩展 applyMove 支持"两堆等量移除"走法，继承 NimBoard 视觉 + NimTreeViz 游戏树。
+滑动拼图——见 backlog §9 搜索/启发式。需实现 A* + 曼哈顿距离/线性冲突启发式 + 反向随机游走生成器。这是首款需要启发式搜索的游戏，将引入新的求解器模式。
 
-### 选项 B：15-puzzle (A*)
+### 选项 B：Sokoban 生成器升级
 
-滑动拼图——见 backlog §9 搜索/启发式。需实现 A* + 曼哈顿距离/线性冲突启发式 + 反向随机游走生成器。
-
-### 选项 C：Sokoban 生成器升级
-
-参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器。
+参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器，替代当前 Microban 选关方案。
 
 ## 🐛 KNOWN ISSUES
 
@@ -128,8 +136,8 @@ Nim 已完成全面优化（详见下方 session log）。下一款游戏待定�
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 5 是否先做数独（DLX），再做 Nim（博弈论）？NEXT ACTION 已建议此顺序。
-- 是否需要在阶段 5 前先提取 `packages/ui`（GameShell 等已被 1 款游戏使用，需 ≥2 才达到提取阈值）？
+- 是否需要在阶段 5 前先提取 `packages/ui`（GameShell 等已被 5 款游戏使用，已达提取阈值）？
+- 下一款游戏：15-puzzle (A*) 还是 Sokoban 生成器升级？
 
 ## 📝 SESSION LOG
 
@@ -230,6 +238,16 @@ Nim 已完成全面优化（详见下方 session log）。下一款游戏待定�
   3. `rules.ts` `isSolved` 仅检测 `currentPlayer === 1` 导致 AI 取最后一颗石不被视为终结 → 改为仅检测所有堆为空
   4. 新增 i18n key: `nim.piles` (zh-CN: "堆数", en: "Piles")
   5. 测试 152/152 全过，typecheck 全绿
+- [2026-06-27] **阶段 5d — Wythoff 完整实现**：
+  - Core 层：WythoffState/WythoffMove 类型 + isWythoffPPosition (O(1) 黄金比例判定) + findWythoffWinningMove (枚举单堆/双堆走法) + solveWythoff + 随机生成器（easy/medium/hard 预设）+ 难度公式 (maxStone/15)
+  - Game 层：完整插件 (rules 20 测/manifest/index/render) + WythoffBoard (两堆石子 + "同时取两堆"按钮列)
+  - Web 层：WythoffTreeViz (React Flow + Dagre) 懒加载 + store scheduleWythoffAI + GameShell/EducationPanel/GameStatusBar 集成
+  - 架构：store 中 Nim/Wythoff 统一 `isAdversarial` 分支 + SolverTrace 类型新增 'wythoff-beatty'
+  - i18n：wythoff.* 27 keys × 2 语言
+  - 教学：L2/L3 × zh/en 四份 markdown (Beatty 定理推导 + Nim 对比表)
+  - 测试：47 新测试 (求解器 16 + 规则 20 + 生成器 5 + 难度 6)，总计 199 全过
+  - 构建：WythoffTreeViz 懒加载 ~3.3KB (gzip ~1.6KB)
+  - 新增 16 文件，修改 13 文件
 - [2026-06-27] Nim 全面优化（多轮审查修复）：
   **生成器**：随机生成替代 P-距离走步，P/N 自然分布，配合玩家自选先后手
   **交互**：提示/求解高亮推荐先后手按钮，求解自动选择+播放完整序列，撤销/重做触发 AI
@@ -238,3 +256,20 @@ Nim 已完成全面优化（详见下方 session log）。下一款游戏待定�
   **文档**：L3 更新随机生成法+先手假设声明，清理过期伪代码，清理 4 个未使用 i18n key
   **经验**：lessons-learned.md 新增 §11 Nim 专项（人机对战模式、AI 调度、先后手机制等）
   测试 152/152 全过，typecheck 全绿
+- [2026-06-27] Wythoff 全面审查与修复（两轮）+ Nim 求解器优化：
+  **Wythoff 修复**：
+  - 同时取按钮截断：`Math.min(maxBoth, 6)` → 全部显示 + `max-h-48 overflow-y-auto`
+  - FP 精度：`Math.floor(k * PHI)` → `Math.floor(k * PHI + 1e-12)` 三处统一
+  - AI P 位置走法：从"取第一非空堆 1 颗"→"取较大堆 1 颗"（与 solveWythoffState 一致）
+  - scheduleWythoffAI 同步修复（与 solve 函数一致）
+  - L3 伪代码：`return null` → `return { moves: [] }`，中英双份
+  - 难度选择器移除：固定每堆 1-10 颗，仅保留"新关卡"按钮，难度公式 `maxStone/10`
+  - 文档 5 段式 header：改为 `## N. 中文 · English` 格式，stage 按钮正确链接
+  - 石子渲染：容器固定高度 `maxContainerH(MAX_VISIBLE)`（与 Nim 一致），底部向上堆叠
+  **Nim 修复**：
+  - Nim-sum XOR bug：Wythoff 重构中误改为 `piles[0]^piles[1]`（只 XOR 前两堆），改回完整 `reduce`
+  - `findWinningMove` 优化：从"遇第一个就返回"→"选剩余石子最少的必胜走法"（与 Wythoff 一致）
+  **文档同步**：
+  - Nim L3 伪代码 + §5.3 更新（最优化策略 + minimax 注释），中英双份
+  - Wythoff L3 伪代码 + "求解"节更新（最优化策略 + minimax 注释），中英双份
+  **验证**：196 测试全过，typecheck 零错误，vite build 成功

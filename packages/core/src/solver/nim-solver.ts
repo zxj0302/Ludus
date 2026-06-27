@@ -12,13 +12,21 @@ export function isPPosition(piles: number[]): boolean {
 export function findWinningMove(piles: number[]): NimMove | null {
   const nimSum = computeNimSum(piles);
   if (nimSum === 0) return null;
+  let bestMove: NimMove | null = null;
+  let bestRemaining = Infinity;
   for (let i = 0; i < piles.length; i++) {
     const target = piles[i]! ^ nimSum;
     if (target < piles[i]!) {
-      return { pileIndex: i, removeCount: piles[i]! - target };
+      const newPiles = [...piles];
+      newPiles[i] = target;
+      const remaining = newPiles.reduce((a, b) => a + b, 0);
+      if (remaining < bestRemaining) {
+        bestRemaining = remaining;
+        bestMove = { pileIndex: i, removeCount: piles[i]! - target };
+      }
     }
   }
-  return null;
+  return bestMove;
 }
 
 export function solveNim(state: NimState): Solution {

@@ -2,17 +2,18 @@ import { useRef, useCallback, useEffect, useMemo, useState, lazy, Suspense } fro
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState } from '@ludus/core';
-import { computeNimSum } from '@ludus/core';
+import { computeNimSum, isWythoffPPosition } from '@ludus/core';
 import { MatrixViz } from './MatrixViz';
 import { KnowledgeCard } from './KnowledgeCard';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '../stores/gameStore';
-import type { LightsOutState, SokobanState, SudokuState, NimState } from '@ludus/games';
+import type { LightsOutState, SokobanState, SudokuState, NimState, WythoffState } from '@ludus/games';
 
 const BFSTreeViz = lazy(() => import('./BFSTreeViz'));
 const DLXMatrixViz = lazy(() => import('./DLXMatrixViz').then(m => ({ default: m.DLXMatrixViz })));
 const NimTreeViz = lazy(() => import('./NimTreeViz').then(m => ({ default: m.NimTreeViz })));
+const WythoffTreeViz = lazy(() => import('./WythoffTreeViz').then(m => ({ default: m.WythoffTreeViz })));
 
 import l2zhLO from '@ludus/education/src/content/lights-out/l2.zh-CN.md?raw';
 import l2enLO from '@ludus/education/src/content/lights-out/l2.en.md?raw';
@@ -33,6 +34,11 @@ import l2enNI from '@ludus/education/src/content/nim/l2.en.md?raw';
 import l3zhNI from '@ludus/education/src/content/nim/l3.zh-CN.md?raw';
 import l3enNI from '@ludus/education/src/content/nim/l3.en.md?raw';
 
+import l2zhWY from '@ludus/education/src/content/wythoff/l2.zh-CN.md?raw';
+import l2enWY from '@ludus/education/src/content/wythoff/l2.en.md?raw';
+import l3zhWY from '@ludus/education/src/content/wythoff/l3.zh-CN.md?raw';
+import l3enWY from '@ludus/education/src/content/wythoff/l3.en.md?raw';
+
 const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   'lights-out': {
     'zh-CN': { L2: l2zhLO, L3: l3zhLO },
@@ -49,6 +55,10 @@ const CONTENT_MAPS: Record<string, Record<string, Record<string, string>>> = {
   nim: {
     'zh-CN': { L2: l2zhNI, L3: l3zhNI },
     en: { L2: l2enNI, L3: l3enNI },
+  },
+  wythoff: {
+    'zh-CN': { L2: l2zhWY, L3: l3zhWY },
+    en: { L2: l2enWY, L3: l3enWY },
   },
 };
 
@@ -144,6 +154,7 @@ export function EducationPanel({
   const loState = gameState as LightsOutState | null;
   const suState = gameState as SudokuState | null;
   const niState = gameState as NimState | null;
+  const wyState = gameState as WythoffState | null;
   const onCount = loState?.grid?.filter(c => c === 1).length ?? 0;
   const totalCells = loState ? loState.n * loState.n : 0;
 
@@ -160,6 +171,7 @@ export function EducationPanel({
   const isSK = gameId === 'sokoban';
   const isSU = gameId === 'sudoku';
   const isNI = gameId === 'nim';
+  const isWY = gameId === 'wythoff';
 
   if (!open && !hasBeenOpened) return null;
 
@@ -296,6 +308,25 @@ export function EducationPanel({
                 </div>
               </div>
             )}
+            {isWY && wyState?.piles && (() => {
+              const [a, b] = wyState.piles;
+              const isP = isWythoffPPosition(a, b);
+              const k = Math.abs(b - a);
+              return (
+                <div className="space-y-2 mt-2">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-warm-stone-50 rounded-lg p-2">
+                      <div className="text-warm-stone-500 text-xs">{t('wythoff.piles')}</div>
+                      <div className="font-mono font-semibold">{a}, {b}</div>
+                    </div>
+                    <div className="bg-warm-stone-50 rounded-lg p-2">
+                      <div className="text-warm-stone-500 text-xs">{t('wythoff.beattyPair')}</div>
+                      <div className="font-mono font-semibold">k={k}, {isP ? 'P' : 'N'}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </KnowledgeCard>
         )}
 
@@ -332,9 +363,16 @@ export function EducationPanel({
           </Suspense>
         )}
 
+        {/* Wythoff：Beatty 序列游戏树可视化 */}
+        {isWY && wyState?.piles && (
+          <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
+            <WythoffTreeViz key={wyState.piles.join(',')} trace={solution?.trace} state={wyState} />
+          </Suspense>
+        )}
+
         {/* 最优解步骤列表 — Nim 空 moves 时显示 P-position 提示 */}
-        {solution?.solvable && (solution.moves.length > 0 || isNI) && (
-          <KnowledgeCard title={solution.moves.length > 0 ? t('education.optimalSolution', { count: solution.moves.length }) : t('nim.pPosition')} icon={solution.moves.length > 0 ? '👆' : '⏳'}>
+        {solution?.solvable && (solution.moves.length > 0 || isNI || isWY) && (
+          <KnowledgeCard title={solution.moves.length > 0 ? t('education.optimalSolution', { count: solution.moves.length }) : isNI ? t('nim.pPosition') : t('wythoff.pPosition')} icon={solution.moves.length > 0 ? '👆' : '⏳'}>
             {solution.moves.length > 0 ? (
               <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
                 {solution.moves.map((m, i) => {
@@ -353,6 +391,15 @@ export function EducationPanel({
                     const move = m as { pileIndex: number; removeCount: number };
                     const isPlayerMove = i % 2 === 0;
                     moveLabel = (isPlayerMove ? '🧑 ' : '🤖 ') + t('education.nimMove', { pile: move.pileIndex + 1, count: move.removeCount });
+                  } else if (isWY) {
+                    const move = m as { type: string; pileIndex?: number; removeCount: number };
+                    const isPlayerMove = i % 2 === 0;
+                    const icon = isPlayerMove ? '🧑 ' : '🤖 ';
+                    if (move.type === 'both') {
+                      moveLabel = icon + t('education.wythoffMoveBoth', { count: move.removeCount });
+                    } else {
+                      moveLabel = icon + t('education.wythoffMoveSingle', { pile: (move.pileIndex ?? 0) + 1, count: move.removeCount });
+                    }
                   } else {
                     const move = m as { direction: string };
                     moveLabel = t(`education.move.${move.direction}`, move.direction);
@@ -373,7 +420,7 @@ export function EducationPanel({
                 })}
               </div>
             ) : (
-              <p className="text-xs text-logic-indigo-500">{t('nim.pPositionHint')}</p>
+              <p className="text-xs text-logic-indigo-500">{isNI ? t('nim.pPositionHint') : t('wythoff.pPositionHint')}</p>
             )}
           </KnowledgeCard>
         )}

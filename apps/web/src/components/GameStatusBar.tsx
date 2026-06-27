@@ -65,7 +65,7 @@ export function GameStatusBar({
 
         <div className="flex items-center gap-2">
           {isSolving && <Badge color="indigo" pulse>{t('game.status.solving')}</Badge>}
-          {isSolved && !solvePlayback && gameId !== 'nim' && (
+          {isSolved && !solvePlayback && gameId !== 'nim' && gameId !== 'wythoff' && (
             <div className="flex items-center gap-2">
               <Badge color="teal">
                 {optimalSteps != null
