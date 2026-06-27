@@ -326,10 +326,10 @@ export function EducationPanel({
           </Suspense>
         )}
 
-        {/* Nim：XOR 游戏树可视化 */}
-        {solution?.trace?.type === 'nim-xor' && niState && (
+        {/* Nim：XOR 游戏树可视化 — 随游戏进展实时更新 */}
+        {isNI && niState?.piles && (
           <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
-            <NimTreeViz trace={solution.trace} state={niState} />
+            <NimTreeViz trace={solution?.trace} state={niState} />
           </Suspense>
         )}
 

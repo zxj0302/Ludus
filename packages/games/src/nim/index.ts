@@ -7,10 +7,12 @@ import {
   isSolved,
   getDifficulty,
   solveNimState,
+  chooseHand,
 } from './rules';
 import type { NimState, NimMove } from './rules';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
 export { NimBoard } from './render';
+export { chooseHand };
 
 const metadata = {
   id: 'nim',

@@ -2,8 +2,9 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { Move } from '@ludus/core';
-import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard } from '@ludus/games';
+import { getGame, LightsOutBoard, SokobanBoard, SudokuBoard, NimBoard, chooseHand } from '@ludus/games';
 import type { LightsOutState, LightsOutMove, SokobanState, SokobanMove, SudokuState, SudokuMove, NimState, NimMove } from '@ludus/games';
+import { generateNimLevelByPreset } from '@ludus/core';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
@@ -282,6 +283,14 @@ export function GameShell({ gameId }: Props) {
                   onMove={handleMove}
                   disabled={isWin || solvePlayback}
                   highlightCell={highlightCell}
+                  onChooseHand={(playerFirst) => {
+                    const newState = chooseHand(niState, playerFirst);
+                    useGameStore.getState().loadCustomState(newState as unknown as Record<string, unknown>);
+                  }}
+                  onNewGame={(preset) => {
+                    const level = generateNimLevelByPreset(preset);
+                    useGameStore.getState().loadCustomState(level.initialState as unknown as Record<string, unknown>);
+                  }}
                 />
               ) : (
                 <p className="text-warm-stone-400 text-sm">{t('game.loading')}</p>

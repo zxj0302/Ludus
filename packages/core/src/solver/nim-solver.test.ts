@@ -3,7 +3,7 @@ import { computeNimSum, isPPosition, findWinningMove, solveNim } from './nim-sol
 import type { NimState } from '../types/nim';
 
 function makeState(piles: number[]): NimState {
-  return { piles, currentPlayer: 0, initialPiles: [...piles] };
+  return { piles, currentPlayer: 0, initialPiles: [...piles], phase: 'playing' as const };
 }
 
 describe('computeNimSum', () => {

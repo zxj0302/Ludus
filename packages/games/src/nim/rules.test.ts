@@ -29,13 +29,13 @@ describe('legalMoves', () => {
   });
 
   it('returns empty for empty piles', () => {
-    const s: NimState = { piles: [0, 0], currentPlayer: 0, initialPiles: [0, 0] };
+    const s: NimState = { piles: [0, 0], currentPlayer: 0, initialPiles: [0, 0], phase: 'playing' };
     expect(legalMoves(s)).toEqual([]);
   });
 
-  it('returns moves regardless of currentPlayer', () => {
-    const s: NimState = { piles: [3, 4, 5], currentPlayer: 1, initialPiles: [3, 4, 5] };
-    expect(legalMoves(s).length).toBe(12);
+  it('returns empty when it is AI turn', () => {
+    const s: NimState = { piles: [3, 4, 5], currentPlayer: 1, initialPiles: [3, 4, 5], phase: 'playing' };
+    expect(legalMoves(s)).toEqual([]);
   });
 });
 
@@ -67,7 +67,7 @@ describe('applyMove', () => {
   });
 
   it('applies move during AI turn and toggles currentPlayer', () => {
-    const s: NimState = { piles: [3, 1], currentPlayer: 1, initialPiles: [3, 4] };
+    const s: NimState = { piles: [3, 1], currentPlayer: 1, initialPiles: [3, 4], phase: 'playing' };
     const next = applyMove(s, { pileIndex: 0, removeCount: 1 });
     expect(next).not.toBe(s);
     expect(next.piles[0]).toBe(2);
@@ -77,7 +77,7 @@ describe('applyMove', () => {
 
 describe('isSolved', () => {
   it('true when all piles empty and it is AI turn', () => {
-    const s: NimState = { piles: [0, 0, 0], currentPlayer: 1, initialPiles: [3, 4, 5] };
+    const s: NimState = { piles: [0, 0, 0], currentPlayer: 1, initialPiles: [3, 4, 5], phase: 'playing' };
     expect(isSolved(s)).toBe(true);
   });
 
@@ -86,7 +86,7 @@ describe('isSolved', () => {
   });
 
   it('true when all piles empty regardless of player turn', () => {
-    const s: NimState = { piles: [0, 0, 0], currentPlayer: 0, initialPiles: [3, 4, 5] };
+    const s: NimState = { piles: [0, 0, 0], currentPlayer: 0, initialPiles: [3, 4, 5], phase: 'playing' };
     expect(isSolved(s)).toBe(true);
   });
 });
@@ -109,7 +109,7 @@ describe('solveNimState', () => {
   });
 
   it('empty moves for P-position', () => {
-    const s: NimState = { piles: [1, 2, 3], currentPlayer: 0, initialPiles: [1, 2, 3] };
+    const s: NimState = { piles: [1, 2, 3], currentPlayer: 0, initialPiles: [1, 2, 3], phase: 'playing' };
     const sol = solveNimState(s);
     expect(sol.moves).toEqual([]);
   });
