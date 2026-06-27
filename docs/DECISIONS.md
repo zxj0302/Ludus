@@ -220,3 +220,9 @@
 - [2026-06-25] 阶段 0 确认：ADR-006(pnpm) / ADR-007(KaTeX) / ADR-008(zod+semver) / ADR-013(react-i18next) / ADR-014(Vitest) / ADR-015(MVP 3 款) / ADR-016(MIT) / ADR-017(文件+localStorage) → ACCEPTED。
 - [2026-06-26] ADR-018 (Playful Bento UI 设计系统) → ACCEPTED。详见 `docs/phases/04-ui-design-system.md`。
 - [2026-06-26] ADR-019 (Zustand 状态管理) / ADR-020 (React Router v6) / ADR-021 (Howler.js 音效 + 阶段 4 即做) / ADR-022 (阶段 4 最小包启动) → ACCEPTED。
+- [2026-06-27] ADR-023 (游戏即插件 — 全自包含架构) → ACCEPTED。
+  - **决策**：每款游戏 = `packages/games/<game>/` 下完全自包含的目录，含 types/rules/solver/generator/difficulty/render/manifest/i18n。Core 只保留类型/schema/Worker 抽象（不留任何游戏专属策略代码）。共享布局提取到 `packages/ui`。
+  - **理由**：当前 5 款游戏后 core 膨胀至 41 文件、GameShell 418 行上帝组件、gameStore 硬编码 Nim/Wythoff AI。新增第 6 款游戏摩擦成本递增。162 款游戏 backlog 需要可缩放架构。
+  - **新增接口**：`GamePluginEntry`（`packages/games/src/types.ts`）— 包装 `GamePlugin` + BoardComponent + isOwnState + i18n + ui 扩展 + education + visualization
+  - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
+  - **迁移计划**：10 步，已完成 3 步（接口定义 + 游戏代码迁移 + AI 字段实现）。详见重构计划。

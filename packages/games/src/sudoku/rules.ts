@@ -1,19 +1,8 @@
 // packages/games/src/sudoku/rules.ts
 import type { GameState, Move, Solution, Difficulty } from '@ludus/core';
-import { solveSudoku as dlxSolve, validateSudoku } from '@ludus/core';
-import { computeSudokuDifficulty } from '@ludus/core';
-
-export interface SudokuState extends GameState {
-  n: number;
-  grid: number[];
-  givenMask: boolean[];
-}
-
-export interface SudokuMove extends Move {
-  row: number;
-  col: number;
-  value: number;
-}
+import { solveSudoku as dlxSolve, validateSudoku } from './solver';
+import { computeSudokuDifficulty } from './difficulty';
+import type { SudokuState, SudokuMove } from './types';
 
 /** Create initial empty state */
 export function createInitialState(): SudokuState {

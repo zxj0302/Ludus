@@ -135,7 +135,7 @@ describe('solveWythoff', () => {
     const sol = solveWythoff(makeState(1, 2));
     expect(sol.solvable).toBe(true);
     expect(sol.moves).toHaveLength(0);
-    expect(sol.trace.type).toBe('wythoff-beatty');
+    expect(sol.trace?.type).toBe('wythoff-beatty');
     expect(sol.stats.solverName).toContain('Wythoff');
     expect(sol.stats.terminated).toBe('solved');
   });
@@ -149,7 +149,7 @@ describe('solveWythoff', () => {
 
   it('trace contains visualizationData', () => {
     const sol = solveWythoff(makeState(3, 5));
-    const vd = sol.trace.visualizationData as { piles: number[]; isP: boolean };
+    const vd = sol.trace!.visualizationData as { piles: number[]; isP: boolean };
     expect(vd.piles).toEqual([3, 5]);
     expect(vd.isP).toBe(true);
   });

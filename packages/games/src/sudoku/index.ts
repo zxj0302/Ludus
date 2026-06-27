@@ -1,6 +1,6 @@
 // packages/games/src/sudoku/index.ts
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
-import { generateSudokuLevel } from '@ludus/core';
+import { generateSudokuLevel } from './generator';
 import {
   createInitialState,
   legalMoves,
@@ -9,7 +9,7 @@ import {
   getDifficulty,
   solveSudokuState,
 } from './rules';
-import type { SudokuState, SudokuMove } from './rules';
+import type { SudokuState, SudokuMove } from './types';
 import { sudokuEducationManifest, sudokuVisualizationManifest } from './manifest';
 
 const metadata = {

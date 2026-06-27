@@ -1,6 +1,7 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
-import { generateSokobanLevel, getLevel } from '@ludus/core';
-import type { SokobanState, SokobanMove } from './rules';
+import { generateSokobanLevel } from './generator';
+import { getLevel } from './levels';
+import type { SokobanState, SokobanMove } from './types';
 import {
   legalMoves,
   applyMove,

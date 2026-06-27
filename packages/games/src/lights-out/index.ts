@@ -7,9 +7,9 @@ import {
   getDifficulty,
   solveLightsOut,
 } from './rules';
-import type { LightsOutState, LightsOutMove } from './rules';
+import type { LightsOutState, LightsOutMove } from './types';
 import { lightsOutEducationManifest, lightsOutVisualizationManifest } from './manifest';
-import { generateLightsOutLevel } from '@ludus/core';
+import { generateLightsOutLevel } from './generator';
 
 const metadata = {
   id: 'lights-out',

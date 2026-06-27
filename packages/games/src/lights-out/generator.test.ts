@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { generateLightsOutLevel } from '@ludus/core';
+import { generateLightsOutLevel } from './generator';
 import { applyMove, isSolved } from './rules';
-import type { LightsOutState, LightsOutMove } from './rules';
+import type { LightsOutState, LightsOutMove } from './types';
 
 describe('generateLightsOutLevel', () => {
   it('generates a valid level with default config', () => {

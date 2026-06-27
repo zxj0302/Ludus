@@ -1,17 +1,6 @@
 import type { GameState, Move, Difficulty } from '@ludus/core';
-import { buildLightsOutMatrix, solveGF2, solveGF2WithTrace, optimalSolution, hammingWeight, applyMoveToGrid } from '@ludus/core';
-
-// ---- Lights Out 专用类型 ----
-
-export interface LightsOutState extends GameState {
-  n: number;
-  grid: number[]; // length n*n, 0 = off, 1 = on
-}
-
-export interface LightsOutMove extends Move {
-  row: number;
-  col: number;
-}
+import { buildLightsOutMatrix, solveGF2, solveGF2WithTrace, optimalSolution, hammingWeight, applyMoveToGrid } from './solver';
+import type { LightsOutState, LightsOutMove } from './types';
 
 // ---- 状态创建 ----
 

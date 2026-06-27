@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { LightsOutState, LightsOutMove } from './rules';
+import type { LightsOutState, LightsOutMove } from './types';
 
 interface Props {
   state: LightsOutState;

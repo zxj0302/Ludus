@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, legalMoves, applyMove, isSolved, getDifficulty, solveNimState } from './rules';
-import type { NimState } from './rules';
+import type { NimState } from './types';
 
 function makePlayingState(piles: number[] = [1, 2, 3]): NimState {
   return { piles, currentPlayer: 0, initialPiles: [...piles], phase: 'playing' };

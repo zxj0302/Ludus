@@ -1,7 +1,7 @@
 // packages/games/src/sudoku/render.tsx
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import type { SudokuState, SudokuMove } from './rules';
+import type { SudokuState, SudokuMove } from './types';
 
 interface Props {
   state: SudokuState;

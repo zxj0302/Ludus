@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getDifficulty } from './rules';
-import { getLevel } from '@ludus/core';
+import { getLevel } from './levels';
 
 describe('getDifficulty', () => {
   it('returns score 0-100 with label key for level 0', () => {

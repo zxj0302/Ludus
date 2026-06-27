@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { SokobanState, SokobanMove } from './rules';
+import type { SokobanState, SokobanMove } from './types';
 import { legalMoves } from './rules';
 
 interface Props {

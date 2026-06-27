@@ -1,8 +1,7 @@
 import type { Difficulty, Solution } from '@ludus/core';
-import type { NimState, NimMove } from '@ludus/core';
-import { computeNimSum } from '@ludus/core';
-import { findWinningMove } from '@ludus/core';
-import { computeNimDifficulty } from '@ludus/core';
+import type { NimState, NimMove } from './types';
+import { computeNimSum, findWinningMove } from './solver';
+import { computeNimDifficulty } from './difficulty';
 
 export type { NimState, NimMove };
 

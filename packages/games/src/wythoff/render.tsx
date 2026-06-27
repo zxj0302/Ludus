@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { WythoffState, WythoffMove } from './rules';
+import type { WythoffState, WythoffMove } from './types';
 
 interface Props {
   state: WythoffState;

@@ -7,8 +7,8 @@ import {
   isSolved,
   solveWythoffState,
 } from './rules';
-import { isWythoffPPosition } from '@ludus/core';
-import type { WythoffState, WythoffMove } from './rules';
+import { isWythoffPPosition } from './solver';
+import type { WythoffState, WythoffMove } from './types';
 
 describe('createInitialState', () => {
   it('returns choosing phase with (1,2)', () => {
@@ -126,7 +126,7 @@ describe('solveWythoffState', () => {
     const s: WythoffState = { piles: [2, 2], currentPlayer: 0, initialPiles: [2, 2], phase: 'playing' };
     const sol = solveWythoffState(s);
     expect(sol.solvable).toBe(true);
-    expect(sol.trace.type).toBe('wythoff-beatty');
+    expect(sol.trace?.type).toBe('wythoff-beatty');
     expect(sol.stats.solverName).toContain('Wythoff');
   });
 

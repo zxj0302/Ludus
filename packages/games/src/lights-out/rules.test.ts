@@ -8,7 +8,7 @@ import {
   solveLightsOut,
   getDifficulty,
 } from './rules';
-import type { LightsOutState } from './rules';
+import type { LightsOutState } from './types';
 
 describe('createLightsOutState', () => {
   it('creates all-off state for default 5×5', () => {

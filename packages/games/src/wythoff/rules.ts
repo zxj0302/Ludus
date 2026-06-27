@@ -1,7 +1,7 @@
 import type { Difficulty, Solution } from '@ludus/core';
-import type { WythoffState, WythoffMove } from '@ludus/core';
-import { isWythoffPPosition, findWythoffWinningMove } from '@ludus/core';
-import { computeWythoffDifficulty } from '@ludus/core';
+import type { WythoffState, WythoffMove } from './types';
+import { isWythoffPPosition, findWythoffWinningMove } from './solver';
+import { computeWythoffDifficulty } from './difficulty';
 
 export type { WythoffState, WythoffMove };
 

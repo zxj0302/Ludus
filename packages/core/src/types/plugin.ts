@@ -205,4 +205,13 @@ export interface GamePlugin<
 
   // -- 可视化 --
   visualizationManifest: VisualizationManifest;
+
+  // -- AI 对手（可选，Nim/Wythoff 等对抗游戏） --
+  /** AI 对手支持 */
+  ai?: {
+    /** 当前状态是否轮到 AI */
+    isAITurn(state: S): boolean;
+    /** 获取 AI 走子 + 建议延迟(ms)，null = AI 无法行动 */
+    getAIMove(state: S): { move: M; delay: number } | null;
+  };
 }

@@ -1,5 +1,5 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
-import { generateNimLevel } from '@ludus/core';
+import { generateNimLevel } from './generator';
 import {
   createInitialState,
   legalMoves,
@@ -9,8 +9,10 @@ import {
   solveNimState,
   chooseHand,
 } from './rules';
-import type { NimState, NimMove } from './rules';
+import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
+import { findWinningMove } from './solver';
+
 export { NimBoard } from './render';
 export { chooseHand };
 export { solveNimState } from './rules';
@@ -62,4 +64,15 @@ export const nimPlugin: GamePlugin<NimState, NimMove> = {
   renderBackend: 'dom',
   educationManifest: nimEducationManifest,
   visualizationManifest: nimVisualizationManifest,
+  ai: {
+    isAITurn: (state) => state.currentPlayer === 1 && state.phase === 'playing' && !state.piles.every(v => v === 0),
+    getAIMove: (state) => {
+      const wm = findWinningMove(state.piles);
+      if (wm) return { move: wm, delay: 600 };
+      // P-position: take 1 from first non-empty pile
+      const idx = state.piles.findIndex(v => v > 0);
+      if (idx >= 0) return { move: { pileIndex: idx, removeCount: 1 }, delay: 600 };
+      return null;
+    },
+  },
 };

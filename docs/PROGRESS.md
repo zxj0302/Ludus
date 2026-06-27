@@ -5,11 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）进行中— Wythoff 已完整实现**。下一步：下一款游戏（15-puzzle 或 Sokoban 生成器升级）
+- **当前阶段**：**阶段 5（增量游戏）进行中 — 架构重构中：游戏即插件**。5 款游戏已完成，正在进行插件化解耦重构。
 - **MVP 范围**：5 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：3 包 monorepo（core / games / web），100+ 个源文件，196 个测试（全过），Vite 构建成功。
-- **测试覆盖**：GF(2) 求解器 16 测 / Lights Out 规则 18 测 + 生成器 5 测 / Sokoban 规则+BFS+关卡 20 测 + 生成器 7 测 + 难度 3 测 / DLX 求解器 16 测 + 生成器 5 测 + 数独规则 14 测 + 难度 4 测 / Nim 求解器 15 测 + 规则 16 测 + 生成器 6 测 + 难度 5 测 / Wythoff 求解器 16 测 + 规则 20 测 + 生成器 2 测 + 难度 6 测 = **196 测试全过**。
+- **代码库状态**：3 包 monorepo（core / games / web），120+ 个源文件，196 个测试（全过），Vite 构建成功。
+- **测试覆盖**：18 个测试文件，196 测试全过（games 包内所有测试已随源码迁移至对应游戏目录）。
+- **重构进度**：10 步计划已完成 3 步——GamePluginEntry 接口 ✅、ai 字段 ✅、游戏代码迁移 ✅。
 
 ## ✅ DONE
 
@@ -108,31 +109,39 @@
 
 ## 🚧 IN PROGRESS
 
-- **Sokoban 高质量生成器**（待做——参考学术资料实现反向行走/模板拼接/进化算法）
+- **架构重构：游戏即插件**（10 步计划，已完成 3 步）：
+  1. ✅ `GamePluginEntry` 接口 — `packages/games/src/types.ts`
+  2. ✅ `GamePlugin.ai` 可选字段 — Nim/Wythoff 已实现 `isAITurn` + `getAIMove`
+  3. ✅ 游戏专属代码从 core 迁回各游戏目录（26 文件迁移，196 测试全过）
+  4. ⬜ gameStore 去游戏化 — 用 `plugin.ai` 替代 scheduleNimAI/scheduleWythoffAI
+  5. ⬜ GameShell 去游戏化 + 提取共享组件到 `packages/ui`
+  6. ⬜ EducationPanel 去静态 import
+  7. ⬜ i18n 拆分 — 游戏专属字符串归入各游戏
+  8. ⬜ Registry 更新 + Core barrel 清理
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-Wythoff 已完成。下次可推进：
+继续架构重构 Step 4：重构 `gameStore.ts`。
 
-### 选项 A：15-puzzle (A*)
+1. 将 `scheduleNimAI` / `scheduleWythoffAI` 替换为通用 `scheduleAI`，调用 `plugin.ai.getAIMove()`
+2. 删除所有 `isAdversarial` 硬编码分支（`gameId === 'nim' || gameId === 'wythoff'`）
+3. 删除 `findWinningMove` / `findWythoffWinningMove` / `isWythoffPPosition` 等游戏专属 import
+4. 运行 `pnpm typecheck && pnpm test`，确保 196 测试全过
+5. 手动验证 Nim/Wythoff AI 自动对弈正常
 
-滑动拼图——见 backlog §9 搜索/启发式。需实现 A* + 曼哈顿距离/线性冲突启发式 + 反向随机游走生成器。这是首款需要启发式搜索的游戏，将引入新的求解器模式。
-
-### 选项 B：Sokoban 生成器升级
-
-参考学术资料（Rolling Stone 反向行走 / Murase 模板拼接 / Ashlock 进化算法）实现高质量关卡生成器，替代当前 Microban 选关方案。
+参考文件：`packages/games/src/nim/index.ts`（已实现 `ai` 字段）、`apps/web/src/stores/gameStore.ts`（当前 590 行，目瘦至约 250 行）
 
 ## 🐛 KNOWN ISSUES
 
-- `packages/ui` / `packages/viz` 尚未提取（ADN-022：≥2 游戏共享时提取）
+- `packages/ui` / `packages/viz` 尚未提取（重构 Step 5 将处理）
+- `packages/i18n` 为空壳（重构 Step 7 将处理）
 - 音效文件（.mp3 audio sprite）尚未制作，`useSound` hook 与 Howler.js 封装已就绪
-- EducationPanel 当前使用内联内容，尚未动态加载 .md 文件（ContentRenderer 骨架已存在）
 - 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器有 fallback 处理
-- `packages/i18n` 为空壳（package.json 存在但无 src），`npm run typecheck` 在根目录会因该包而失败
 - `LightsOutBoard` 的 `aria-label`（`render.tsx`）为硬编码英文，因 packages/games 无 react-i18next 依赖
-- Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施（`solver.worker.ts`）就绪但未接入 `shouldUseWorker` 分流逻辑
-- Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成（反向行走/模板/进化）
-- 侧边栏布局已确定终局方案：flex `items-start` + ResizeObserver 左列高度测量 + 右列 `height` 同步（非 `min-height`）。见 memory `lessons-learned.md` §9.4。
+- Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
+- Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
+- Core 层仍保留游戏专属代码副本（solver/generator/difficulty 原文），重构 Step 9 清理
+- `apps/web/src/workers/solver.worker.ts` 仍从 `@ludus/core` 导入 GF(2) 函数，重构完成前可用
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
@@ -256,6 +265,20 @@ Wythoff 已完成。下次可推进：
   **文档**：L3 更新随机生成法+先手假设声明，清理过期伪代码，清理 4 个未使用 i18n key
   **经验**：lessons-learned.md 新增 §11 Nim 专项（人机对战模式、AI 调度、先后手机制等）
   测试 152/152 全过，typecheck 全绿
+- [2026-06-27] **架构重构：游戏即插件 — Step 1–3**：
+  - **Step 1**：创建 `packages/games/src/types.ts` — `GamePluginEntry<S, M>` 接口（BoardComponent / isOwnState / moveToHighlight / i18n / ui / ai / education / visualization 等 9 个字段）
+  - **Step 1**：`GamePlugin` 接口新增可选 `ai?: { isAITurn, getAIMove }` 字段（`packages/core/src/types/plugin.ts`）
+  - **Step 2**：26 个游戏专属文件从 core 迁回各游戏目录：
+    - Lights Out：`solver.ts`（GF(2) 高斯消元）+ `generator.ts` + `types.ts`
+    - Nim：`solver.ts` + `generator.ts` + `difficulty.ts` + `types.ts`
+    - Wythoff：`solver.ts` + `generator.ts` + `difficulty.ts` + `types.ts`
+    - Sudoku：`solver.ts`（DLX）+ `generator.ts` + `difficulty.ts` + `types.ts`
+    - Sokoban：`solver.ts`（BFS）+ `solver-utils.ts` + `generator.ts` + `levels.ts` + `types.ts`
+  - 所有 import 路径更新为本地引用（如 `'./solver'` 替代 `'@ludus/core'`）
+  - 测试文件随源码迁移，import 路径同步更新
+  - 196 测试全过，core / games / web typecheck 全绿
+  - **Step 3 前置**：Nim + Wythoff 插件已实现 `ai` 字段（`isAITurn` + `getAIMove`），为 gameStore 重构做准备
+  - 重构计划文档：`/Users/zxj/.claude/plans/drifting-dancing-wreath.md`（10 步，已完成 3 步）
 - [2026-06-27] Wythoff 全面审查与修复（两轮）+ Nim 求解器优化：
   **Wythoff 修复**：
   - 同时取按钮截断：`Math.min(maxBoth, 6)` → 全部显示 + `max-h-48 overflow-y-auto`
