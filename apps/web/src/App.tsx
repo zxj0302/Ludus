@@ -14,7 +14,7 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="glass-panel sticky top-0 z-50 border-b border-white/60">
+      <header className="glass-panel border-b border-white/60">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 no-underline group">
             <span className="w-8 h-8 rounded-xl bg-logic-indigo-600 flex items-center justify-center text-white text-sm font-bold">
