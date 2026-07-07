@@ -72,7 +72,7 @@ const SECTION_STYLES: Record<string, SectionStyle> = {
 function splitSections(md: string): { key: string; english: string; chinese: string; body: string }[] {
   const sections: { key: string; english: string; chinese: string; body: string }[] = [];
   const parts = md.split(/^## /m);
-  const stageMap: Record<string, string> = { play: 'play', think: 'think', reveal: 'reveal', solve: 'solve', create: 'create' };
+  const knownStages = new Set(['play', 'think', 'reveal', 'solve', 'create']);
 
   for (const part of parts) {
     if (!part.trim()) continue;
@@ -80,14 +80,17 @@ function splitSections(md: string): { key: string; english: string; chinese: str
     const heading = newlineIdx >= 0 ? part.slice(0, newlineIdx).trim() : part.trim();
     const body = newlineIdx >= 0 ? part.slice(newlineIdx + 1).trim() : '';
 
-    // heading format: "1. 玩 · Play" or "2. 思考 · Think"
-    const englishPart = heading.includes('·') ? heading.split('·').pop()!.trim() : heading;
+    // heading formats: "1. 玩 · Play" (zh), "1. Play" (en), "1. Play · Play" (edge)
+    const englishPart = heading.includes('·')
+      ? heading.split('·').pop()!.trim()
+      : heading.replace(/^\d+\.\s*/, '').trim();
     const englishLower = englishPart.toLowerCase();
-    const chinesePart = heading.includes('·') ? heading.split('·')[0]!.replace(/^\d+\.\s*/, '').trim() : heading;
+    const chinesePart = heading.includes('·')
+      ? heading.split('·')[0]!.replace(/^\d+\.\s*/, '').trim()
+      : englishPart;
 
-    const key = stageMap[englishLower];
-    if (key && body) {
-      sections.push({ key, english: englishPart, chinese: chinesePart, body });
+    if (knownStages.has(englishLower) && body) {
+      sections.push({ key: englishLower, english: englishPart, chinese: chinesePart, body });
     }
   }
   return sections;
