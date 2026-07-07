@@ -54,6 +54,77 @@ const STAGES: { key: Stage; i18nKey: string; english: string }[] = [
   { key: 'create', i18nKey: 'education.section.create', english: 'Create' },
 ];
 
+interface SectionStyle {
+  icon: string;
+  borderColor: string;
+  bgColor: string;
+  headerColor: string;
+}
+
+const SECTION_STYLES: Record<string, SectionStyle> = {
+  play:   { icon: '\u{1F3AE}', borderColor: 'var(--clarity-teal-dark)',    bgColor: '#ccfbef', headerColor: 'var(--clarity-teal-dark)' },
+  think:  { icon: '\u{1F4A1}', borderColor: 'var(--game-amber-400)',       bgColor: 'var(--game-amber-100)',  headerColor: 'var(--game-amber-700)' },
+  reveal: { icon: '\u{1F52C}', borderColor: 'var(--logic-indigo-600)',     bgColor: 'var(--logic-indigo-50)', headerColor: 'var(--logic-indigo-700)' },
+  solve:  { icon: '⚙️', borderColor: 'var(--sky-blue-600)',         bgColor: 'var(--sky-blue-50)',     headerColor: 'var(--sky-blue-700)' },
+  create: { icon: '\u{1F3A8}', borderColor: 'var(--violet-600)',           bgColor: 'var(--violet-50)',       headerColor: 'var(--violet-700)' },
+};
+
+function splitSections(md: string): { key: string; english: string; chinese: string; body: string }[] {
+  const sections: { key: string; english: string; chinese: string; body: string }[] = [];
+  const parts = md.split(/^## /m);
+  const stageMap: Record<string, string> = { play: 'play', think: 'think', reveal: 'reveal', solve: 'solve', create: 'create' };
+
+  for (const part of parts) {
+    if (!part.trim()) continue;
+    const newlineIdx = part.indexOf('\n');
+    const heading = newlineIdx >= 0 ? part.slice(0, newlineIdx).trim() : part.trim();
+    const body = newlineIdx >= 0 ? part.slice(newlineIdx + 1).trim() : '';
+
+    // heading format: "1. 玩 · Play" or "2. 思考 · Think"
+    const englishPart = heading.includes('·') ? heading.split('·').pop()!.trim() : heading;
+    const englishLower = englishPart.toLowerCase();
+    const chinesePart = heading.includes('·') ? heading.split('·')[0]!.replace(/^\d+\.\s*/, '').trim() : heading;
+
+    const key = stageMap[englishLower];
+    if (key && body) {
+      sections.push({ key, english: englishPart, chinese: chinesePart, body });
+    }
+  }
+  return sections;
+}
+
+function SectionCard({ section }: { section: { key: string; english: string; chinese: string; body: string } }) {
+  const style = SECTION_STYLES[section.key];
+  if (!style) return <MarkdownRenderer content={section.body} />;
+
+  const sectionId = 'section-' + section.english.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 32);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="bento-card overflow-hidden"
+      id={sectionId}
+    >
+      {/* 标题行 */}
+      <div
+        className="flex items-center gap-2 px-4 py-2.5 border-b border-warm-stone-100"
+        style={{ borderLeft: `4px solid ${style.borderColor}`, backgroundColor: style.bgColor }}
+      >
+        <span className="text-base">{style.icon}</span>
+        <h3 className="text-sm font-semibold" style={{ color: style.headerColor }}>
+          {section.chinese} · {section.english}
+        </h3>
+      </div>
+      {/* 内容 */}
+      <div className="px-4 py-3">
+        <MarkdownRenderer content={section.body} />
+      </div>
+    </motion.div>
+  );
+}
+
 interface Props {
   gameId: string;
   open: boolean;
@@ -253,8 +324,18 @@ export function EducationPanel({
           );
         })()}
 
-        {/* 完整 Markdown 教学内容（所有章节） */}
-        {bodyMd && <MarkdownRenderer content={bodyMd} />}
+        {/* 五段式教学卡片 */}
+        {bodyMd && (() => {
+          const sections = splitSections(bodyMd);
+          if (sections.length === 0) return <MarkdownRenderer content={bodyMd} />;
+          return (
+            <div className="space-y-3">
+              {sections.map(section => (
+                <SectionCard key={section.key} section={section} />
+              ))}
+            </div>
+          );
+        })()}
       </div>
     </motion.div>
   );
