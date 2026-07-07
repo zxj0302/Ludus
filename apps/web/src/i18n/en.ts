@@ -130,6 +130,7 @@ const en = {
     'education.title': 'Algorithm Visualization',
     'education.close': 'Close',
     'education.backToTop': 'Back to top',
+    'education.liveAnalysis': 'Live Analysis',
     'education.section.play': 'Play',
     'education.section.think': 'Think',
     'education.section.reveal': 'Reveal',

@@ -267,91 +267,93 @@ export function EducationPanel({
 
       {/* Full content — all sections visible, scroll to navigate */}
       <div className="px-5 py-4 space-y-4" ref={contentRef}>
-        {/* 实时状态卡片 */}
-        {gameState && (
-          <StatusCard gameId={gameId} gameState={gameState} solution={solution} solvePlayback={solvePlayback} solveStepIndex={solveStepIndex} />
-        )}
-
-        {/* 可视化区域 */}
-        <div id="solver-viz-top" className="scroll-mt-28" />
-
-        {solution?.trace && (() => {
-          const entry = getGameEntry(gameId);
-          const VizComponent = entry?.visualization?.Component;
-          const matchTrace = entry?.visualization?.matchTrace;
-          if (!VizComponent || !matchTrace || !matchTrace(solution.trace as SolverTrace)) return null;
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="bento-card overflow-hidden"
+        {/* 实时分析卡片：状态 + 可视化 + 最优解 */}
+        {(gameState || solution?.trace || solution?.solvable) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="bento-card overflow-hidden"
+            id="solver-viz-top"
+          >
+            <div
+              className="flex items-center gap-2 px-4 py-2.5 border-b border-warm-stone-100"
+              style={{ borderLeft: '4px solid var(--sky-blue-600)', backgroundColor: 'var(--sky-blue-50)' }}
             >
-              <div
-                className="flex items-center gap-2 px-4 py-2.5 border-b border-warm-stone-100"
-                style={{ borderLeft: '4px solid var(--sky-blue-600)', backgroundColor: 'var(--sky-blue-50)' }}
-              >
-                <span className="text-base">📊</span>
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--sky-blue-700)' }}>
-                  {t('education.section.solve')} · Visualization
-                </h3>
-              </div>
-              <div className="p-4">
-                <VizComponent trace={solution.trace as SolverTrace} solution={solution} gameState={gameState!} solveStepIndex={solveStepIndex} solvePlayback={solvePlayback} />
-              </div>
-            </motion.div>
-          );
-        })()}
+              <span className="text-base">📊</span>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--sky-blue-700)' }}>
+                {t('education.liveAnalysis')} · Live Analysis
+              </h3>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* 状态 */}
+              {gameState && (
+                <StatusCard gameId={gameId} gameState={gameState} solution={solution} solvePlayback={solvePlayback} solveStepIndex={solveStepIndex} />
+              )}
 
-        {/* 最优解 / 终局 / P-position — 同一容器，仅内容切换，避免卸载重装闪烁 */}
-        {solution?.solvable && (() => {
-          const entry = getGameEntry(gameId);
-          const isGameOver = gameState && entry?.plugin.isSolved(gameState);
-          const hasMoves = solution.moves.length > 0;
+              {/* 可视化 */}
+              {solution?.trace && (() => {
+                const entry = getGameEntry(gameId);
+                const VizComponent = entry?.visualization?.Component;
+                const matchTrace = entry?.visualization?.matchTrace;
+                if (!VizComponent || !matchTrace || !matchTrace(solution.trace as SolverTrace)) return null;
+                return (
+                  <VizComponent trace={solution.trace as SolverTrace} solution={solution} gameState={gameState!} solveStepIndex={solveStepIndex} solvePlayback={solvePlayback} />
+                );
+              })()}
 
-          let title: string; let icon: string; let body: React.ReactNode;
+              {/* 最优解 / 终局 / P-position */}
+              {solution?.solvable && (() => {
+                const entry = getGameEntry(gameId);
+                const isGameOver = gameState && entry?.plugin.isSolved(gameState);
+                const hasMoves = solution.moves.length > 0;
 
-          if (hasMoves) {
-            title = t('education.optimalSolution', { count: solution.moves.length });
-            icon = '👆';
-            body = (
-              <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
-                {solution.moves.map((m, i) => {
-                  const isCurrentStep = solvePlayback && i === solveStepIndex;
-                  const isPastStep = solvePlayback && i < solveStepIndex;
-                  const playersFirst = (solution.trace?.visualizationData as any)?.playerStarts ?? true;
-                  const label = formatMove(gameId, m, i, playersFirst, t);
-                  return (
-                    <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
-                      text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
-                      ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
-                        isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
-                        'text-warm-stone-600'}
-                    `}>
-                      <span className="w-5 text-right tabular-nums">{i + 1}.</span>
-                      <span>{label}</span>
-                      {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
+                let title: string; let icon: string; let body: React.ReactNode;
+
+                if (hasMoves) {
+                  title = t('education.optimalSolution', { count: solution.moves.length });
+                  icon = '👆';
+                  body = (
+                    <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
+                      {solution.moves.map((m, i) => {
+                        const isCurrentStep = solvePlayback && i === solveStepIndex;
+                        const isPastStep = solvePlayback && i < solveStepIndex;
+                        const playersFirst = (solution.trace?.visualizationData as any)?.playerStarts ?? true;
+                        const label = formatMove(gameId, m, i, playersFirst, t);
+                        return (
+                          <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
+                            text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
+                            ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
+                              isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
+                              'text-warm-stone-600'}
+                          `}>
+                            <span className="w-5 text-right tabular-nums">{i + 1}.</span>
+                            <span>{label}</span>
+                            {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
-                })}
-              </div>
-            );
-          } else if (isGameOver) {
-            title = t('education.gameOver');
-            icon = '🏁';
-            body = <p className="text-xs text-warm-stone-600">{t('education.gameOverHint')}</p>;
-          } else {
-            title = t('education.noWinningMove');
-            icon = '⚠️';
-            body = <p className="text-xs text-warm-stone-600">{t('game.status.noWinningMove')}</p>;
-          }
+                } else if (isGameOver) {
+                  title = t('education.gameOver');
+                  icon = '🏁';
+                  body = <p className="text-xs text-warm-stone-600">{t('education.gameOverHint')}</p>;
+                } else {
+                  title = t('education.noWinningMove');
+                  icon = '⚠️';
+                  body = <p className="text-xs text-warm-stone-600">{t('game.status.noWinningMove')}</p>;
+                }
 
-          return (
-            <KnowledgeCard title={title} icon={icon}>
-              {body}
-            </KnowledgeCard>
-          );
-        })()}
+                return (
+                  <KnowledgeCard title={title} icon={icon}>
+                    {body}
+                  </KnowledgeCard>
+                );
+              })()}
+            </div>
+          </motion.div>
+        )}
 
         {/* 五段式教学卡片 */}
         {bodyMd && (() => {
