@@ -240,6 +240,14 @@ export function EducationPanel({
                 </button>
               ))}
             </div>
+            <button type="button" onClick={scrollToTop}
+              className="w-7 h-7 rounded-btn flex items-center justify-center hover:bg-warm-stone-100 text-warm-stone-500 transition-colors"
+              title={t('education.backToTop')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m18 15-6-6-6 6"/>
+              </svg>
+            </button>
             <button type="button" onClick={onClose}
               className="w-7 h-7 rounded-btn flex items-center justify-center hover:bg-warm-stone-100 text-warm-stone-500 transition-colors text-sm">
               ✕
@@ -368,19 +376,20 @@ export function EducationPanel({
           );
         })()}
 
-        {/* 返回顶部 */}
-        <div className="flex justify-center pt-2 pb-1">
+        {/* 返回顶部 — sticky 悬浮在底部 */}
+        <div className="sticky bottom-3 flex justify-end pointer-events-none">
           <button
             type="button"
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-btn text-xs font-medium
-              bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700
-              transition-colors"
+            className="pointer-events-auto w-8 h-8 rounded-full flex items-center justify-center
+              bg-white/90 backdrop-blur-sm border border-warm-stone-200 shadow-md
+              text-warm-stone-400 hover:text-warm-stone-600 hover:border-warm-stone-300
+              transition-all"
+            title={t('education.backToTop')}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m18 15-6-6-6 6"/>
             </svg>
-            {t('education.backToTop')}
           </button>
         </div>
       </div>
