@@ -203,7 +203,13 @@ export function EducationPanel({
     if (info) scrollToSection(info.english);
   }, [scrollToSection]);
 
-  // 游戏专属判断（用于解步骤标签）
+  const scrollToTop = useCallback(() => {
+    const vizEl = document.getElementById('solver-viz-top');
+    const scrollParent = vizEl?.closest('.overflow-y-auto') as HTMLElement | null;
+    if (scrollParent) {
+      scrollParent.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
 
   if (!open && !hasBeenOpened) return null;
 
@@ -266,7 +272,7 @@ export function EducationPanel({
           <StatusCard gameId={gameId} gameState={gameState} solution={solution} solvePlayback={solvePlayback} solveStepIndex={solveStepIndex} />
         )}
 
-        {/* 可视化区域：根据 trace 类型自动选择组件 */}
+        {/* 可视化区域 */}
         <div id="solver-viz-top" className="scroll-mt-28" />
 
         {solution?.trace && (() => {
@@ -274,7 +280,27 @@ export function EducationPanel({
           const VizComponent = entry?.visualization?.Component;
           const matchTrace = entry?.visualization?.matchTrace;
           if (!VizComponent || !matchTrace || !matchTrace(solution.trace as SolverTrace)) return null;
-          return <VizComponent trace={solution.trace as SolverTrace} solution={solution} gameState={gameState!} solveStepIndex={solveStepIndex} solvePlayback={solvePlayback} />;
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="bento-card overflow-hidden"
+            >
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 border-b border-warm-stone-100"
+                style={{ borderLeft: '4px solid var(--sky-blue-600)', backgroundColor: 'var(--sky-blue-50)' }}
+              >
+                <span className="text-base">📊</span>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--sky-blue-700)' }}>
+                  {t('education.section.solve')} · Visualization
+                </h3>
+              </div>
+              <div className="p-4">
+                <VizComponent trace={solution.trace as SolverTrace} solution={solution} gameState={gameState!} solveStepIndex={solveStepIndex} solvePlayback={solvePlayback} />
+              </div>
+            </motion.div>
+          );
         })()}
 
         {/* 最优解 / 终局 / P-position — 同一容器，仅内容切换，避免卸载重装闪烁 */}
@@ -339,6 +365,22 @@ export function EducationPanel({
             </div>
           );
         })()}
+
+        {/* 返回顶部 */}
+        <div className="flex justify-center pt-2 pb-1">
+          <button
+            type="button"
+            onClick={scrollToTop}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-btn text-xs font-medium
+              bg-warm-stone-100 text-warm-stone-500 hover:bg-warm-stone-200 hover:text-warm-stone-700
+              transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m18 15-6-6-6 6"/>
+            </svg>
+            {t('education.backToTop')}
+          </button>
+        </div>
       </div>
     </motion.div>
   );

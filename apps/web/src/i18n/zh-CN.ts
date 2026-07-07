@@ -129,6 +129,7 @@ const zhCN = {
 
     'education.title': '算法原理可视化',
     'education.close': '收起',
+    'education.backToTop': '回到顶部',
     'education.section.play': '玩',
     'education.section.think': '思考',
     'education.section.reveal': '揭示',
