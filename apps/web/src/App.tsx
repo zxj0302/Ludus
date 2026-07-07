@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from './stores/gameStore';
@@ -6,6 +7,10 @@ export function App() {
   const { t } = useTranslation();
   const location = useLocation();
   const isHub = location.pathname === '/';
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col">
