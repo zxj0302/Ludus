@@ -233,6 +233,22 @@ const en = {
     'hub.play': 'Play',
     'hub.comingSoon': 'Coming Soon',
     'hub.lightsOut.desc': 'Linear Algebra · GF(2) Gaussian Elimination',
+
+    'game.fifteen.name': '15-Puzzle',
+    'game.fifteen.description': 'Slide numbered tiles to reorder them — use A* search with Manhattan distance heuristic to find the shortest path',
+    'fifteen.empty': 'Empty',
+    'fifteen.tileAria': 'Tile {{value}}, row {{row}} column {{col}}',
+    'fifteen.steps': 'Steps',
+    'fifteen.scrambleDepth': 'Scramble Depth',
+    'fifteen.manhattanDist': 'Manhattan Distance',
+    'fifteen.heuristic': 'Heuristic',
+    'fifteen.fValue': 'f-value',
+    'fifteen.gValue': 'g-value (cost so far)',
+    'fifteen.hValue': 'h-value (heuristic estimate)',
+    'fifteen.solutionPath': 'Solution Path',
+    'fifteen.searchTree': 'A* Search Tree',
+    'fifteen.nodesExplored': 'Nodes Explored',
+    'fifteen.solverName': 'A* (Manhattan Distance)',
   },
 };
 

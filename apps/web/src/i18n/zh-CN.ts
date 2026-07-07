@@ -233,6 +233,22 @@ const zhCN = {
     'hub.play': '开始玩',
     'hub.comingSoon': '即将推出',
     'hub.lightsOut.desc': '线性代数 · GF(2) 高斯消元',
+
+    'game.fifteen.name': '15-Puzzle 数字华容道',
+    'game.fifteen.description': '滑动数字块重新排列——用 A* 搜索与曼哈顿距离启发式找到最短路径',
+    'fifteen.empty': '空位',
+    'fifteen.tileAria': '数字 {{value}}，第 {{row}} 行第 {{col}} 列',
+    'fifteen.steps': '步数',
+    'fifteen.scrambleDepth': '打乱步数',
+    'fifteen.manhattanDist': '曼哈顿距离',
+    'fifteen.heuristic': '启发式',
+    'fifteen.fValue': 'f 值',
+    'fifteen.gValue': 'g 值（已走步数）',
+    'fifteen.hValue': 'h 值（启发式估计）',
+    'fifteen.solutionPath': '最优解路径',
+    'fifteen.searchTree': 'A* 搜索树',
+    'fifteen.nodesExplored': '搜索节点数',
+    'fifteen.solverName': 'A* (曼哈顿距离)',
   },
 };
 

@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -42,6 +42,11 @@ import l2enWY from '@ludus/education/src/content/wythoff/l2.en.md?raw';
 import l3zhWY from '@ludus/education/src/content/wythoff/l3.zh-CN.md?raw';
 import l3enWY from '@ludus/education/src/content/wythoff/l3.en.md?raw';
 
+import l2zhFF from '@ludus/education/src/content/fifteen/l2.zh-CN.md?raw';
+import l2enFF from '@ludus/education/src/content/fifteen/l2.en.md?raw';
+import l3zhFF from '@ludus/education/src/content/fifteen/l3.zh-CN.md?raw';
+import l3enFF from '@ludus/education/src/content/fifteen/l3.en.md?raw';
+
 lightsOutEntry.education = {
   content: { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
 };
@@ -58,6 +63,10 @@ wythoffEntry.education = {
   content: { 'L2.zh-CN': l2zhWY, 'L2.en': l2enWY, 'L3.zh-CN': l3zhWY, 'L3.en': l3enWY },
 };
 
+fifteenEntry.education = {
+  content: { 'L2.zh-CN': l2zhFF, 'L2.en': l2enFF, 'L3.zh-CN': l3zhFF, 'L3.en': l3enFF },
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 2. Visualization — viz 组件（lazy import）
 // ═══════════════════════════════════════════════════════════════
@@ -67,6 +76,7 @@ const BFSTreeViz = lazy(() => import('./components/BFSTreeViz'));
 const DLXMatrixViz = lazy(() => import('./components/DLXMatrixViz').then(m => ({ default: m.DLXMatrixViz })));
 const NimTreeViz = lazy(() => import('./components/NimTreeViz').then(m => ({ default: m.NimTreeViz })));
 const WythoffTreeViz = lazy(() => import('./components/WythoffTreeViz').then(m => ({ default: m.WythoffTreeViz })));
+const FifteenTreeViz = lazy(() => import('./components/FifteenTreeViz').then(m => ({ default: m.FifteenTreeViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -113,6 +123,15 @@ wythoffEntry.visualization = {
   Component: (({ trace, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback />}>
       {gameState && <WythoffTreeViz key={(gameState as any).piles?.join(',')} trace={trace} state={gameState as any} />}
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
+fifteenEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'a-star-search',
+  Component: (({ trace, solution, gameState }: VisualizationProps) => (
+    <Suspense fallback={<Fallback height="h-80" />}>
+      <FifteenTreeViz trace={trace} solution={solution} gameState={gameState as any} />
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };

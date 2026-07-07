@@ -57,6 +57,8 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
         };
 
         self.postMessage(response);
+      } else if (gameId === 'fifteen') {
+        self.postMessage({ id, type, error: 'Fifteen worker not yet implemented — use main thread' });
       } else {
         self.postMessage({ id, type, error: `Unknown game: ${gameId}` });
       }

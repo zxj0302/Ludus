@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）— 架构重构已完成**。下一步：新游戏开发或 Sokoban 生成器升级。
-- **MVP 范围**：5 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅）。
+- **当前阶段**：**阶段 5（增量游戏）— 第 6 款游戏 15-Puzzle 已完成**。下一步：Sokoban 生成器升级或下一款游戏。
+- **MVP 范围**：6 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅），超 MVP 目标。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，196 个测试（全过），Vite 构建成功。
-- **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。
-- **测试覆盖**：18 个测试文件，196 测试全过。
+- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，225 个测试（全过），Vite 构建成功。
+- **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'`。
+- **测试覆盖**：22 个测试文件，225 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -101,6 +101,17 @@
   - 最终包结构：4 包（core/games/education/ui）+ apps/web。i18n/viz 包已移除。
   - 每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。新增游戏 = 加目录 + registry 一行。
   - 196 测试全过，typecheck 零错误，vite build 成功
+- **阶段 5e — 15-Puzzle (A* 搜索)** ✅:
+  - Core: FifteenState/FifteenMove 类型 + 规则引擎（legalMoves/applyMove/isSolved）+ A* 求解器（曼哈顿距离启发式 + MinHeap 优先队列 + 状态去重）+ 随机走动生成器（保可解）+ 难度公式（scrambleDepth/80）
+  - Game: 完整插件（rules/manifest/index/render）+ FifteenBoard 渲染（CSS Grid 4×4 + Framer Motion layout 动画 + 键盘方向键 + 点击双交互）
+  - Web: GameShell 动态 Board 选择 + EducationPanel 状态卡片 + FifteenTreeViz 懒加载（custom SVG，路径节点缩略图 + f/g/h 标注 + f 值趋势图）
+  - i18n: 中英翻译 key（fifteen.* 完整覆盖，17 keys × 2 languages）
+  - 教学: 四份 markdown（L2/L3 × zh/en），五段式结构
+  - 测试: 规则 9 测 + 求解器 8 测 + 生成器 6 测 + 难度 6 测 = 29 新测试，**225 全过**
+  - 构建: v1.0 成功，FifteenTreeViz 懒加载分包（~3.3KB gzip ~1.3KB）
+  - 新增 13 个文件（9 core + 4 edu），修改 5 个文件（registry/zh-CN/en/entrySetup/worker）
+  - isFastSolver: false（A* 走后台 scheduleBackgroundSolve，不阻塞 UI）
+  - SolverTrace type 新增 `'a-star-search'`（packages/core/src/types/plugin.ts）
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
@@ -119,11 +130,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-架构重构全部完成，docs 已全面更新。下一步回归游戏开发：
+6 款游戏全部完成（超 MVP 目标）。下一步：
 
-1. 15-puzzle (A*) 或下一款增量游戏
-2. 或 Sokoban 生成器升级（反向行走/模板/进化算法）
-3. 新增游戏演示：复制任意游戏目录 → 改 id → registry 加一行 → 验证零改动即插即用
+1. **Sokoban 生成器升级**（反向行走/模板/进化算法）— 当前为 Microban 选关
+2. **下一款增量游戏**：按 B.6 建议顺序，下一款是倒水问题（数论）或 Nonogram
+3. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
 
 ## 🐛 KNOWN ISSUES
 
@@ -133,10 +144,13 @@
 - Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
+- 15-Puzzle A* 求解器在主线程执行，中大深度可能卡 UI——Worker 有 stub 但未接入
+- 15-Puzzle `getDifficulty` 始终返回 score=0（难度由生成器设定，当前状态无法反推 scramble depth）
+- FifteenTreeViz 有少量硬编码英文（Collapse/Expand 按钮、步骤说明文本）
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 下一款游戏：15-puzzle (A*) 还是 Sokoban 生成器升级？
+- 下一阶段：Sokoban 生成器升级 vs 倒水问题 vs Nonogram vs 横切能力（进度/成就/i18n 完善）？
 
 ## 📝 SESSION LOG
 
@@ -310,6 +324,15 @@
   - GameShell: 418 → 379 行
   - 314 测试全过，games/web typecheck 全绿
   - 重构进度：10 步完成 6 步
+- [2026-07-08] **阶段 5e — 15-Puzzle (A* 搜索)**：
+  - Core 层：A* 求解器（曼哈顿距离启发式 + MinHeap 优先队列）+ 随机走动生成器 + 难度公式 + 规则引擎
+  - Game 层：FifteenBoard（CSS Grid 4×4 + Framer Motion layout 动画 + 键盘方向键 + 点击双交互）
+  - Web 层：FifteenTreeViz（custom SVG，路径节点缩略图 + f/g/h 标注 + f 值趋势图）懒加载
+  - i18n：中英 17 keys × 2 languages；教学：L2/L3 × zh/en 四份
+  - 测试：29 新测试（规则 9 + 求解器 8 + 生成器 6 + 难度 6），总计 225 全过
+  - 新增 13 文件（9 core + 4 edu），修改 5 文件（registry/zh-CN/en/entrySetup/worker）
+  - isFastSolver: false（A* 后台 solve，不阻塞 UI）
+  - 开发方式：Subagent-Driven Development × 3 batches，全程 typecheck + test 绿色
 - [2026-06-28] **Docs 全面更新**：审计并修复 `docs/` 下所有过时内容：
   - `02-architecture.md`：更新 §1 分层架构图（移除 viz/i18n 包、Core solver/generator 子目录）、§1 依赖规则表、§2.1 包依赖关系图、§3 GamePlugin 接口（新增 ai 字段 + GamePluginEntry）、§6 目录骨架（完整重写为当前实际状态）、§7.3 Worker 策略、§2 小结（9 包 → 4 包）
   - `DECISIONS.md`：ADR-006 标记 ⚠️ SUPERSEDED（包清单被 ADR-023 取代）
