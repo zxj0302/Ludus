@@ -24,6 +24,18 @@
 
   --clarity-teal-light: #ccfbef;
   --clarity-teal-dark: #14b897;
+
+  --sky-blue-50: #f0f7ff;
+  --sky-blue-100: #d6e8ff;
+  --sky-blue-200: #a8cfff;
+  --sky-blue-600: #2b7bd6;
+  --sky-blue-700: #1d5fa8;
+
+  --violet-50: #f7f5ff;
+  --violet-100: #e7e0ff;
+  --violet-200: #c9b8ff;
+  --violet-600: #7847d6;
+  --violet-700: #5e2fad;
 }
 
 @layer base {
