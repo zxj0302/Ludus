@@ -218,7 +218,7 @@ export function EducationPanel({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25 }}
-      className="bg-white rounded-card shadow-card border border-warm-stone-200/60 overflow-hidden"
+      className="bg-white rounded-card shadow-card border border-warm-stone-200/60"
     >
       {/* Header */}
       <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-warm-stone-200 px-5 py-3 space-y-3 z-10">
