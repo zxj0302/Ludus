@@ -27,7 +27,7 @@
 - **阶段 3**：`docs/phases/03-education-framework.md` ✅
 
   - 五段式模板 + 创作指南 + **Lights Out 完整教学内容 (L2/L3 × zh-CN/en，4 个 .md 文件)**
-  - ContentRenderer 组件接口定义 + 骨架
+  - 教学内容加载方案（Vite ?raw import → entrySetup.tsx → entry.education.content）
   - **§5 已按四种保证机制重写**（可解性/唯一解/最优解/难度可控 + 策略对比表）
   - **Markdown 格式修复**：全 11 个 .md 文件扫描，修复嵌套代码块高亮冲突、LaTeX 转义、占位符、裸 `<`、中文引号等 8 处问题
 - **UI 设计系统**：`docs/phases/04-ui-design-system.md` ✅
@@ -106,7 +106,7 @@
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
   - **Game 层**：Lights Out 完整插件（rules/solver/generator/manifest/render/plugin） + 游戏注册表
   - **Web 层**：`apps/web/` 全栈骨架（Vite + React 18 + Tailwind + Framer Motion + React Router v6 + Zustand + react-i18next + Howler.js）
-  - **UI 组件**（11 个）：HubPage / GamePage / GameShell / GameToolbar / GameStatusBar / ProgressiveDisclosure / KnowledgeCard / EducationPanel / MatrixViz / SolverStepPlayer / LightsOutBoard
+  - **UI 组件**（9 个）：HubPage / GamePage / GameShell / GameToolbar / GameStatusBar / ProgressiveDisclosure / KnowledgeCard / EducationPanel / MatrixViz
   - **Web Worker**：`solver.worker.ts` + Vite `?worker` 动态加载 + store 条件分流（大状态走 Worker）
   - **i18n**：中/英双语言完整覆盖，language switcher 可用
   - **单元测试**：38 测试全过（gf2.test.ts 16 / rules.test.ts 17 / generator.test.ts 5）

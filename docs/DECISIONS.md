@@ -205,7 +205,7 @@
 - **暂不创建**（等阶段 5/6 需要时再建）：
   - `packages/ui` — 阶段 4 的 GameShell/Button 等组件先放在 `apps/web/src/components/`，等 ≥2 款游戏共享时提取
   - `packages/viz` — 算法可视化在阶段 5 才需要
-  - `packages/education` — 阶段 3 已有 ContentRenderer 骨架与 Lights Out 教学内容文件，阶段 4 不再扩展此包；apps/web 用静态 import 直接消费其内容文件
+  - `packages/education` — 阶段 3 已有 Lights Out 教学内容文件；apps/web 通过 entrySetup.tsx 的 Vite ?raw import 直接消费其内容文件
   - `packages/i18n` — 阶段 4 的语言资源放在 `apps/web/src/i18n/`，等规模到需独立管理时再提取
   - `apps/desktop` / `apps/mobile` — 阶段 6
 - **理由**：垂直切片的目的是**最快验证全链路**，不是搭建完整 monorepo。一次性创建全部包会分散注意力且大量包长时间为空。等模式在 ≥2 款游戏中验证后提取共享代码，反而能设计出更准确的接口

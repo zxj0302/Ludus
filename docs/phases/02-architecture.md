@@ -16,9 +16,8 @@
 │                           (Capacitor)                        │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                packages/ui                            │   │
-│  │  GameShell  GameToolbar  GameStatusBar                │   │
-│  │  ProgressiveDisclosure  MarkdownRenderer              │   │
-│  │  ErrorBoundary                                        │   │
+│  │  GameToolbar  GameStatusBar  ProgressiveDisclosure    │   │
+│  │  MarkdownRenderer  ErrorBoundary                      │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  (viz 组件在 apps/web 按 trace.type 懒加载，不独立成包)     │
 │  (i18n 字符串归入各游戏目录，共享 key 在 apps/web)          │
@@ -26,7 +25,6 @@
 │                    EDUCATION LAYER                           │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              packages/education                       │   │
-│  │  ContentRenderer  — 渐进式揭示容器                    │   │
 │  │  content/  — 各游戏教学内容 .md 文件                  │   │
 │  │  lights-out/  sudoku/  nim/  wythoff/  sokoban/      │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -117,7 +115,7 @@ packages:
 | -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
 | `@ludus/core`      | `packages/core`      | 类型定义(GamePlugin/Level/State/Solution)、Zod Schema、版本化 Migrator、Worker 消息协议。**零游戏专属代码**。                  | 仅 zod                                |
 | `@ludus/games`     | `packages/games`     | 各游戏模块（每游戏自包含 types/rules/solver/generator/difficulty/render/manifest/i18n）、GamePluginEntry 注册表、共享类型 BoardProps | `@ludus/core`、react、framer-motion |
-| `@ludus/education` | `packages/education` | 教学内容文件（.md）、ContentRenderer                                                                                                 | `@ludus/core`                       |
+| `@ludus/education` | `packages/education` | 教学内容 Markdown 文件（L2/L3 × zh-CN/en），通过 Vite ?raw import 加载                                                              | `@ludus/core`                       |
 | `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、ProgressiveDisclosure、ErrorBoundary、MarkdownRenderer                                     | `@ludus/core`、react                |
 | `ludus-web`        | `apps/web`           | Vite + React SPA，静态部署入口。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/SokobanToolbar                            | 所有 packages                         |
 | `ludus-desktop`    | `apps/desktop`       | Tauri 壳，内嵌 Web，可选原生 API 调用（阶段 6）                                                                                      | `ludus-web` (复用)                  |
@@ -641,7 +639,6 @@ Ludus/
 │   │   ├── tsconfig.json
 │   │   └── src/
 │   │       ├── index.ts ★
-│   │       ├── ContentRenderer.tsx  # 渐进式揭示容器 ★
 │   │       └── content/
 │   │           ├── lights-out/     # L2/L3 × zh-CN/en (4 个 .md) ★
 │   │           ├── sokoban/        # 同上 ★
@@ -654,7 +651,6 @@ Ludus/
 │       ├── tsconfig.json
 │       └── src/
 │           ├── index.ts ★
-│           ├── GameShell.tsx       # 游戏框架（board + toolbar + statusBar + sidebar）★
 │           ├── GameToolbar.tsx     # 通用工具栏（撤销/重做/重置/求解/提示/新关卡）★
 │           ├── GameStatusBar.tsx   # 状态栏（步数/最优/用时/求解状态）★
 │           ├── ProgressiveDisclosure.tsx  # L1/L2/L3 渐进揭示容器 ★
@@ -670,17 +666,16 @@ Ludus/
 │   │   └── src/
 │   │       ├── main.tsx       # 入口：i18n init + Router ★
 │   │       ├── App.tsx        # Router + entrySetup ★
-│   │       ├── entrySetup.ts  # Web 层 entry 增强（Sokoban toolbar 注入等）★
+│   │       ├── entrySetup.tsx  # Web 层 entry 增强（education content + viz + toolbar 注入）★
 │   │       ├── i18n/          # 共享 UI i18n 资源 + init ★
 │   │       ├── stores/
 │   │       │   └── gameStore.ts  # Zustand store（零游戏专属引用）★
 │   │       ├── components/
+│   │       │   ├── GameShell.tsx       # 游戏框架（board + toolbar + statusBar + sidebar）★
 │   │       │   ├── EducationPanel.tsx  # 侧边栏（五段式 + 可视化 + 步骤列表）★
 │   │       │   ├── KnowledgeCard.tsx   # Bento 知识卡 ★
 │   │       │   ├── SokobanToolbar.tsx  # Sokoban 关卡选择器 ★
 │   │       │   └── ...                # HubPage, GamePage 等 ★
-│   │       ├── vizComponents.tsx  # trace.type → Viz 组件懒加载 ★
-│   │       ├── educationContent.ts # .md 文件导入 + getEducationContent ★
 │   │       ├── statusCards.tsx    # 游戏状态卡片（按 gameId 渲染）★
 │   │       └── workers/
 │   │           └── solver.worker.ts  # 求解器 Web Worker 入口 ★
@@ -701,7 +696,7 @@ Ludus/
 
 ### 7.1 为何 GamePlugin 中 render 不是纯 Core 层概念？
 
-Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含 React 组件签名**。具体渲染由 `packages/games/<game>/render.tsx` 实现，通过 `packages/ui/GameShell` 加载。这保持了 Core 零 UI 依赖，同时允许每个游戏选择渲染策略。
+Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含 React 组件签名**。具体渲染由 `packages/games/<game>/render.tsx` 实现，通过 `apps/web/src/components/GameShell` 加载。这保持了 Core 零 UI 依赖，同时允许每个游戏选择渲染策略。
 
 ### 7.2 求解器与生成器为何在各游戏而非 Core？
 
@@ -711,7 +706,7 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 
 - `packages/core/src/worker/` 定义 Worker task 抽象
 - `apps/web/src/workers/solver.worker.ts` 是 Web Worker 入口，import 各游戏 solver
-- `packages/ui/src/GameShell.tsx` 负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker
+- `apps/web/src/components/GameShell.tsx` 负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker
 
 ---
 

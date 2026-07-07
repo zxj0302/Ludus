@@ -11,7 +11,7 @@
 每个游戏的教学内容均按以下 Markdown 模板编写，按 `语言 × 深度` 生成 4 个文件：
 
 ```
-games/<game-id>/
+packages/education/src/content/&lt;game-id&gt;/
 ├── l2.zh-CN.md    # L2 中文
 ├── l2.en.md       # L2 English
 ├── l3.zh-CN.md    # L3 中文
@@ -151,52 +151,43 @@ abstractProblem: <形式化问题名>
 
 ---
 
-## 4. 渐进式揭示组件接口定义
+## 4. 渐进式揭示实现
 
-`ContentRenderer` 是 `@ludus/ui` 中的核心组件，负责按 L1/L2/L3 层级渲染教学内容：
+> **2026-07 更新**：原计划的 `ContentRenderer` 组件接口已被实际实现替代。教学内容现在通过 `EducationPanel`（`apps/web/src/components/EducationPanel.tsx`）渲染，使用 `MarkdownRenderer`（`@ludus/ui`）解析 .md 文件，按五段式卡片（玩/思考/揭示/求解/出题）组织，支持 L2/L3 切换、中英双语、求解器可视化嵌入和最优解步骤展示。
 
-```typescript
-// packages/education/src/ContentRenderer.tsx (骨架)
+### 当前实现路径
 
-import type { EducationContent } from '@ludus/core/schemas';
-
-export interface ContentRendererProps {
-  /** 要渲染的教学内容（已解析的 EducationContent 对象） */
-  content: EducationContent;
-  /** 当前可见深度：'L1' = 仅游戏, 'L2' = 知识卡片, 'L3' = 完整教学 */
-  visibleDepth: 'L1' | 'L2' | 'L3';
-  /** 切换到更深层的回调 */
-  onReveal: (depth: 'L2' | 'L3') => void;
-  /** 求解器步骤轨迹（供 §4 可视化消费） */
-  solverTrace?: SolverTrace;
-  /** 语言 */
-  locale: 'zh-CN' | 'en';
-}
-```
+| 组件 | 位置 | 职责 |
+|------|------|------|
+| `EducationPanel` | `apps/web/src/components/EducationPanel.tsx` | 侧边栏：五段卡片 + 实时分析 + 可视化 + 最优解 |
+| `MarkdownRenderer` | `packages/ui/src/MarkdownRenderer.tsx` | KaTeX + Markdown → HTML 渲染 |
+| `SectionCard` | `EducationPanel.tsx` 内 | 单段落彩色卡片（左侧色条 + 图标） |
+| `KnowledgeCard` | `apps/web/src/components/KnowledgeCard.tsx` | 知识卡（状态 / 最优解 / P-position） |
+| `StatusCard` | `apps/web/src/statusCards.tsx` | 游戏状态卡片（按 gameId 渲染统计数据） |
 
 ### 行为规范
 
-| 层级         | 可见内容                                                                          | 入口           |
-| ------------ | --------------------------------------------------------------------------------- | -------------- |
+| 层级   | 可见内容                                                                          | 入口           |
+| ------ | --------------------------------------------------------------------------------- | -------------- |
 | **L1** | 仅游戏本体，零教学内容                                                            | 无（默认状态） |
-| **L2** | 通关后出现"揭秘"按钮 → 展开知识卡片（§2 思考 + §3 揭示摘要 + §4 求解器演示）  | 点击"揭秘"     |
-| **L3** | L2 卡片底部"深入学习"按钮 → 展开完整文档（§3 完整推导 + §4 伪代码 + §5 出题） | 点击"深入学习" |
+| **L2** | 侧边栏 → 实时分析卡片 + 五段教学卡片（摘要版）                                   | 点击"原理"     |
+| **L3** | 侧边栏 → 完整内容（含推导过程、伪代码、出题原理）                                 | 切换 L2→L3     |
 
 ### 渲染规则
 
 1. **L2 卡片**：紧凑布局，至多一屏；求解器演示自动播放（可暂停）。
-2. **L3 文档**：类教材排版，含目录导航；伪代码语法高亮；公式 KaTeX 渲染。
+2. **L3 文档**：类教材排版；伪代码语法高亮；公式 KaTeX 渲染。
 3. **关闭行为**：L2/L3 层可随时关闭回到 L1 游戏，不丢失游戏状态。
-4. **语言切换**：ContentRenderer 根据 `locale` prop 加载对应语言的教学内容。
+4. **语言切换**：根据 `useGameStore.language` 加载对应语言的教学内容。
 
 ---
 
 ## 📌 阶段 3 小结
 
 - 五段式模板与创作指南完成，所有游戏教学内容统一遵循。
-- Lights Out 4 份教学内容（L2/L3 × zh-CN/en）已写入 `packages/education/src/content/lights-out/`。
-- ContentRenderer 接口已定义，将在阶段 4（垂直切片）中实现。
+- 5 款游戏 × 4 份教学内容（L2/L3 × zh-CN/en）已写入 `packages/education/src/content/`。
+- ~~ContentRenderer~~ 已由 `EducationPanel` + `MarkdownRenderer` 替代实现。
 
 ---
 
-*角色：教学内容设计师 | 产出：`docs/phases/03-education-framework.md` + 4 个 .md 内容文件 + ContentRenderer 骨架 | ✅ 已确认*
+*角色：教学内容设计师 | 产出：`docs/phases/03-education-framework.md` + 20 个 .md 内容文件 | ✅ 已确认*

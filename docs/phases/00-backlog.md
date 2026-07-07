@@ -37,8 +37,8 @@
 
 ## 2. 组合博弈论
 
-- ⬜ Nim / 取石子（Sprague-Grundy / P / XOR / 可生成必胜局面）
-- ⬜ Wythoff（Beatty 序列 / P / 黄金比公式 / 可生成）
+- ✅ Nim / 取石子（Sprague-Grundy / P / XOR / 可生成必胜局面）
+- ✅ Wythoff（Beatty 序列 / P / 黄金比公式 / 可生成）
 - ⬜ Euclid's Game（减法/取模博弈 / P / gcd+逆向分析 / 可生成）★ cut-the-knot / GamesCrafters
 - ⬜ Grundy's Game（Sprague-Grundy 分裂堆 / — / Grundy 数列 / 可生成）★ cut-the-knot
 - ⬜ Northcott's Game（棋盘位置博弈 / — / Nimber 映射 / 可生成）★ cut-the-knot
@@ -69,7 +69,7 @@
 ## 3. 计算复杂性（"感受难度爆炸"单元）
 
 - ⬜ 扫雷（CSP/一致性判定 / NP-完全 / CSP+概率 / 可生成）
-- ⬜ Sokoban（PSPACE / 推箱子 / IDA*+死锁检测 / 可生成）
+- ✅ Sokoban（PSPACE / 推箱子 / IDA*+死锁检测 / 可生成）
 - ⬜ Rush Hour 华容道车阵（PSPACE / 滑块 / BFS 状态空间 / 可生成最优解）
 - ⬜ n×n 数独（NP-完全 / 见 §4 / DLX / 可生成唯一解）
 - ⬜ 俄罗斯方块离线优化（NP-完全 / — / 近似/搜索 / 可生成）
@@ -79,7 +79,7 @@
 
 ## 4. 约束满足 / SAT / 逻辑
 
-- ⬜ 数独（精确覆盖 / NP-完全 / DLX/SAT / 可生成唯一解）
+- ✅ 数独（精确覆盖 / NP-完全 / DLX/SAT / 可生成唯一解）
 - ⬜ 扫雷（CSP/概率 / NP-完全 / 见 §3）
 - ⬜ Nonogram 数织（行列约束 / NP-完全 / 行列 DP+传播 / 可生成唯一解）
 - ⬜ Kakuro（和约束 CSP / NP-完全 / 回溯+剪枝 / 可生成唯一解）
@@ -108,7 +108,7 @@
 
 ## 5. 线性代数 GF(2)
 
-- ⬜ Lights Out 点灯（高斯消元/零空间 / P / GF(2) 高斯消元 / 可生成唯一解·最优解）★首个切片
+- ✅ Lights Out 点灯（高斯消元/零空间 / P / GF(2) 高斯消元 / 可生成唯一解·最优解）★首个切片
 - ⬜ Merlin's Magic Squares（Lights Out 同构变体 / P / GF(2) 高斯消元 / 可生成）★ cut-the-knot
 - ⬜ 开关阵列 / 异或谜题（线性方程组 GF(2) / P / 高斯消元 / 可生成）
 - ⬜ 15 数码（置换奇偶不变量 / 见 §7,§9 / — / —）
@@ -224,9 +224,9 @@
 
 ## 🚀 早期开发顺序（阶段 5，刻意覆盖不同领域以暴露接口缺陷）
 
-1. ✅/🟡/⬜ **Lights Out 点灯**（§5 线性代数 GF(2)）—— 阶段 4 垂直切片
-2. ⬜ **数独**（§4 CSP/SAT，DLX + 唯一解生成）
-3. ⬜ **Nim / Wythoff**（§2 组合博弈论）
+1. ✅ **Lights Out 点灯**（§5 线性代数 GF(2)）—— 阶段 4 垂直切片
+2. ✅ **数独**（§4 CSP/SAT，DLX + 唯一解生成）
+3. ✅ **Nim / Wythoff**（§2 组合博弈论）
 4. ⬜ **Connect 4**（§2 博弈树/Alpha-Beta，已强解，教育价值极高）★ GamesCrafters
 5. ⬜ **15-puzzle 滑块**（§7 搜索，A*/IDA*）
 6. ⬜ **倒水谜题**（§13 数论）
