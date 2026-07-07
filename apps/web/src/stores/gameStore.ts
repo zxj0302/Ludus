@@ -8,10 +8,11 @@ import i18n from '../i18n';
 // 通用 AI 调度 — 通过 plugin.ai 实现，不依赖具体游戏
 // ═══════════════════════════════════════════════════════════════
 
-function scheduleAI(
-  get: () => GameStore,
-  set: (partial: Partial<GameStore>) => void,
-) {
+function getPlayerStarts(solution: Solution | null): boolean {
+  return (solution?.trace?.visualizationData as Record<string, unknown> | undefined)?.playerStarts as boolean ?? true;
+}
+
+function scheduleAI(get: () => GameStore) {
   setTimeout(() => {
     const s = get();
     if (!s.plugin?.ai || !s.gameState || s.solvePlayback) return;
@@ -233,7 +234,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    if (hasAI) scheduleAI(get, set);
+    if (hasAI) scheduleAI(get);
   },
 
   applyMove: (move) => {
@@ -264,7 +265,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solution,
     });
 
-    if (!solvePlayback && plugin.ai && !plugin.isSolved(newState)) scheduleAI(get, set);
+    if (!solvePlayback && plugin.ai && !plugin.isSolved(newState)) scheduleAI(get);
   },
 
   undo: () => {
@@ -285,7 +286,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintHighlight: null,
         solveError: null,
       });
-      if (plugin?.ai) scheduleAI(get, set);
+      if (plugin?.ai) scheduleAI(get);
     }
   },
 
@@ -307,7 +308,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintHighlight: null,
         solveError: null,
       });
-      if (plugin?.ai) scheduleAI(get, set);
+      if (plugin?.ai) scheduleAI(get);
     }
   },
 
@@ -362,7 +363,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    if (hasAI) scheduleAI(get, set);
+    if (hasAI) scheduleAI(get);
   },
 
   loadCustomState: (state: GameState) => {
@@ -390,7 +391,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state);
-    if (hasAI) scheduleAI(get, set);
+    if (hasAI) scheduleAI(get);
   },
 
   requestSolve: () => {
@@ -411,7 +412,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
         // 选先后手阶段：先高亮最优选择，短暂延迟后自动选定并开始播放
         if (sAny.phase === 'choosing') {
-          const playerStarts = (solution.trace?.visualizationData as any)?.playerStarts ?? true;
+          const playerStarts = getPlayerStarts(solution);
           // 先高亮按钮告诉玩家选择了什么
           set({
             hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
@@ -490,7 +491,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
       // 对抗游戏选先后手阶段：高亮"先手"或"后手"按钮
       if (isAdversarial && (s as any).phase === 'choosing') {
-        const playerStarts = (solution.trace?.visualizationData as any)?.playerStarts ?? true;
+        const playerStarts = getPlayerStarts(solution);
         set({
           hintMove: null,
           hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
@@ -541,7 +542,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (isLastStep) {
-      scheduleAI(get, set);
+      scheduleAI(get);
     }
   },
 

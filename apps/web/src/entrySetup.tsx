@@ -68,7 +68,9 @@ const DLXMatrixViz = lazy(() => import('./components/DLXMatrixViz').then(m => ({
 const NimTreeViz = lazy(() => import('./components/NimTreeViz').then(m => ({ default: m.NimTreeViz })));
 const WythoffTreeViz = lazy(() => import('./components/WythoffTreeViz').then(m => ({ default: m.WythoffTreeViz })));
 
-const Fallback = () => <div className="h-48 rounded-card bg-warm-stone-100 animate-pulse" />;
+const Fallback = ({ height = 'h-48' }: { height?: string }) => (
+  <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
+);
 
 lightsOutEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'matrix-transform',
@@ -82,7 +84,7 @@ lightsOutEntry.visualization = {
 sokobanEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'search-tree',
   Component: (({ gameState }: VisualizationProps) => (
-    <Suspense fallback={<div className="h-80 rounded-card bg-warm-stone-100 animate-pulse" />}>
+    <Suspense fallback={<Fallback height="h-80" />}>
       {gameState && <BFSTreeViz gameState={gameState as any} />}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
@@ -100,7 +102,7 @@ sudokuEntry.visualization = {
 nimEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'nim-xor',
   Component: (({ trace, gameState }: VisualizationProps) => (
-    <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
+    <Suspense fallback={<Fallback />}>
       {gameState && <NimTreeViz key={(gameState as any).piles?.join(',')} trace={trace} state={gameState as any} />}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
@@ -109,7 +111,7 @@ nimEntry.visualization = {
 wythoffEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'wythoff-beatty',
   Component: (({ trace, gameState }: VisualizationProps) => (
-    <Suspense fallback={<div className="h-48 bg-warm-stone-100 rounded-lg animate-pulse" />}>
+    <Suspense fallback={<Fallback />}>
       {gameState && <WythoffTreeViz key={(gameState as any).piles?.join(',')} trace={trace} state={gameState as any} />}
     </Suspense>
   )) as ComponentType<VisualizationProps>,

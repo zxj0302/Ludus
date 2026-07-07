@@ -34,7 +34,7 @@ export function GameShell({ gameId }: Props) {
   const {
     gameState, applyMove, undo, redo, reset, newLevel,
     requestSolve, requestHint, solution, solverStatus, solveError,
-    hintMove, initialOptimalSteps, currentOptimalSteps,
+    hintMove, hintHighlight, initialOptimalSteps, currentOptimalSteps,
     solvePlayback, solveStepIndex, nextPlaybackStep, prevPlaybackStep, stopPlayback,
     disclosureLevel, setDisclosureLevel, educationOpen, setEducationOpen,
     historyIndex, history, startTime, elapsed, tick,
@@ -116,7 +116,6 @@ export function GameShell({ gameId }: Props) {
 
   // 以下 plugin 和 gameState 均非 null，且 state 与 gameId 匹配
 
-  const hintHighlight = store.hintHighlight;
   let highlightCell: { row: number; col: number; value?: number } | null = null;
 
   // 直接高亮坐标优先（对抗游戏选先后手等无需 moveToHighlight 的场景）
