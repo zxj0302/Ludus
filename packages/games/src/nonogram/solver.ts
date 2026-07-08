@@ -3,6 +3,44 @@ import type { NonogramState, CellState } from './types';
 import { EMPTY, FILLED, CROSS } from './types';
 
 // ═══════════════════════════════════════════════════════════════
+// Algorithm trace — detailed step-by-step solver data for visualization
+// ═══════════════════════════════════════════════════════════════
+
+export interface LineSolveTraceStep {
+  lineType: 'row' | 'col';
+  lineIndex: number;
+  length: number;
+  clues: number[];
+  /** Up to 10 sample placements (for display) */
+  placements: boolean[][];
+  /** Total valid placements */
+  totalPlacements: number;
+  /** Newly determined cell indices (in the line) */
+  determinedIndices: number[];
+  /** Value at each determined index: 'fill' or 'empty' */
+  determinedValues: ('fill' | 'empty')[];
+}
+
+export interface SearchTreeNode {
+  id: number;
+  parentId: number | null;
+  cell?: { row: number; col: number };
+  guess?: 'fill' | 'cross';
+  depth: number;
+  result: 'solved' | 'contradiction' | 'branch';
+  /** Cells determined by line solving at this node */
+  newCells: number;
+}
+
+export interface AlgorithmTraceData {
+  lineSteps: LineSolveTraceStep[];
+  searchTree: SearchTreeNode[];
+  totalLineSolveIterations: number;
+  branchCount: number;
+  solutionNodeIds: number[];
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Placement cache — keyed by `${L}:${clues.join(',')}`
 // ═══════════════════════════════════════════════════════════════
 
@@ -216,6 +254,8 @@ interface LineSolveResult {
   solved: boolean;
   /** Number of cells determined by line solving */
   determined: number;
+  /** Trace steps for visualization */
+  traceSteps: LineSolveTraceStep[];
 }
 
 /**
@@ -224,6 +264,7 @@ interface LineSolveResult {
  */
 function lineSolve(state: SolverInternal): LineSolveResult {
   const queue: Array<{ type: 'row' | 'col'; index: number }> = [];
+  const traceSteps: LineSolveTraceStep[] = [];
 
   // Initial queue: all rows and columns
   for (let r = 0; r < state.height; r++) queue.push({ type: 'row', index: r });
@@ -234,30 +275,68 @@ function lineSolve(state: SolverInternal): LineSolveResult {
 
     if (item.type === 'row') {
       const row = getRow(state, item.index);
-      const result = solveLine(row, state.rowClues[item.index]!);
+      const clues = state.rowClues[item.index]!;
+      const result = solveLine(row, clues);
       if (result === null) {
-        // Contradiction — this shouldn't happen in a solvable puzzle
-        return { state, solved: false, determined: countDetermined(state) };
+        return { state, solved: false, determined: countDetermined(state), traceSteps };
       }
       if (result.changed) {
-        setRow(state, item.index, result.cells);
-        // Enqueue all intersecting columns
-        for (let c = 0; c < state.width; c++) {
-          queue.push({ type: 'col', index: c });
+        // Record trace: which cells were determined and how
+        const determinedIndices: number[] = [];
+        const determinedValues: ('fill' | 'empty')[] = [];
+        for (let i = 0; i < row.length; i++) {
+          if (row[i] === EMPTY && result.cells[i] !== EMPTY) {
+            determinedIndices.push(i);
+            determinedValues.push(result.cells[i] === FILLED ? 'fill' : 'empty');
+          }
         }
+        if (determinedIndices.length > 0 && traceSteps.length < 50) {
+          const placements = generatePlacements(state.width, clues);
+          traceSteps.push({
+            lineType: 'row',
+            lineIndex: item.index,
+            length: state.width,
+            clues: [...clues],
+            placements: placements.slice(0, 10),
+            totalPlacements: placements.length,
+            determinedIndices,
+            determinedValues,
+          });
+        }
+        setRow(state, item.index, result.cells);
+        for (let c = 0; c < state.width; c++) queue.push({ type: 'col', index: c });
       }
     } else {
       const col = getCol(state, item.index);
-      const result = solveLine(col, state.colClues[item.index]!);
+      const clues = state.colClues[item.index]!;
+      const result = solveLine(col, clues);
       if (result === null) {
-        return { state, solved: false, determined: countDetermined(state) };
+        return { state, solved: false, determined: countDetermined(state), traceSteps };
       }
       if (result.changed) {
-        setCol(state, item.index, result.cells);
-        // Enqueue all intersecting rows
-        for (let r = 0; r < state.height; r++) {
-          queue.push({ type: 'row', index: r });
+        const determinedIndices: number[] = [];
+        const determinedValues: ('fill' | 'empty')[] = [];
+        for (let i = 0; i < col.length; i++) {
+          if (col[i] === EMPTY && result.cells[i] !== EMPTY) {
+            determinedIndices.push(i);
+            determinedValues.push(result.cells[i] === FILLED ? 'fill' : 'empty');
+          }
         }
+        if (determinedIndices.length > 0 && traceSteps.length < 50) {
+          const placements = generatePlacements(state.height, clues);
+          traceSteps.push({
+            lineType: 'col',
+            lineIndex: item.index,
+            length: state.height,
+            clues: [...clues],
+            placements: placements.slice(0, 10),
+            totalPlacements: placements.length,
+            determinedIndices,
+            determinedValues,
+          });
+        }
+        setCol(state, item.index, result.cells);
+        for (let r = 0; r < state.height; r++) queue.push({ type: 'row', index: r });
       }
     }
   }
@@ -266,6 +345,7 @@ function lineSolve(state: SolverInternal): LineSolveResult {
     state,
     solved: isAllDetermined(state),
     determined: countDetermined(state),
+    traceSteps,
   };
 }
 
@@ -287,6 +367,9 @@ interface BacktrackStats {
   maxDepth: number;
   /** Grid snapshots at key moments, as flat CellState arrays */
   snapshots: { label: string; cells: CellState[] }[];
+  /** Search tree nodes for visualization */
+  searchTree: SearchTreeNode[];
+  nextNodeId: number;
 }
 
 /**
@@ -339,62 +422,74 @@ function backtrackSolve(
   depth: number,
   stats: BacktrackStats,
   solutions: SolverInternal[],
-): void {
+  parentId: number | null = null,
+  guessCell?: { row: number; col: number },
+  guessValue?: 'fill' | 'cross',
+): { result: 'solved' | 'contradiction' } {
   // Early exit if we've reached the limit
-  if (solutions.length >= limit) return;
+  if (solutions.length >= limit) return { result: 'contradiction' };
 
+  const nodeId = stats.nextNodeId++;
   stats.nodesExplored++;
   if (depth > stats.maxDepth) stats.maxDepth = depth;
 
   // Phase 1: Line solving
+  const beforeLineSolve = s.cells.filter(c => c !== EMPTY).length;
   const lsResult = lineSolve(cloneInternal(s));
   Object.assign(s.cells, lsResult.state.cells);
+  const afterLineSolve = s.cells.filter(c => c !== EMPTY).length;
+  const newCells = afterLineSolve - beforeLineSolve;
 
-  // Record snapshot: state after line solving
-  if (lsResult.determined > 0 && stats.snapshots.length < 50) {
-    const undetermined = s.width * s.height - countDetermined(s);
-    stats.snapshots.push({
-      label: `Line solve: ${lsResult.determined} cells determined, ${undetermined} remaining`,
-      cells: [...s.cells],
-    });
+  // Record search tree node (cap at 200)
+  if (stats.searchTree.length < 200) {
+    const node: SearchTreeNode = {
+      id: nodeId,
+      parentId,
+      cell: guessCell,
+      guess: guessValue,
+      depth,
+      result: isAllDetermined(s) && verifySolution(s) ? 'solved' : 'branch',
+      newCells,
+    };
+    stats.searchTree.push(node);
   }
 
-  // Check contradiction — if line solving stalled and depth > 0, it's a real contradiction
-  if (!lsResult.solved && !isAllDetermined(s) && depth > 0) {
-    const stillConsistent = verifyLineConsistency(s);
-    if (!stillConsistent) return; // Contradiction — prune this branch
+  // Check contradiction
+  if (!verifyLineConsistency(s)) {
+    // Update node result
+    const node = stats.searchTree.find(n => n.id === nodeId);
+    if (node) node.result = 'contradiction';
+    return { result: 'contradiction' };
   }
 
   // Check if solved
   if (isAllDetermined(s)) {
     if (verifySolution(s)) {
       solutions.push(cloneInternal(s));
+      // Update node result
+      const node = stats.searchTree.find(n => n.id === nodeId);
+      if (node) node.result = 'solved';
+      return { result: 'solved' };
     }
-    return;
+    return { result: 'contradiction' };
   }
 
   // Phase 2: Pick a cell to branch on
   const cell = pickCell(s);
-  if (!cell) return;
+  if (!cell) return { result: 'contradiction' };
 
   stats.backtracks++;
-  if (stats.snapshots.length < 50) {
-    stats.snapshots.push({
-      label: `Backtrack #${stats.backtracks}: try (${cell.row + 1},${cell.col + 1}) = fill`,
-      cells: [...s.cells],
-    });
-  }
 
   // Branch 1: Fill
   const s1 = cloneInternal(s);
   s1.cells[cell.row * s.width + cell.col] = FILLED;
-  backtrackSolve(s1, limit, depth + 1, stats, solutions);
-  if (solutions.length >= limit) return;
+  const r1 = backtrackSolve(s1, limit, depth + 1, stats, solutions, nodeId, cell, 'fill');
+  if (solutions.length >= limit) return r1;
 
-  // Branch 2: Cross (mark as empty)
+  // Branch 2: Cross
   const s2 = cloneInternal(s);
   s2.cells[cell.row * s.width + cell.col] = CROSS;
-  backtrackSolve(s2, limit, depth + 1, stats, solutions);
+  return backtrackSolve(s2, limit, depth + 1, stats, solutions, nodeId, cell, 'cross');
 }
 
 /**
@@ -467,22 +562,20 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
   const t0 = performance.now();
 
   const internal = toInternal(state);
-  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [] };
+  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [], searchTree: [], nextNodeId: 0 };
   const solutions: SolverInternal[] = [];
 
   // Initial line solve
   const initial = lineSolve(cloneInternal(internal));
-  // Record initial snapshot
-  if (initial.determined > 0) {
-    const undetermined = state.width * state.height - initial.determined;
-    stats.snapshots.push({
-      label: `Line solve: ${initial.determined} cells determined, ${undetermined} remaining`,
-      cells: [...initial.state.cells],
-    });
-  }
 
   if (initial.solved && verifySolution(initial.state)) {
     solutions.push(initial.state);
+    // Record root node
+    stats.searchTree.push({
+      id: 0, parentId: null, depth: 0,
+      result: 'solved',
+      newCells: initial.determined,
+    });
   } else {
     backtrackSolve(internal, 1, 0, stats, solutions);
   }
@@ -493,6 +586,15 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
   const solution = solvable
     ? internalToGrid(solutions[0]!, state.height, state.width)
     : undefined;
+
+  // Build algorithm trace
+  const algorithmTrace: AlgorithmTraceData = {
+    lineSteps: initial.traceSteps,
+    searchTree: stats.searchTree,
+    totalLineSolveIterations: initial.traceSteps.length,
+    branchCount: stats.backtracks,
+    solutionNodeIds: stats.searchTree.filter(n => n.result === 'solved').map(n => n.id),
+  };
 
   return {
     solvable,
@@ -507,7 +609,7 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
     },
     trace: {
       type: 'constraint-propagation',
-      steps: stats.snapshots.map(s => ({ description: s.label, data: { cells: s.cells } })),
+      steps: [],
       visualizationData: {
         nodesExplored: stats.nodesExplored,
         backtracks: stats.backtracks,
@@ -516,11 +618,7 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
         timeMs: elapsed,
         width: state.width,
         height: state.height,
-        snapshots: stats.snapshots.map(s => ({
-          label: s.label,
-          // Convert flat cells to 2D grid for viz
-          grid: cellsToGrid(s.cells, state.height, state.width),
-        })),
+        algorithmTrace,
       },
     },
   };
@@ -540,7 +638,7 @@ function cellsToGrid(cells: CellState[], height: number, width: number): CellSta
  */
 export function countSolutions(state: NonogramState, limit: number = 2): number {
   const internal = toInternal(state);
-  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [] };
+  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [], searchTree: [], nextNodeId: 0 };
   const solutions: SolverInternal[] = [];
 
   // Initial line solve
