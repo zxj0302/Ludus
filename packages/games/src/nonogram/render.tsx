@@ -239,10 +239,11 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
       ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
     }
 
-    // Grid lines
+    // Grid lines — thick every 5 cells only for larger grids (≥10)
+    const useGroupLines = w >= 10 || h >= 10;
     for (let r = 0; r <= h; r++) {
       const y = colClueHeight + r * cellSize;
-      const isGroup = r % GRID_GROUP_SIZE === 0;
+      const isGroup = useGroupLines && r % GRID_GROUP_SIZE === 0;
       ctx.strokeStyle = isGroup ? COLORS.thickLine : COLORS.gridLine;
       ctx.lineWidth = isGroup ? 2 : 0.5;
       ctx.beginPath();
@@ -252,7 +253,7 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
     }
     for (let c = 0; c <= w; c++) {
       const x = rowClueWidth + c * cellSize;
-      const isGroup = c % GRID_GROUP_SIZE === 0;
+      const isGroup = useGroupLines && c % GRID_GROUP_SIZE === 0;
       ctx.strokeStyle = isGroup ? COLORS.thickLine : COLORS.gridLine;
       ctx.lineWidth = isGroup ? 2 : 0.5;
       ctx.beginPath();
