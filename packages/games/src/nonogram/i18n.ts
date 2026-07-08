@@ -18,6 +18,10 @@ export const nonogramI18n = {
     'nonogram.clickToFill': '点击填充',
     'nonogram.rightClickToCross': '右键标记空格',
     'nonogram.keyboardHint': '方向键移动 · 空格填充 · X 标记空格',
+    'nonogram.collapse': '收起',
+    'nonogram.expand': '展开',
+    'nonogram.bfsTree': '求解过程',
+    'nonogram.noTrace': '求解器直接找到了解（纯线求解，无需回溯）',
   },
   en: {
     'game.nonogram.name': 'Nonogram',
@@ -38,5 +42,9 @@ export const nonogramI18n = {
     'nonogram.clickToFill': 'Click to fill',
     'nonogram.rightClickToCross': 'Right-click to mark empty',
     'nonogram.keyboardHint': 'Arrows to move · Space to fill · X to mark empty',
+    'nonogram.collapse': 'Collapse',
+    'nonogram.expand': 'Expand',
+    'nonogram.bfsTree': 'Solver Trace',
+    'nonogram.noTrace': 'Solver found solution directly (pure line solving, no backtracking needed)',
   },
 };

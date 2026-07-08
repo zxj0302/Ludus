@@ -285,6 +285,8 @@ interface BacktrackStats {
   nodesExplored: number;
   backtracks: number;
   maxDepth: number;
+  /** Grid snapshots at key moments, as flat CellState arrays */
+  snapshots: { label: string; cells: CellState[] }[];
 }
 
 /**
@@ -348,28 +350,40 @@ function backtrackSolve(
   const lsResult = lineSolve(cloneInternal(s));
   Object.assign(s.cells, lsResult.state.cells);
 
-  // Check contradiction
-  if (!lsResult.solved) {
-    // Verify the line-solved state is still consistent
-    // (lineSolve returns solved=false on contradiction too)
-    // We need to check more carefully...
+  // Record snapshot: state after line solving
+  if (lsResult.determined > 0 && stats.snapshots.length < 50) {
+    const undetermined = s.width * s.height - countDetermined(s);
+    stats.snapshots.push({
+      label: `Line solve: ${lsResult.determined} cells determined, ${undetermined} remaining`,
+      cells: [...s.cells],
+    });
+  }
+
+  // Check contradiction — if line solving stalled and depth > 0, it's a real contradiction
+  if (!lsResult.solved && !isAllDetermined(s) && depth > 0) {
+    const stillConsistent = verifyLineConsistency(s);
+    if (!stillConsistent) return; // Contradiction — prune this branch
   }
 
   // Check if solved
   if (isAllDetermined(s)) {
-    // Verify the solution matches all clues
     if (verifySolution(s)) {
       solutions.push(cloneInternal(s));
     }
     return;
   }
 
-  // Check if line solving got stuck (converged but not all determined)
   // Phase 2: Pick a cell to branch on
   const cell = pickCell(s);
-  if (!cell) return; // No undetermined cells but not all determined? shouldn't happen
+  if (!cell) return;
 
   stats.backtracks++;
+  if (stats.snapshots.length < 50) {
+    stats.snapshots.push({
+      label: `Backtrack #${stats.backtracks}: try (${cell.row + 1},${cell.col + 1}) = fill`,
+      cells: [...s.cells],
+    });
+  }
 
   // Branch 1: Fill
   const s1 = cloneInternal(s);
@@ -453,11 +467,19 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
   const t0 = performance.now();
 
   const internal = toInternal(state);
-  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0 };
+  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [] };
   const solutions: SolverInternal[] = [];
 
   // Initial line solve
   const initial = lineSolve(cloneInternal(internal));
+  // Record initial snapshot
+  if (initial.determined > 0) {
+    const undetermined = state.width * state.height - initial.determined;
+    stats.snapshots.push({
+      label: `Line solve: ${initial.determined} cells determined, ${undetermined} remaining`,
+      cells: [...initial.state.cells],
+    });
+  }
 
   if (initial.solved && verifySolution(initial.state)) {
     solutions.push(initial.state);
@@ -485,16 +507,31 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
     },
     trace: {
       type: 'constraint-propagation',
-      steps: [],
+      steps: stats.snapshots.map(s => ({ description: s.label, data: { cells: s.cells } })),
       visualizationData: {
         nodesExplored: stats.nodesExplored,
         backtracks: stats.backtracks,
         maxDepth: stats.maxDepth,
         lineSolveCells: initial.determined,
         timeMs: elapsed,
+        width: state.width,
+        height: state.height,
+        snapshots: stats.snapshots.map(s => ({
+          label: s.label,
+          // Convert flat cells to 2D grid for viz
+          grid: cellsToGrid(s.cells, state.height, state.width),
+        })),
       },
     },
   };
+}
+
+function cellsToGrid(cells: CellState[], height: number, width: number): CellState[][] {
+  const grid: CellState[][] = [];
+  for (let r = 0; r < height; r++) {
+    grid.push(cells.slice(r * width, (r + 1) * width));
+  }
+  return grid;
 }
 
 /**
@@ -503,7 +540,7 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
  */
 export function countSolutions(state: NonogramState, limit: number = 2): number {
   const internal = toInternal(state);
-  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0 };
+  const stats: BacktrackStats = { nodesExplored: 0, backtracks: 0, maxDepth: 0, snapshots: [] };
   const solutions: SolverInternal[] = [];
 
   // Initial line solve

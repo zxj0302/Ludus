@@ -96,6 +96,7 @@ const NimTreeViz = lazy(() => import('./components/NimTreeViz').then(m => ({ def
 const WythoffTreeViz = lazy(() => import('./components/WythoffTreeViz').then(m => ({ default: m.WythoffTreeViz })));
 const FifteenTreeViz = lazy(() => import('./components/FifteenTreeViz').then(m => ({ default: m.FifteenTreeViz })));
 const WaterJugTreeViz = lazy(() => import('./components/WaterJugTreeViz').then(m => ({ default: m.WaterJugTreeViz })));
+const NonogramTraceViz = lazy(() => import('./components/NonogramTraceViz').then(m => ({ default: m.NonogramTraceViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -160,6 +161,15 @@ waterJugEntry.visualization = {
   Component: (({ trace, solution, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback height="h-80" />}>
       <WaterJugTreeViz trace={trace} solution={solution} gameState={gameState as any} />
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
+nonogramEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'constraint-propagation',
+  Component: (({ trace, solution }: VisualizationProps) => (
+    <Suspense fallback={<Fallback height="h-48" />}>
+      <NonogramTraceViz trace={trace} solution={solution} />
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };

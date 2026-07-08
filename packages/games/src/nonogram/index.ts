@@ -66,15 +66,13 @@ export const nonogramPlugin: GamePlugin<NonogramState, NonogramMove> = {
   isSolved,
   solve: (state: NonogramState): Solution => {
     const result = solveNonogram(state);
-    // Build moves from the solution grid: fill correct cells, cross the rest
+    // Build moves from the solution grid — only fill cells (empty cells stay empty)
     const moves: NonogramMove[] = [];
     if (result.solvable && result.solution) {
       for (let r = 0; r < state.height; r++) {
         for (let c = 0; c < state.width; c++) {
           if (result.solution[r]![c]) {
             moves.push({ row: r, col: c, action: 'fill' });
-          } else {
-            moves.push({ row: r, col: c, action: 'cross' });
           }
         }
       }
