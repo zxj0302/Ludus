@@ -4,9 +4,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GameState, Solution } from '@ludus/core';
-import { computeNimSum, isWythoffPPosition } from '@ludus/games';
+import { computeNimSum, isWythoffPPosition, isSolvable, gcd } from '@ludus/games';
 import type {
-  LightsOutState, SokobanState, SudokuState, NimState, WythoffState,
+  LightsOutState, SokobanState, SudokuState, NimState, WythoffState, WaterJugState,
 } from '@ludus/games';
 import { KnowledgeCard } from './components/KnowledgeCard';
 
@@ -137,6 +137,36 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
             <StatCell label={t('fifteen.manhattanDist')} value={manhattanDist} colorClass="text-clarity-teal-dark" />
             <StatCell label={t('fifteen.nodesExplored')} value={solution?.stats.nodesExplored ?? '—'} colorClass="text-logic-indigo-700" />
             <StatCell label={t('fifteen.solutionPath')} value={solution?.stats.solutionLength ?? '—'} />
+          </div>
+        </KnowledgeCard>
+      );
+    }
+    case 'water-jug': {
+      const s = gameState as WaterJugState | null;
+      const caps = s?.capacities ?? [];
+      const target = s?.target ?? 0;
+      const solvable = caps.length >= 2 && isSolvable(caps, target);
+      const capGcd = caps.length >= 2 ? gcd(caps[0]!, caps[1]!) : (caps[0] ?? 1);
+      const jugLevels = s?.jugs?.join(', ') ?? '—';
+      return (
+        <KnowledgeCard title={t('education.currentState')} icon="💧">
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('waterJug.current')} value={jugLevels} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('education.optimalSteps')} value={solution?.solvable ? solution.stats.solutionLength : '—'} colorClass="text-logic-indigo-700" />
+            <StatCell label={t('education.nodesExplored')} value={solution?.stats.nodesExplored ?? '—'} />
+          </div>
+          <div className="mt-3 pt-3 border-t border-warm-stone-200 grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('waterJug.target')} value={`${target}L`} colorClass="text-game-amber-700" />
+            <StatCell
+              label={t('waterJug.gcdInfo', { a: caps[0] ?? '?', b: caps[1] ?? '?', g: capGcd })}
+              value={solvable ? '✅' : '❌'}
+              colorClass={solvable ? 'text-clarity-teal-dark' : 'text-red-500'}
+            />
+            <StatCell
+              label={t('waterJug.stateSpace')}
+              value={caps.reduce((p, c) => p * (c + 1), 1)}
+              colorClass="text-warm-stone-600"
+            />
           </div>
         </KnowledgeCard>
       );

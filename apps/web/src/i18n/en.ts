@@ -258,6 +258,10 @@ const en = {
     'fifteen.fTrend': 'f = g + h trend (non-decreasing along optimal path)',
     'fifteen.stepN': 'Step {{n}}',
     'fifteen.timeMs': '{{ms}}ms',
+    // Water Jug
+    'education.waterJugFill': 'Fill jug {{jug}}',
+    'education.waterJugEmpty': 'Empty jug {{jug}}',
+    'education.waterJugPour': 'Pour jug {{from}} → jug {{to}}',
   },
 };
 

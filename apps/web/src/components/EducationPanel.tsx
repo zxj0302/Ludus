@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState, Move, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
-import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove } from '@ludus/games';
+import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove, WaterJugMove } from '@ludus/games';
 import { getGameEntry } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
@@ -78,6 +78,12 @@ function formatMove(
       const row = Math.floor(m.tileIndex / 4);
       const col = m.tileIndex % 4;
       return t('education.fifteenMove', { row: row + 1, col: col + 1 });
+    }
+    case 'water-jug': {
+      const m = move as WaterJugMove;
+      if (m.type === 'fill') return t('education.waterJugFill', { jug: m.jugIndex + 1 });
+      if (m.type === 'empty') return t('education.waterJugEmpty', { jug: m.jugIndex + 1 });
+      return t('education.waterJugPour', { from: m.from + 1, to: m.to + 1 });
     }
     default:
       return `${index + 1}. ${JSON.stringify(move)}`;

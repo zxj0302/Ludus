@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）— 第 6 款游戏 15-Puzzle 已完成**。下一步：Sokoban 生成器升级或下一款游戏。
-- **MVP 范围**：6 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅），超 MVP 目标。
+- **当前阶段**：**阶段 5（增量游戏）— 第 7 款游戏 倒水谜题已完成**。下一步：Nonogram 或横切能力。
+- **MVP 范围**：7 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅），超 MVP 目标。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，225 个测试（全过），Vite 构建成功。
-- **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'`。
-- **测试覆盖**：22 个测试文件，225 测试全过。
+- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，281 个测试（全过），Vite 构建成功。
+- **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
+- **测试覆盖**：27 个测试文件，281 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -112,6 +112,18 @@
   - 新增 13 个文件（9 core + 4 edu），修改 5 个文件（registry/zh-CN/en/entrySetup/worker）
   - isFastSolver: false（A* 走后台 scheduleBackgroundSolve，不阻塞 UI）
   - SolverTrace type 新增 `'a-star-search'`（packages/core/src/types/plugin.ts）
+- **阶段 5f — 倒水谜题 (Water Jug Problem)** ✅:
+  - Core: WaterJugState/WaterJugMove 类型 + 规则引擎（legalMoves/applyMove/isSolved）+ BFS 求解器（状态去重 + 最短路径保证）+ 随机生成器（裴蜀定理保证可解）+ 难度公式（最优深度归一化）
+  - Game: 完整插件（rules/manifest/index/render）+ WaterJugBoard 渲染（CSS 水壶动画 + 装满/倒空/倒水三操作 + pour 两步选择）
+  - Web: GameShell 动态 Board 选择 + EducationPanel 状态卡片（状态空间/GCD）+ WaterJugTreeViz（custom SVG，BFS 路径节点水壶缩略图 + → 箭头）
+  - i18n: 中英翻译 key（waterJug.* 完整覆盖，26 keys × 2 languages）
+  - 教学: 四份 markdown（L2/L3 × zh/en），五段式结构，含裴蜀定理推导 + BFS 伪代码 + 求解器对比表
+  - 测试: 规则 30 测 + 求解器 11 测 + 生成器 8 测 + 难度 6 测 = 55 新测试，**281 全过**
+  - 构建: v1.0 成功，WaterJugTreeViz 懒加载分包
+  - 新增 13 文件（9 core + 4 edu），修改 7 文件（core types/registry/barrel/entrySetup/statusCards/EducationPanel/i18n 自动合并）
+  - isFastSolver: true（BFS 状态空间小，即时求解）
+  - SolverTrace type 新增 `'bfs-state-search'`（packages/core/src/types/plugin.ts）
+
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
   - **Core 层**：GF(2) 高斯消元求解器 (`solveGF2`/`optimalSolution`/`buildLightsOutMatrix`) + 反向求解生成器 (`generateLightsOutLevel`) + Worker 消息协议 (`shouldUseWorker`)
@@ -130,12 +142,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-6 款游戏全部完成（超 MVP 目标）。下一步：
+7 款游戏全部完成（超 MVP 目标）。倒水谜题难度系统已校准。
 
-1. **继续修复审计发现的高优 bug**：A* solver 修复（H1/H2）、15-puzzle 已解状态重新生成（H3）、Wythoff 难度支持（H4）
+1. **下一款增量游戏**：按 B.6 建议顺序，下一款是 Nonogram 数织（§4 CSP）或 Connect 4（博弈树）
 2. **Sokoban 生成器升级**（反向行走/模板/进化算法）— 当前为 Microban 选关
-3. **下一款增量游戏**：按 B.6 建议顺序，下一款是倒水问题（数论）或 Nonogram
-4. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
+3. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
 
 ## 🐛 KNOWN ISSUES
 
@@ -145,7 +156,7 @@
 - Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
-- 15-Puzzle A* 求解器在主线程执行，中大深度可能卡 UI——Worker 有 stub 但未接入
+- ~~15-Puzzle A* 求解器在主线程执行~~ ✅ 已修复：Web Worker 离线程求解，不阻塞 UI
 - ~~15-Puzzle `getDifficulty` 始终返回 score=0~~ ✅ 已修复：改用曼哈顿距离动态计算难度
 - ~~FifteenTreeViz 有少量硬编码英文~~ ✅ 已修复：全部替换为 i18n key
 - ~~15-Puzzle 侧边栏无状态卡片~~ ✅ 已修复：statusCards.tsx 新增 `case 'fifteen'`
@@ -416,6 +427,23 @@
   4. **i18n**：新增 `difficulty.random` key（zh-CN / en）
   5. **generator.ts**：`scrambleDepthFromRange` 区间随机采样 → `[1,100]` 覆盖三档均匀分布
   - 226 测试全过，typecheck 零错误，vite build 8.16s
+- [2026-07-08] **15-Puzzle 全面修复提交 + 推送**：35 文件变更，+1022/-423 行。涵盖难度修复+选择器、Web Worker 离线程求解、FifteenTreeViz 横向箭头重设计、侧边栏状态卡片、i18n 补齐、教学内容扩展、死代码清理。提交 `6191ac8`，已推送 origin/master。226 测试全过，typecheck 零错误。
+- [2026-07-08] **倒水谜题交互 UX 重写 + 侧边栏补全 + 文档扩展**：
+  - render.tsx 完全重写：点击壶体直接交互（点壶→选壶→点另一壶完成倒水，双击倒空）；消除 Pour 专用小按钮；壶体 hover/选中/接收三种视觉状态（环状高亮 + 脉冲动画 + 蒙层文字）；Fill/Empty 按钮增大（py-2 px-3 text-sm）；键盘快捷键（1/2/3 选壶，F/E 装满/倒空，Esc 取消）；点击容器外取消选择
+  - statusCards.tsx 重写：3 列 StatCell 布局（对齐 Lights Out 标准）；新增当前水量/最优步数/探索节点显示；导入 isSolvable 替代错误启发式
+  - rules.ts getDifficulty 统一为 BFS 深度公式（实时求解，与 difficulty.ts 一致）
+  - i18n：新增 6 个交互提示 key × 2 语言
+  - 教育文档扩展：添加 YAML frontmatter 至全部 4 文件；L2 70→110 行（+BFS 伪代码、复杂度标注、引导问题、操作提示）；L3 183→330 行（+必要性/充分性证明概要、唯一性讨论、难度因素贡献表、完整生成器伪代码、验证清单、生成策略对比表、6 篇延伸阅读）
+  - 281 测试全过，typecheck 零错误，vite build 7.79s
+- [2026-07-08] **阶段 5f — 倒水谜题完整实现**：
+  - Core 层：WaterJugState/WaterJugMove 类型 + 规则引擎（legalMoves/applyMove/isSolved/gcd/isSolvable）+ BFS 求解器（状态去重 + 路径重构 + trace）+ 随机生成器（裴蜀定理验证可解 + 3 档难度容量范围）+ 难度公式（最优深度/25 归一化）
+  - Game 层：WaterJugBoard 渲染（CSS SVG 水壶 + CSS 水位动画 + 装满/倒空/倒水三操作按钮 + pour 两步选择 UI）+ 完整插件 + manifest + i18n
+  - Web 层：WaterJugTreeViz（BFS 路径节点水壶缩略图 + → 箭头 + 操作描述）+ statusCard（状态空间/GCD 信息）+ formatMove（装满/倒空/倒水三格式）
+  - 教学：4 份 markdown（L2/L3 × zh/en），五段式结构，裴蜀定理推导 + BFS 伪代码 + 求解器对比表
+  - 测试：55 新测试（规则 30 + 求解器 11 + 生成器 8 + 难度 6），总计 281 全过
+  - typecheck 零错误，vite build 7.94s 成功。新增 13 文件，修改 7 文件。
+  - SolverTrace type 新增 `'bfs-state-search'`。isFastSolver: true（BFS 即时求解）。
+- [2026-07-08] **启动阶段 5f — 倒水谜题**：B.6 建议顺序第 4 款增量游戏，数论领域（裴蜀定理/GCD/BFS）。
 - [2026-07-08] **15-Puzzle Web Worker 离线程求解 + 工具栏优化**：
   1. **FifteenToolbar** 改为紧凑下拉 +「+ 新关卡」按钮：选择难度自动生成，同难度可多次点击刷新
   2. **Web Worker 实现**（solver.worker.ts）：`solveFifteen` 导出 → 真正在独立线程运行 A\* 求解，不再阻塞 UI。Worker 创建/销毁生命周期由 `runSolverOffThread` 统一管理
@@ -426,3 +454,25 @@
      - 移除未使用的 `bgWorker` 变量，简化 `clearTimers`
   4. **导入修复**：Worker 从 barrel `@ludus/games` 改为直接 import solver 源文件（`@ludus/games/src/fifteen/solver`），绕过 barrel 中 React/framer-motion 等浏览器依赖，修复 `window is not defined`。Worker chunk 仅 5.3KB
   - 226 测试全过，typecheck 零错误，vite build 9.31s（含 worker chunk）
+- [2026-07-08] **倒水谜题难度选择器 + 文档步数上界分析**：
+  - **难度选择器**（`apps/web/src/components/WaterJugToolbar.tsx` 新建）：复用 FifteenToolbar 模式——`<select>` 下拉 Easy/Medium/Hard/Random 四档 +「+ 新关卡」按钮。选择难度即时生成新关卡。在 `entrySetup.tsx` 注册为 `waterJugEntry.ui.toolbarSlot`。
+  - **L3 新增 §3.5「步骤上界分析」**（zh-CN + en）：完整数学推导——平凡图论上界（`maxDepth ≤ stateSpace−1`，松）→ 容量和上界（`maxDepth ≤ a+b−gcd(a,b)`，紧）→ 紧致性示例表（(11,12)→1 depth≈21 vs bound=23，紧致率 91%）→ N 壶推广（`sum(capacities)/minGCD`）→ 代码对应 `maxDepth = max(sum(capacities), 6)`。
+  - **L3 §5.4 修正**：`maxDepth = 25`（过时经验值）→ `maxDepth = max(sum(capacities), 6)`（数学上界，引用 §3.5）。困难档位表「典型最优步数」：10–25 → 10–23。
+  - **L2 微调**（zh-CN + en）：在 BFS 秒解说明后补充一句「步数也有上界：a+b−gcd(a,b)，约等于容量之和」。
+  - 281 测试全过，typecheck 零错误，vite build 8.46s
+- [2026-07-08] **倒水谜题难度系统校准 + 生成器拒绝采样**：
+  - difficulty.ts：`maxDepth` 从固定 25 → 动态 `sum(capacities)`（数学上界 ≈ a+b），消除小容量子被过度惩罚的问题。新增状态空间加分（0-20 分），大容量子得分更高。实际举例：(3,5)→4 depth=6: 评分 25→60，(11,12)→1 depth≈21: 评分 84→74。
+  - rules.ts getDifficulty：删除重复公式，改为调用 `computeWaterJugDifficulty` 单一来源
+  - generator.ts 完全重写：
+    - 智能目标选择 `pickTargetsByDifficulty`：按"非平凡性"排序候选目标（直接=某容量→惩罚100，=|c₁−c₂|→惩罚50，相对大小小的→惩罚20），困难模式从非平凡目标中选
+    - 拒绝采样：生成容量和目标后运行 BFS 求解 → 计算实际难度分数 → 仅在落入请求难度区间时接受，最多重试 100 次
+    - Fallback：100 次未匹配则返回最接近请求区间的候选；极端情况退回经典 (3,5)→4
+    - uniqueSolution 修正：true → false（BFS 返回一条最短路径，不保证唯一）
+  - 281 测试全过，typecheck 零错误，vite build 8.11s
+	- [2026-07-08] **倒水谜题全面审计与修复**：
+	  - 🔴 **L3 文档 §5.4 难度公式错误**（zh-CN + en）：文档描述单组件公式，实际代码使用双组件公式（深度 0–80 + 状态空间 0–20）。已修正为实际公式 + 分解说明。
+	  - 🔴 **L3 §5.5 伪代码过时**：缺少拒绝采样、optimalSteps<3 过滤、pickTargetsByDifficulty、fallback 链。已重写。
+	  - 🔴 **generator.ts 死代码**：targetPreference 变量三个分支执行完全相同代码。已移除变量、合并为单行。同时移除逻辑永假检查 capGcd > max(capacities)。
+	  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
+	  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
+	  - 281 测试全过，typecheck 零错误，vite build 8.32s

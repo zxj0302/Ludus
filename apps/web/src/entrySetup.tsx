@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -47,6 +47,11 @@ import l2enFF from '@ludus/education/src/content/fifteen/l2.en.md?raw';
 import l3zhFF from '@ludus/education/src/content/fifteen/l3.zh-CN.md?raw';
 import l3enFF from '@ludus/education/src/content/fifteen/l3.en.md?raw';
 
+import l2zhWJ from '@ludus/education/src/content/water-jug/l2.zh-CN.md?raw';
+import l2enWJ from '@ludus/education/src/content/water-jug/l2.en.md?raw';
+import l3zhWJ from '@ludus/education/src/content/water-jug/l3.zh-CN.md?raw';
+import l3enWJ from '@ludus/education/src/content/water-jug/l3.en.md?raw';
+
 lightsOutEntry.education = {
   content: { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
 };
@@ -67,6 +72,10 @@ fifteenEntry.education = {
   content: { 'L2.zh-CN': l2zhFF, 'L2.en': l2enFF, 'L3.zh-CN': l3zhFF, 'L3.en': l3enFF },
 };
 
+waterJugEntry.education = {
+  content: { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 2. Visualization — viz 组件（lazy import）
 // ═══════════════════════════════════════════════════════════════
@@ -77,6 +86,7 @@ const DLXMatrixViz = lazy(() => import('./components/DLXMatrixViz').then(m => ({
 const NimTreeViz = lazy(() => import('./components/NimTreeViz').then(m => ({ default: m.NimTreeViz })));
 const WythoffTreeViz = lazy(() => import('./components/WythoffTreeViz').then(m => ({ default: m.WythoffTreeViz })));
 const FifteenTreeViz = lazy(() => import('./components/FifteenTreeViz').then(m => ({ default: m.FifteenTreeViz })));
+const WaterJugTreeViz = lazy(() => import('./components/WaterJugTreeViz').then(m => ({ default: m.WaterJugTreeViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -136,12 +146,22 @@ fifteenEntry.visualization = {
   )) as ComponentType<VisualizationProps>,
 };
 
+waterJugEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'bfs-state-search',
+  Component: (({ trace, solution, gameState }: VisualizationProps) => (
+    <Suspense fallback={<Fallback height="h-80" />}>
+      <WaterJugTreeViz trace={trace} solution={solution} gameState={gameState as any} />
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 3. UI extensions — web 专属 toolbar
 // ═══════════════════════════════════════════════════════════════
 
 import { SokobanToolbar } from './components/SokobanToolbar';
 import { FifteenToolbar } from './components/FifteenToolbar';
+import { WaterJugToolbar } from './components/WaterJugToolbar';
 
 sokobanEntry.ui = {
   ...sokobanEntry.ui,
@@ -150,4 +170,8 @@ sokobanEntry.ui = {
 
 fifteenEntry.ui = {
   toolbarSlot: FifteenToolbar as any,
+};
+
+waterJugEntry.ui = {
+  toolbarSlot: WaterJugToolbar as any,
 };

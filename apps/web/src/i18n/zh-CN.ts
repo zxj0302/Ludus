@@ -258,6 +258,10 @@ const zhCN = {
     'fifteen.fTrend': 'f = g + h 趋势（沿最优路径非递减）',
     'fifteen.stepN': '第 {{n}} 步',
     'fifteen.timeMs': '{{ms}} 毫秒',
+    // Water Jug
+    'education.waterJugFill': '装满第 {{jug}} 个壶',
+    'education.waterJugEmpty': '倒空第 {{jug}} 个壶',
+    'education.waterJugPour': '从第 {{from}} 壶倒水到第 {{to}} 壶',
   },
 };
 

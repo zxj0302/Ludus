@@ -6,6 +6,7 @@ import { sudokuPlugin, sudokuEntry } from './sudoku';
 import { nimPlugin, nimEntry } from './nim';
 import { wythoffPlugin, wythoffEntry } from './wythoff';
 import { fifteenPlugin, fifteenEntry } from './fifteen';
+import { waterJugPlugin, waterJugEntry } from './water-jug';
 
 // -- Plugin registry (core interface) --
 
@@ -17,6 +18,7 @@ pluginRegistry.set(sudokuPlugin.metadata.id, sudokuPlugin);
 pluginRegistry.set(nimPlugin.metadata.id, nimPlugin);
 pluginRegistry.set(wythoffPlugin.metadata.id, wythoffPlugin);
 pluginRegistry.set(fifteenPlugin.metadata.id, fifteenPlugin);
+pluginRegistry.set(waterJugPlugin.metadata.id, waterJugPlugin);
 
 export function getGame(id: string): GamePlugin | undefined {
   return pluginRegistry.get(id);
@@ -37,6 +39,7 @@ entryRegistry.set(sudokuEntry.plugin.metadata.id, sudokuEntry);
 entryRegistry.set(nimEntry.plugin.metadata.id, nimEntry);
 entryRegistry.set(wythoffEntry.plugin.metadata.id, wythoffEntry);
 entryRegistry.set(fifteenEntry.plugin.metadata.id, fifteenEntry);
+entryRegistry.set(waterJugEntry.plugin.metadata.id, waterJugEntry);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getGameEntry(id: string): GamePluginEntry<any, any> | undefined {
@@ -50,5 +53,5 @@ export function getAllEntries(): GamePluginEntry<any, any>[] {
 
 // -- Re-exports --
 
-export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin };
-export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry };
+export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin };
+export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry };
