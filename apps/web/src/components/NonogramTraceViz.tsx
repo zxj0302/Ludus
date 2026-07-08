@@ -94,7 +94,7 @@ export function NonogramTraceViz({ trace, solution }: Props) {
         <LineSolvePanel steps={algo.lineSteps} width={data?.width ?? 5} height={data?.height ?? 5} />
       )}
       {tab === 'tree' && algo && (
-        <SearchTreePanel tree={algo.searchTree} solutionIds={algo.solutionNodeIds} />
+        <SearchTreePanel tree={algo.searchTree} solutionIds={algo.solutionNodeIds} lineSteps={algo.lineSteps} />
       )}
       {!algo && (
         <div className="text-sm text-warm-stone-500 text-center py-4">{t('nonogram.noTrace')}</div>
@@ -231,12 +231,34 @@ interface LayoutNode {
   children: LayoutNode[];
 }
 
-function SearchTreePanel({ tree, solutionIds }: { tree: SearchTreeNode[]; solutionIds: number[] }) {
+function SearchTreePanel({ tree, solutionIds, lineSteps }: { tree: SearchTreeNode[]; solutionIds: number[]; lineSteps?: LineSolveTraceStep[] }) {
   if (tree.length === 0) return null;
+
+  // If only 1 root node (no backtracking happened), build a linear tree from line-solve steps
+  let displayTree = tree;
+  if (tree.length === 1 && lineSteps && lineSteps.length > 0) {
+    displayTree = [];
+    // Root node
+    displayTree.push({ ...tree[0]!, id: 0, parentId: null });
+    // One node per line-solve step
+    for (let i = 0; i < lineSteps.length; i++) {
+      const step = lineSteps[i]!;
+      displayTree.push({
+        id: i + 1,
+        parentId: i, // chain: 0 → 1 → 2 → ...
+        cell: undefined,
+        guess: undefined,
+        depth: i + 1,
+        result: i === lineSteps.length - 1 ? 'solved' : 'branch',
+        newCells: step.determinedIndices.length,
+      });
+    }
+    solutionIds = [lineSteps.length]; // last node is solution
+  }
 
   // Build parent→children map
   const childrenMap = new Map<number | null, SearchTreeNode[]>();
-  for (const node of tree) {
+  for (const node of displayTree) {
     const key = node.parentId;
     if (!childrenMap.has(key)) childrenMap.set(key, []);
     childrenMap.get(key)!.push(node);
@@ -294,7 +316,7 @@ function SearchTreePanel({ tree, solutionIds }: { tree: SearchTreeNode[]; soluti
     }
   }
   assignX(roots, 0);
-  const maxX = Math.max(...tree.map(n => n.depth), 0);
+  const maxX = Math.max(...displayTree.map(n => n.depth), 0);
   const svgW = 20 + (maxX + 1) * LAYER_GAP + NODE_W;
 
   // Collect all layout nodes
@@ -331,11 +353,19 @@ function SearchTreePanel({ tree, solutionIds }: { tree: SearchTreeNode[]; soluti
                   d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
                   fill="none" stroke={stroke} strokeWidth={2}
                 />
-                {/* Edge label: guess value */}
-                <text x={midX} y={(y1 + y2) / 2 - 4} textAnchor="middle"
-                  fill="#78716c" fontSize="10" fontWeight="bold">
-                  {child.node.guess === 'fill' ? '■' : '✕'}
-                </text>
+                {/* Edge label: guess value or step count */}
+                {child.node.guess && (
+                  <text x={midX} y={(y1 + y2) / 2 - 4} textAnchor="middle"
+                    fill="#78716c" fontSize="10" fontWeight="bold">
+                    {child.node.guess === 'fill' ? '■' : '✕'}
+                  </text>
+                )}
+                {!child.node.guess && child.node.newCells > 0 && (
+                  <text x={midX} y={(y1 + y2) / 2 - 4} textAnchor="middle"
+                    fill="#78716c" fontSize="9">
+                    +{child.node.newCells}
+                  </text>
+                )}
               </g>
             );
           })
@@ -351,9 +381,10 @@ function SearchTreePanel({ tree, solutionIds }: { tree: SearchTreeNode[]; soluti
           const stroke = isSolution ? '#22c55e'
             : n.result === 'contradiction' ? '#ef4444'
             : '#6366f1';
-          const label = n.guess
+          const hasCell = n.cell && n.guess;
+          const label = hasCell
             ? `(${n.cell!.row + 1},${n.cell!.col + 1})`
-            : '始';
+            : n.parentId === null ? '始' : `L${n.id}`;
           const resultIcon = isSolution ? '✅'
             : n.result === 'contradiction' ? '❌'
             : '';
