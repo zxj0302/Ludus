@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -52,6 +52,11 @@ import l2enWJ from '@ludus/education/src/content/water-jug/l2.en.md?raw';
 import l3zhWJ from '@ludus/education/src/content/water-jug/l3.zh-CN.md?raw';
 import l3enWJ from '@ludus/education/src/content/water-jug/l3.en.md?raw';
 
+import l2zhNO from '@ludus/education/src/content/nonogram/l2.zh-CN.md?raw';
+import l2enNO from '@ludus/education/src/content/nonogram/l2.en.md?raw';
+import l3zhNO from '@ludus/education/src/content/nonogram/l3.zh-CN.md?raw';
+import l3enNO from '@ludus/education/src/content/nonogram/l3.en.md?raw';
+
 lightsOutEntry.education = {
   content: { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
 };
@@ -74,6 +79,10 @@ fifteenEntry.education = {
 
 waterJugEntry.education = {
   content: { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
+};
+
+nonogramEntry.education = {
+  content: { 'L2.zh-CN': l2zhNO, 'L2.en': l2enNO, 'L3.zh-CN': l3zhNO, 'L3.en': l3enNO },
 };
 
 // ═══════════════════════════════════════════════════════════════
