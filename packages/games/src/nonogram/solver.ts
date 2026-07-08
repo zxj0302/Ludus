@@ -624,14 +624,6 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
   };
 }
 
-function cellsToGrid(cells: CellState[], height: number, width: number): CellState[][] {
-  const grid: CellState[][] = [];
-  for (let r = 0; r < height; r++) {
-    grid.push(cells.slice(r * width, (r + 1) * width));
-  }
-  return grid;
-}
-
 /**
  * Count the number of solutions for a Nonogram puzzle, up to a given limit.
  * Used for uniqueness verification: countSolutions(state, 2) === 1 means unique.
