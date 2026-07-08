@@ -216,97 +216,169 @@ function LineSolvePanel({ steps, width, height }: { steps: LineSolveTraceStep[];
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Search Tree Panel
+// Search Tree Panel — SVG tree diagram
 // ═══════════════════════════════════════════════════════════════
+
+const NODE_W = 130;
+const NODE_H = 36;
+const LAYER_GAP = 140; // horizontal spacing between depth layers
+const NODE_GAP = 10;   // vertical spacing between sibling nodes
+
+interface LayoutNode {
+  node: SearchTreeNode;
+  x: number;
+  y: number;
+  children: LayoutNode[];
+}
 
 function SearchTreePanel({ tree, solutionIds }: { tree: SearchTreeNode[]; solutionIds: number[] }) {
   if (tree.length === 0) return null;
 
   // Build parent→children map
-  const children = new Map<number | null, SearchTreeNode[]>();
+  const childrenMap = new Map<number | null, SearchTreeNode[]>();
   for (const node of tree) {
     const key = node.parentId;
-    if (!children.has(key)) children.set(key, []);
-    children.get(key)!.push(node);
+    if (!childrenMap.has(key)) childrenMap.set(key, []);
+    childrenMap.get(key)!.push(node);
   }
 
+  // Build layout tree
+  function buildLayout(parentId: number | null): LayoutNode[] {
+    const kids = childrenMap.get(parentId) ?? [];
+    return kids.map(n => ({
+      node: n,
+      x: 0, y: 0, // computed later
+      children: buildLayout(n.id),
+    }));
+  }
+
+  const roots = buildLayout(null);
+
+  // Assign y positions (in-order traversal)
+  let nextY = NODE_GAP;
+  function assignY(nodes: LayoutNode[]): number {
+    let totalH = 0;
+    for (const n of nodes) {
+      if (n.children.length > 0) {
+        totalH += assignY(n.children);
+      } else {
+        n.y = nextY;
+        nextY += NODE_H + NODE_GAP;
+        totalH += NODE_H + NODE_GAP;
+      }
+    }
+    if (nodes.length > 0) {
+      // Center parent between children
+      const first = nodes[0]!;
+      const childrenBottom = first.children.length > 0
+        ? first.children[first.children.length - 1]!.y
+        : first.y;
+      const childrenTop = first.children.length > 0
+        ? first.children[0]!.y
+        : first.y;
+      for (const n of nodes) {
+        n.y = (childrenTop + childrenBottom + NODE_H) / 2 - NODE_H / 2;
+      }
+    }
+    return totalH;
+  }
+  assignY(roots);
+  nextY = Math.max(nextY, 50);
+  const svgH = nextY + 20;
+
+  // Assign x positions
+  function assignX(nodes: LayoutNode[], depth: number) {
+    for (const n of nodes) {
+      n.x = 10 + depth * LAYER_GAP;
+      assignX(n.children, depth + 1);
+    }
+  }
+  assignX(roots, 0);
+  const maxX = Math.max(...tree.map(n => n.depth), 0);
+  const svgW = 20 + (maxX + 1) * LAYER_GAP + NODE_W;
+
+  // Collect all layout nodes
+  const allNodes: LayoutNode[] = [];
+  function collect(nodes: LayoutNode[]) {
+    for (const n of nodes) {
+      allNodes.push(n);
+      collect(n.children);
+    }
+  }
+  collect(roots);
+
   return (
-    <div className="bg-white rounded-lg p-3 border border-warm-stone-200 max-h-80 overflow-auto">
-      <div className="text-xs font-semibold text-warm-stone-700 mb-2">
+    <div className="bg-white rounded-lg border border-warm-stone-200 overflow-auto" style={{ maxHeight: 420 }}>
+      <div className="text-xs font-semibold text-warm-stone-700 px-3 pt-2">
         搜索树 — {tree.length} 个节点，{solutionIds.length} 个解
       </div>
-      <div className="font-mono text-[11px] leading-relaxed">
-        <TreeNodeView
-          nodes={children.get(null) ?? []}
-          childrenMap={children}
-          solutionIds={solutionIds}
-          depth={0}
-        />
-      </div>
-      <div className="flex gap-3 mt-2 text-[10px] pt-2 border-t border-warm-stone-200">
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-green-500" /> 解
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-red-400" /> 矛盾
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-sm bg-logic-indigo-400" /> 分支
-        </span>
+      <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} className="block">
+        {/* Edges */}
+        {allNodes.map(ln =>
+          ln.children.map(child => {
+            const x1 = ln.x + NODE_W;
+            const y1 = ln.y + NODE_H / 2;
+            const x2 = child.x;
+            const y2 = child.y + NODE_H / 2;
+            const midX = (x1 + x2) / 2;
+            const isSolution = solutionIds.includes(child.node.id);
+            const stroke = child.node.result === 'contradiction' ? '#fca5a5'
+              : isSolution ? '#86efac'
+              : '#a5b4fc';
+            return (
+              <g key={`edge-${ln.node.id}-${child.node.id}`}>
+                <path
+                  d={`M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`}
+                  fill="none" stroke={stroke} strokeWidth={2}
+                />
+                {/* Edge label: guess value */}
+                <text x={midX} y={(y1 + y2) / 2 - 4} textAnchor="middle"
+                  fill="#78716c" fontSize="10" fontWeight="bold">
+                  {child.node.guess === 'fill' ? '■' : '✕'}
+                </text>
+              </g>
+            );
+          })
+        )}
+
+        {/* Nodes */}
+        {allNodes.map(ln => {
+          const n = ln.node;
+          const isSolution = solutionIds.includes(n.id);
+          const fill = isSolution ? '#dcfce7'
+            : n.result === 'contradiction' ? '#fee2e2'
+            : '#eef2ff';
+          const stroke = isSolution ? '#22c55e'
+            : n.result === 'contradiction' ? '#ef4444'
+            : '#6366f1';
+          const label = n.guess
+            ? `(${n.cell!.row + 1},${n.cell!.col + 1})`
+            : '始';
+          const resultIcon = isSolution ? '✅'
+            : n.result === 'contradiction' ? '❌'
+            : '';
+
+          return (
+            <g key={`node-${n.id}`}>
+              <rect x={ln.x} y={ln.y} width={NODE_W} height={NODE_H}
+                rx={6} fill={fill} stroke={stroke} strokeWidth={1.5} />
+              <text x={ln.x + 8} y={ln.y + 14} fill="#44403c" fontSize="11" fontWeight="bold">
+                {label} {resultIcon}
+              </text>
+              <text x={ln.x + 8} y={ln.y + 28} fill="#78716c" fontSize="10">
+                {n.newCells > 0 ? `+${n.newCells}格` : ''}
+                {n.result === 'contradiction' ? ' 矛盾' : n.result === 'solved' ? ' 解!' : ''}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="flex gap-3 px-3 pb-2 text-[10px]">
+        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-green-300" /> 解</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-red-200" /> 矛盾</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-indigo-100" /> 分支</span>
+        <span className="flex items-center gap-1 ml-2">边标注: <b>■</b>=填 <b>✕</b>=空</span>
       </div>
     </div>
-  );
-}
-
-function TreeNodeView({
-  nodes, childrenMap, solutionIds, depth,
-}: {
-  nodes: SearchTreeNode[];
-  childrenMap: Map<number | null, SearchTreeNode[]>;
-  solutionIds: number[];
-  depth: number;
-}) {
-  return (
-    <>
-      {nodes.map((node, i) => {
-        const isLast = i === nodes.length - 1;
-        const isSolution = solutionIds.includes(node.id);
-        const prefix = depth > 0
-          ? '  '.repeat(depth - 1) + (isLast ? '└─' : '├─')
-          : '';
-
-        const colorClass = isSolution
-          ? 'text-green-600'
-          : node.result === 'contradiction'
-            ? 'text-red-400'
-            : 'text-logic-indigo-600';
-
-        const icon = isSolution ? '✅' : node.result === 'contradiction' ? '❌' : '🔀';
-
-        const desc = node.guess
-          ? `猜 (${node.cell!.row + 1},${node.cell!.col + 1}) = ${node.guess === 'fill' ? '■' : '✕'}`
-          : '初始状态';
-
-        const childNodes = childrenMap.get(node.id) ?? [];
-
-        return (
-          <div key={node.id}>
-            <div className={colorClass}>
-              {prefix}{icon} {desc}
-              {node.newCells > 0 && ` → +${node.newCells}格`}
-              {node.result === 'contradiction' && ' 矛盾!'}
-            </div>
-            {childNodes.length > 0 && (
-              <TreeNodeView
-                nodes={childNodes}
-                childrenMap={childrenMap}
-                solutionIds={solutionIds}
-                depth={depth + 1}
-              />
-            )}
-          </div>
-        );
-      })}
-    </>
   );
 }
