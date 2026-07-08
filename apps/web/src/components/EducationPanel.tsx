@@ -3,18 +3,15 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState, Move, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
-import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove } from '@ludus/games';
+import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove } from '@ludus/games';
 import { getGameEntry } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
 import { StatusCard } from '../statusCards';
+import { getPlayerStarts } from '../utils/solution';
 
 type Stage = 'play' | 'think' | 'reveal' | 'solve' | 'create';
-
-function getPlayerStarts(solution: Solution | null): boolean {
-  return (solution?.trace?.visualizationData as Record<string, unknown> | undefined)?.playerStarts as boolean ?? true;
-}
 
 const ChevronUpIcon = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -75,6 +72,12 @@ function formatMove(
       const icon = isPlayer ? '🧑 ' : '🤖 ';
       if (m.type === 'both') return icon + t('education.wythoffMoveBoth', { count: m.removeCount });
       return icon + t('education.wythoffMoveSingle', { pile: (m.pileIndex ?? 0) + 1, count: m.removeCount });
+    }
+    case 'fifteen': {
+      const m = move as FifteenMove;
+      const row = Math.floor(m.tileIndex / 4);
+      const col = m.tileIndex % 4;
+      return t('education.fifteenMove', { row: row + 1, col: col + 1 });
     }
     default:
       return `${index + 1}. ${JSON.stringify(move)}`;

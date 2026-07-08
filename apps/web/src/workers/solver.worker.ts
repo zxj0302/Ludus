@@ -1,5 +1,7 @@
 // Web Worker — 在独立线程中运行求解/生成任务，避免阻塞 UI
-import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games';
+// ⚠️ 直接从 solver 源文件 import，绕过 barrel(index.ts) —— barrel 引用了 React/framer-motion 等浏览器依赖，Worker 环境无 window
+import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
+import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import type { WorkerRequest, WorkerResponse } from '@ludus/core';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
@@ -58,7 +60,18 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 
         self.postMessage(response);
       } else if (gameId === 'fifteen') {
-        self.postMessage({ id, type, error: 'Fifteen worker not yet implemented — use main thread' });
+        try {
+          const solution = solveFifteen({
+            grid: state.grid as number[],
+          });
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in fifteen solver',
+          });
+        }
       } else {
         self.postMessage({ id, type, error: `Unknown game: ${gameId}` });
       }

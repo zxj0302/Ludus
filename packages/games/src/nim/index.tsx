@@ -1,5 +1,5 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
-import { generateNimLevel, generateNimLevelByPreset } from './generator';
+import { generateNimLevel } from './generator';
 import {
   createInitialState,
   legalMoves,
@@ -11,8 +11,7 @@ import {
 } from './rules';
 import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
-import { findWinningMove, computeNimSum, isPPosition } from './solver';
-import { NimToolbarSlot } from './toolbar';
+import { findWinningMove } from './solver';
 
 import type { GamePluginEntry } from '../types';
 import { NimBoard } from './render';
@@ -20,8 +19,7 @@ import { nimI18n } from './i18n';
 export { nimI18n };
 
 export { NimBoard };
-export { computeNimSum, isPPosition };
-export { generateNimLevelByPreset };
+export { computeNimSum, isPPosition } from './solver';
 export { solveNimState } from './rules';
 
 const metadata = {
@@ -116,5 +114,4 @@ export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   },
   i18n: { namespace: 'nim', zhCN: nimI18n.zhCN, en: nimI18n.en },
   education: { content: {} },
-  ui: { toolbarSlot: NimToolbarSlot as any },
 };

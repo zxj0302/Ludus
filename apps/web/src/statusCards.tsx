@@ -39,6 +39,15 @@ interface Props {
 export function StatusCard({ gameId, gameState, solution }: Props) {
   const { t } = useTranslation();
 
+  // Lifted to top level — hooks must not be called conditionally (Rules of Hooks)
+  const sokobanOnGoals = useMemo(() => {
+    if (gameId !== 'sokoban') return 0;
+    const s = gameState as Record<string, unknown> | null;
+    const boxes = (s?.boxes as Array<{row: number; col: number}> | undefined) ?? [];
+    const goals = (s?.goals as Array<{row: number; col: number}> | undefined) ?? [];
+    return boxes.filter(b => goals.some(g => g.row === b.row && g.col === b.col)).length;
+  }, [gameId, gameState]);
+
   switch (gameId) {
     case 'lights-out': {
       const s = gameState as LightsOutState | null;
@@ -57,15 +66,10 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
     case 'sokoban': {
       const s = gameState as Record<string, unknown> | null;
       const boxes = (s?.boxes as Array<{row: number; col: number}> | undefined) ?? [];
-      const goals = (s?.goals as Array<{row: number; col: number}> | undefined) ?? [];
-      const onGoals = useMemo(() =>
-        boxes.filter(b => goals.some(g => g.row === b.row && g.col === b.col)).length,
-        [boxes, goals]
-      );
       return (
         <KnowledgeCard title={t('education.currentState')} icon="📦">
           <div className="grid grid-cols-3 gap-2 text-sm">
-            <StatCell label={t('education.boxesPlaced')} value={`${onGoals}/${boxes.length}`} />
+            <StatCell label={t('education.boxesPlaced')} value={`${sokobanOnGoals}/${boxes.length}`} />
             <StatCell label={t('education.optimalSteps')} value={solution?.solvable ? solution.stats.solutionLength : '—'} colorClass="text-clarity-teal-dark" />
             <StatCell label={t('education.nodesExplored')} value={solution?.stats.nodesExplored ?? 0} colorClass="text-logic-indigo-700" />
           </div>
@@ -107,6 +111,32 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <StatBlock label={t('wythoff.piles')} value={s?.piles ? `${s.piles[0]}, ${s.piles[1]}` : '—'} />
             <StatBlock label={t('wythoff.beattyPair')} value={`k=${k}, ${isP ? 'P' : 'N'}`} />
+          </div>
+        </KnowledgeCard>
+      );
+    }
+    case 'fifteen': {
+      const s = gameState as Record<string, unknown> | null;
+      const grid = s?.grid as number[] | undefined;
+      // Compute Manhattan distance from current state
+      let manhattanDist = 0;
+      if (grid) {
+        for (let i = 0; i < 16; i++) {
+          const val = grid[i]!;
+          if (val === 0) continue;
+          const targetRow = Math.floor((val - 1) / 4);
+          const targetCol = (val - 1) % 4;
+          const currentRow = Math.floor(i / 4);
+          const currentCol = i % 4;
+          manhattanDist += Math.abs(targetRow - currentRow) + Math.abs(targetCol - currentCol);
+        }
+      }
+      return (
+        <KnowledgeCard title={t('education.currentState')} icon="🧩">
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('fifteen.manhattanDist')} value={manhattanDist} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('fifteen.nodesExplored')} value={solution?.stats.nodesExplored ?? '—'} colorClass="text-logic-indigo-700" />
+            <StatCell label={t('fifteen.solutionPath')} value={solution?.stats.solutionLength ?? '—'} />
           </div>
         </KnowledgeCard>
       );

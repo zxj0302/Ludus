@@ -132,9 +132,10 @@
 
 6 款游戏全部完成（超 MVP 目标）。下一步：
 
-1. **Sokoban 生成器升级**（反向行走/模板/进化算法）— 当前为 Microban 选关
-2. **下一款增量游戏**：按 B.6 建议顺序，下一款是倒水问题（数论）或 Nonogram
-3. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
+1. **继续修复审计发现的高优 bug**：A* solver 修复（H1/H2）、15-puzzle 已解状态重新生成（H3）、Wythoff 难度支持（H4）
+2. **Sokoban 生成器升级**（反向行走/模板/进化算法）— 当前为 Microban 选关
+3. **下一款增量游戏**：按 B.6 建议顺序，下一款是倒水问题（数论）或 Nonogram
+4. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
 
 ## 🐛 KNOWN ISSUES
 
@@ -145,8 +146,11 @@
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
 - 15-Puzzle A* 求解器在主线程执行，中大深度可能卡 UI——Worker 有 stub 但未接入
-- 15-Puzzle `getDifficulty` 始终返回 score=0（难度由生成器设定，当前状态无法反推 scramble depth）
-- FifteenTreeViz 有少量硬编码英文（Collapse/Expand 按钮、步骤说明文本）
+- ~~15-Puzzle `getDifficulty` 始终返回 score=0~~ ✅ 已修复：改用曼哈顿距离动态计算难度
+- ~~FifteenTreeViz 有少量硬编码英文~~ ✅ 已修复：全部替换为 i18n key
+- ~~15-Puzzle 侧边栏无状态卡片~~ ✅ 已修复：statusCards.tsx 新增 `case 'fifteen'`
+- ~~EducationPanel formatMove 缺少 fifteen case~~ ✅ 已修复：显示可读的走子描述
+- ~~15-Puzzle 教学内容过于稀疏~~ ✅ 已扩展：L2 ~30→~80行，L3 ~89→~200行，对齐 Lights Out 标准
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
@@ -379,3 +383,46 @@
   - **P-position 防御**：
     - `moveToHighlight` 添加 `!move` 空值守卫（Nim + Wythoff）
     - 博弈阶段 P-position 点击 Solve：不启动播放，仅返回求解结果（避免 `moves[0]` 为 undefined 导致崩溃）
+- [2026-07-08] **全项目审计 + 5 项关键 bug 修复**：
+  - **C1** (statusCards.tsx:62)：修复 Rules of Hooks 违规 — `useMemo` 从 `switch` 条件分支提升到组件顶层，消除游戏切换时崩溃风险
+  - **C2** (i18n/index.ts:13)：添加 `entry.i18n` null guard + optional chaining，防止未初始化 entry 导致应用启动崩溃
+  - **C3** (gameStore.ts:528)：`nextPlaybackStep` 添加 `!solvePlayback` 守卫，防止 stopPlayback 后的竞态条件
+  - **C4** (lights-out/difficulty.ts + generator.ts)：统一 Lights Out 双难度公式为单一 `getDifficulty` 函数。Generator 改为调用 `getDifficulty(initialState)`，删除私有 `computeDifficulty`。修复非唯一解方向相反 bug（generator +10, rules -1.25）
+  - **C5** (gameStore.ts)：`scheduleAI` + `scheduleBackgroundSolve` 保存 timeout ID 并在 `loadGame`/`newLevel` 时 `clearTimeout`，消除游戏切换竞态
+  - 226 测试全过，typecheck 零错误，vite build 成功
+- [2026-07-08] **A* 求解器修复 + 15-Puzzle 生成器修复**：
+  - H1：`nodesExplored` 计数移至 `closedSet` 检查后，消除重复状态计数膨胀
+  - H2：`findEmpty` 提升至邻居循环外，O(n²) → O(n)
+  - H3：已解状态添加 retry loop（max 10），不再以已通关开局
+- [2026-07-08] **死代码大清理（保持游戏独立性）**：
+  - **删除死文件**：`nim/toolbar.tsx`、`wythoff/toolbar.tsx`（孤儿）、`ProgressiveDisclosure.tsx`（零消费者）
+  - **删除死代码**：`serializeGrid`(fifteen)、`shouldUseWorker`(core)、Zod schema 从 core barrel 移除（全部未被导入）
+  - **去重**：`findEmpty` 在 fifteen 内合并（solver 导入 rules）、`getPlayerStarts` 提取至 `utils/solution.ts`（apps/web 内共享，不跨游戏）
+  - **Barrel 修复**：添加 `export * from './fifteen'` + `FifteenState/Move` 类型、移除未使用的 `LightsOutBoard` 导出
+  - **不跨游戏共享**：Nim/Wythoff 石子渲染、`mulberry32` RNG 保持各游戏独立
+  - 总计 -8 文件，-~280 行。226 测试全过，typecheck 零错误，vite build 7.19s
+- [2026-07-08] **15-Puzzle 侧边栏/难度/i18n/教学内容全面修复**：
+  1. **侧边栏状态卡片缺失**（statusCards.tsx）：新增 `case 'fifteen'`，展示曼哈顿距离、A* 展开节点数、最优解长度。此前 switch 无 fifteen 分支直接 fall through 到 `default: return null`
+  2. **走子格式化缺失**（EducationPanel.tsx）：新增 `case 'fifteen'` formatMove 分支 + `FifteenMove` 类型导入，走子描述从 `JSON.stringify(move)` 原始 JSON → "滑动第X行第Y列的方块"
+  3. **难度始终为 0**（rules.ts getDifficulty）：从 `computeFifteenDifficulty(0)` 硬编码 → 使用 `manhattanDistance(state.grid)` 动态计算 score（最大曼哈顿距离 60），随玩家推进实时更新
+  4. **FifteenTreeViz 硬编码英文**：6 处硬编码英文（Collapse/Expand、"X steps"、节点说明文字、f 趋势标题、"Step N" 标签、"Xms"）全部替换为 i18n key，新增 8 个中英翻译 key
+  5. **教学内容扩展**：L2 从 ~30 行扩展至 ~80 行（新增目标态图示、逐行逐列策略引导、逆序数可解性谜题、难度档位说明）；L3 从 ~89 行扩展至 ~200 行（新增 §3.2 逆序数详细判定 + 定理、§3.3.2 线性冲突启发式、§3.3.3 启发式对比表、§3.4 复杂度详细论证、§4.1 四种求解方法对比表、§4.2 更详细的伪代码与复杂度分析、§5 三种保证（可解性/最优解已知/难度可控）+ 难度因素表 + 难度档位表 + 生成策略对比表、延伸阅读 4 篇参考文献）
+  6. **i18n 补齐**：新增 `education.fifteenMove`、`fifteen.collapse/expand/solutionPathSteps/nodeDescription/fTrend/stepN/timeMs` 共 8 个 key × 2 语言
+  - 226 测试全过，typecheck 零错误，vite build 7.07s
+- [2026-07-08] **15-Puzzle 难度选择器**：
+  1. **Store**（gameStore.ts）：新增 `difficultyRange: [number, number]` 状态 + `setDifficultyRange` action。`generatePlayableState`/`loadGame`/`newLevel` 从 store 读取偏好
+  2. **FifteenToolbar**（新建）：单个 `<select>` 下拉（简单/中等/困难/随机），选择即自动生成新关卡。替换默认 `newLevelSlot`，与工具栏按钮风格一致（圆角、warm-stone 底色、custom 下拉箭头 SVG）
+  3. **注册**（entrySetup.tsx）：`fifteenEntry.ui = { toolbarSlot: FifteenToolbar }`
+  4. **i18n**：新增 `difficulty.random` key（zh-CN / en）
+  5. **generator.ts**：`scrambleDepthFromRange` 区间随机采样 → `[1,100]` 覆盖三档均匀分布
+  - 226 测试全过，typecheck 零错误，vite build 8.16s
+- [2026-07-08] **15-Puzzle Web Worker 离线程求解 + 工具栏优化**：
+  1. **FifteenToolbar** 改为紧凑下拉 +「+ 新关卡」按钮：选择难度自动生成，同难度可多次点击刷新
+  2. **Web Worker 实现**（solver.worker.ts）：`solveFifteen` 导出 → 真正在独立线程运行 A\* 求解，不再阻塞 UI。Worker 创建/销毁生命周期由 `runSolverOffThread` 统一管理
+  3. **Store 重构**（gameStore.ts）：
+     - 新增 `runSolverOffThread(plugin, state, onResult, onError)` 通用离线程求解函数——fifteen 走 Worker，其他游戏走 setTimeout fallback
+     - `scheduleBackgroundSolve` 改用 `runSolverOffThread`（之前是 `setTimeout(() => p.solve(s))` 主线程阻塞）
+     - `requestSolve` 对 fifteen 改用 `runSolverOffThread`（之前 `setTimeout(() => p.solve(s))` 主线程阻塞）
+     - 移除未使用的 `bgWorker` 变量，简化 `clearTimers`
+  4. **导入修复**：Worker 从 barrel `@ludus/games` 改为直接 import solver 源文件（`@ludus/games/src/fifteen/solver`），绕过 barrel 中 React/framer-motion 等浏览器依赖，修复 `window is not defined`。Worker chunk 仅 5.3KB
+  - 226 测试全过，typecheck 零错误，vite build 9.31s（含 worker chunk）

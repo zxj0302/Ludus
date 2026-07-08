@@ -1,6 +1,7 @@
 import type { Solution, SolverTrace } from '@ludus/core';
 import type { FifteenState, FifteenMove } from './types';
 import { GOAL_GRID, SIZE } from './types';
+import { findEmpty } from './rules';
 
 export interface AStarNode {
   grid: number[];
@@ -23,10 +24,6 @@ export function manhattanDistance(grid: number[]): number {
     dist += Math.abs(targetRow - currentRow) + Math.abs(targetCol - currentCol);
   }
   return dist;
-}
-
-function findEmpty(grid: number[]): number {
-  return grid.indexOf(0);
 }
 
 function getNeighborTiles(grid: number[]): number[] {
@@ -103,10 +100,10 @@ export function solveFifteen(state: FifteenState): Solution {
 
   while (openSet.size > 0) {
     const current = openSet.pop()!;
-    nodesExplored++;
 
     const key = current.grid.join(',');
     if (key === goalKey) {
+      nodesExplored++; // count goal node as explored
       // Reconstruct path
       const moves: FifteenMove[] = [];
       const pathNodes: { grid: number[]; g: number; h: number; f: number }[] = [];
@@ -146,12 +143,15 @@ export function solveFifteen(state: FifteenState): Solution {
       };
     }
 
+    // Skip duplicate states (multiple paths to same grid) — count only unique expansions
     if (closedSet.has(key)) continue;
     closedSet.add(key);
+    nodesExplored++;
 
+    // Hoisted: findEmpty only once per node (was redundantly in neighbor loop)
+    const emptyIdx = findEmpty(current.grid);
     const neighbors = getNeighborTiles(current.grid);
     for (const tileIdx of neighbors) {
-      const emptyIdx = findEmpty(current.grid);
       const newGrid = [...current.grid];
       newGrid[emptyIdx] = newGrid[tileIdx]!;
       newGrid[tileIdx] = 0;

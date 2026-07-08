@@ -86,6 +86,7 @@ const en = {
     'wythoff.goldenRatio': 'Golden Ratio',
     'education.wythoffMoveSingle': 'Remove {{count}} from pile {{pile}}',
     'education.wythoffMoveBoth': 'Remove {{count}} from both piles',
+    'education.fifteenMove': 'Slide tile at row {{row}} col {{col}}',
 
     'game.loading': 'Loading game…',
     'game.noGame': 'No game specified',
@@ -160,6 +161,7 @@ const en = {
     'difficulty.easy': 'Easy',
     'difficulty.medium': 'Medium',
     'difficulty.hard': 'Hard',
+    'difficulty.random': 'Random',
 
     'matrix.title': 'GF(2) Augmented Matrix Elimination',
     'matrix.initial': 'Initial Augmented Matrix [A | b]',
@@ -249,6 +251,13 @@ const en = {
     'fifteen.searchTree': 'A* Search Tree',
     'fifteen.nodesExplored': 'Nodes Explored',
     'fifteen.solverName': 'A* (Manhattan Distance)',
+    'fifteen.collapse': 'Collapse',
+    'fifteen.expand': 'Expand',
+    'fifteen.solutionPathSteps': '{{count}} steps',
+    'fifteen.nodeDescription': 'Each node shows: step number, g (cost so far), h (heuristic), f = g + h',
+    'fifteen.fTrend': 'f = g + h trend (non-decreasing along optimal path)',
+    'fifteen.stepN': 'Step {{n}}',
+    'fifteen.timeMs': '{{ms}}ms',
   },
 };
 

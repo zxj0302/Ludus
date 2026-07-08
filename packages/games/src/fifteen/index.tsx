@@ -5,6 +5,8 @@ import { createInitialState, legalMoves, applyMove, isSolved, getDifficulty } fr
 import type { FifteenState, FifteenMove } from './types';
 import { SIZE } from './types';
 import { solveFifteen } from './solver';
+
+export { solveFifteen };
 import { fifteenEducationManifest, fifteenVisualizationManifest } from './manifest';
 import { FifteenBoard } from './render';
 import { fifteenI18n } from './i18n';

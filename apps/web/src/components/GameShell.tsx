@@ -8,6 +8,7 @@ import { useGameStore } from '../stores/gameStore';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { EducationPanel } from './EducationPanel';
 import { useSound } from '../hooks/useSound';
+import { shouldRunGenericPlayback } from './playbackMode';
 
 interface Props { gameId: string }
 
@@ -23,7 +24,7 @@ export function GameShell({ gameId }: Props) {
     requestSolve: s.requestSolve, requestHint: s.requestHint,
     solution: s.solution, solverStatus: s.solverStatus, solveError: s.solveError,
     hintMove: s.hintMove, hintHighlight: s.hintHighlight, initialOptimalSteps: s.initialOptimalSteps, currentOptimalSteps: s.currentOptimalSteps,
-    solvePlayback: s.solvePlayback, solveStepIndex: s.solveStepIndex,
+    solvePlayback: s.solvePlayback, adversarialPlayback: s.adversarialPlayback, solveStepIndex: s.solveStepIndex,
     nextPlaybackStep: s.nextPlaybackStep, prevPlaybackStep: s.prevPlaybackStep, stopPlayback: s.stopPlayback,
     disclosureLevel: s.disclosureLevel, setDisclosureLevel: s.setDisclosureLevel,
     educationOpen: s.educationOpen, setEducationOpen: s.setEducationOpen,
@@ -35,7 +36,7 @@ export function GameShell({ gameId }: Props) {
     gameState, applyMove, undo, redo, reset, newLevel,
     requestSolve, requestHint, solution, solverStatus, solveError,
     hintMove, hintHighlight, initialOptimalSteps, currentOptimalSteps,
-    solvePlayback, solveStepIndex, nextPlaybackStep, prevPlaybackStep, stopPlayback,
+    solvePlayback, adversarialPlayback, solveStepIndex, nextPlaybackStep, prevPlaybackStep, stopPlayback,
     disclosureLevel, setDisclosureLevel, educationOpen, setEducationOpen,
     historyIndex, history, startTime, elapsed, tick,
   } = store;
@@ -63,10 +64,10 @@ export function GameShell({ gameId }: Props) {
   }, [isWin, historyIndex, playWin, vibrate]);
 
   useEffect(() => {
-    if (!solvePlayback) return;
+    if (!shouldRunGenericPlayback({ solvePlayback, adversarialPlayback })) return;
     const timer = setInterval(() => { playStep(); nextPlaybackStep(); }, 600);
     return () => clearInterval(timer);
-  }, [solvePlayback, nextPlaybackStep, playStep]);
+  }, [solvePlayback, adversarialPlayback, nextPlaybackStep, playStep]);
 
   const handleMove = useCallback((move: Move) => {
     if (isWin || solvePlayback) return;

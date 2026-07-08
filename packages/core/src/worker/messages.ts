@@ -26,11 +26,3 @@ export interface GenerateTaskPayload {
   gameId: string;
   config: Record<string, unknown>;
 }
-
-/**
- * 检查计算是否应分流到 Worker。
- * 默认阈值：状态空间 > 25 格（5×5）时使用 Worker。
- */
-export function shouldUseWorker(stateSize: number, threshold = 25): boolean {
-  return stateSize > threshold;
-}

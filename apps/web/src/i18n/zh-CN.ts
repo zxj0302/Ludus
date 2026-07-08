@@ -86,6 +86,7 @@ const zhCN = {
     'wythoff.goldenRatio': '黄金比例',
     'education.wythoffMoveSingle': '从堆{{pile}}取{{count}}颗',
     'education.wythoffMoveBoth': '从两堆同时取{{count}}颗',
+    'education.fifteenMove': '滑动第{{row}}行第{{col}}列的方块',
 
     'game.loading': '加载中…',
     'game.noGame': '未指定游戏',
@@ -160,6 +161,7 @@ const zhCN = {
     'difficulty.easy': '简单',
     'difficulty.medium': '中等',
     'difficulty.hard': '困难',
+    'difficulty.random': '随机',
 
     'matrix.title': 'GF(2) 增广矩阵消元可视化',
     'matrix.initial': '初始增广矩阵 [A | b]',
@@ -249,6 +251,13 @@ const zhCN = {
     'fifteen.searchTree': 'A* 搜索树',
     'fifteen.nodesExplored': '搜索节点数',
     'fifteen.solverName': 'A* (曼哈顿距离)',
+    'fifteen.collapse': '收起',
+    'fifteen.expand': '展开',
+    'fifteen.solutionPathSteps': '{{count}} 步',
+    'fifteen.nodeDescription': '每个节点显示：步数、g（已走代价）、h（启发式估计）、f = g + h',
+    'fifteen.fTrend': 'f = g + h 趋势（沿最优路径非递减）',
+    'fifteen.stepN': '第 {{n}} 步',
+    'fifteen.timeMs': '{{ms}} 毫秒',
   },
 };
 

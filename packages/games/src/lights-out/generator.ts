@@ -1,5 +1,6 @@
 import { buildLightsOutMatrix, solveGF2, optimalSolution, hammingWeight, applyMoveToGrid } from './solver';
-import type { Level, LevelConfig, Difficulty } from '@ludus/core';
+import { getDifficulty } from './difficulty';
+import type { Level, LevelConfig } from '@ludus/core';
 import type { LightsOutState, LightsOutMove } from './types';
 
 export interface GenerateOptions {
@@ -106,7 +107,8 @@ export function generateLightsOutLevel(config: LevelConfig & {
       grid: currentGrid,
     };
 
-    const difficulty = computeDifficulty(n, actualMoves, optimalSteps, unique);
+    // Use shared getDifficulty for consistency between generator and rules
+    const difficulty = getDifficulty(initialState);
 
     return {
       schemaVersion: 1,
@@ -114,7 +116,7 @@ export function generateLightsOutLevel(config: LevelConfig & {
       levelId,
       initialState: initialState as unknown as Record<string, unknown>,
       difficulty,
-      optimalSteps: optimalSteps ?? actualMoves,
+      optimalSteps,
       uniqueSolution: unique,
       generatedBy: 'reverse-solve-gf2',
       createdAt: new Date().toISOString(),
@@ -138,30 +140,5 @@ export function generateLightsOutLevel(config: LevelConfig & {
     uniqueSolution: false,
     generatedBy: 'reverse-solve-gf2-fallback',
     createdAt: new Date().toISOString(),
-  };
-}
-
-function computeDifficulty(
-  n: number,
-  moveCount: number,
-  optimalSteps: number | null,
-  unique: boolean,
-): Difficulty {
-  // 当前为简化难度公式（尺寸 + 步数 + 冗余度）。
-  // 完整公式（含对称性/散乱度因子）见 L3 教学内容 §5.4。
-  const sizeFactor = (n - 3) / 7; // 0 at 3×3, 1 at 10×10
-  const moveFactor = Math.min(moveCount / 30, 1);
-  const optRatio = optimalSteps ? moveCount / optimalSteps : 1;
-
-  let score = Math.round(sizeFactor * 25 + moveFactor * 50 + optRatio * 25);
-  if (!unique) score += 10;
-  score = Math.max(0, Math.min(100, score));
-
-  const label = score <= 20 ? 'difficulty.easy' : score <= 50 ? 'difficulty.medium' : 'difficulty.hard';
-
-  return {
-    score,
-    factors: { size: n, moves: moveCount, optimalRatio: Math.round(optRatio * 100) / 100 },
-    labelKey: label,
   };
 }

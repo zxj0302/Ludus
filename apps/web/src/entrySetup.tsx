@@ -141,8 +141,13 @@ fifteenEntry.visualization = {
 // ═══════════════════════════════════════════════════════════════
 
 import { SokobanToolbar } from './components/SokobanToolbar';
+import { FifteenToolbar } from './components/FifteenToolbar';
 
 sokobanEntry.ui = {
   ...sokobanEntry.ui,
   toolbarSlot: SokobanToolbar as any,
+};
+
+fifteenEntry.ui = {
+  toolbarSlot: FifteenToolbar as any,
 };

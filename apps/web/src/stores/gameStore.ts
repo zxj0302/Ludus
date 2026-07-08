@@ -1,19 +1,29 @@
 import { create } from 'zustand';
-import type { GamePlugin, GameState, Move, Solution } from '@ludus/core';
+import type { GamePlugin, GameState, Move, Solution, WorkerRequest, WorkerResponse } from '@ludus/core';
 import { getGame } from '@ludus/games';
 import type { DisclosureLevel } from '@ludus/ui';
 import i18n from '../i18n';
+import { getPlayerStarts } from '../utils/solution';
+import SolverWorker from '../workers/solver.worker?worker';
 
 // ═══════════════════════════════════════════════════════════════
 // 通用 AI 调度 — 通过 plugin.ai 实现，不依赖具体游戏
 // ═══════════════════════════════════════════════════════════════
 
-function getPlayerStarts(solution: Solution | null): boolean {
-  return (solution?.trace?.visualizationData as Record<string, unknown> | undefined)?.playerStarts as boolean ?? true;
+let aiTimerId: ReturnType<typeof setTimeout> | null = null;
+let bgSolverTimerId: ReturnType<typeof setTimeout> | null = null;
+let bgWorkerReqId = 0;
+
+function clearTimers() {
+  if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
+  if (bgSolverTimerId) { clearTimeout(bgSolverTimerId); bgSolverTimerId = null; }
+  if (bgSolveCancel) { bgSolveCancel(); bgSolveCancel = null; }
 }
 
 function scheduleAI(get: () => GameStore) {
-  setTimeout(() => {
+  if (aiTimerId) clearTimeout(aiTimerId);
+  aiTimerId = setTimeout(() => {
+    aiTimerId = null;
     const s = get();
     if (!s.plugin?.ai || !s.gameState || s.solvePlayback) return;
     if (!s.plugin.ai.isAITurn(s.gameState)) return;
@@ -78,25 +88,89 @@ function adversarialSolveStep(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 后台求解 — 对慢求解器延迟 500ms 执行，不阻塞 UI
+// 离线程求解 — Web Worker 或 setTimeout fallback
 // ═══════════════════════════════════════════════════════════════
+
+function runSolverOffThread(
+  plugin: GamePlugin,
+  state: GameState,
+  onResult: (solution: Solution) => void,
+  onError?: (message: string) => void,
+): { cancel: () => void } {
+  // Use Web Worker for fifteen — A* can be slow and would block main thread
+  if (plugin.metadata.id === 'fifteen') {
+    const worker = new SolverWorker();
+    const reqId = `solve-${++bgWorkerReqId}`;
+    let done = false;
+
+    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      if (e.data.id !== reqId || done) return;
+      done = true;
+      worker.terminate();
+      if (e.data.error) { onError?.(e.data.error); return; }
+      const result = e.data.result as Solution | undefined;
+      if (result) onResult(result);
+      else onError?.('Empty result from solver');
+    };
+
+    worker.onerror = (err) => {
+      if (done) return;
+      done = true;
+      worker.terminate();
+      onError?.(`Worker error: ${err.message || 'failed to load solver'}`);
+    };
+
+    worker.postMessage({ id: reqId, type: 'solve', payload: { gameId: plugin.metadata.id, state: state as Record<string, unknown> } } satisfies WorkerRequest);
+    return { cancel: () => { if (!done) { done = true; worker.terminate(); } } };
+  }
+
+  // Fallback: setTimeout deferral for other games (Lights Out, Sokoban etc.)
+  const timerId = setTimeout(() => {
+    onResult(plugin.solve(state));
+  }, 0);
+  return { cancel: () => clearTimeout(timerId) };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 后台求解 — 异步调度，不阻塞 UI
+// ═══════════════════════════════════════════════════════════════
+
+let bgSolveCancel: (() => void) | null = null;
 
 function scheduleBackgroundSolve(
   get: () => GameStore,
   set: (partial: Partial<GameStore>) => void,
   savedState: GameState,
+  savedGameId: string,
 ) {
-  setTimeout(() => {
-    const { plugin: p, gameState: s } = get();
-    if (!p || s !== savedState) return;
-    const bgSol = p.solve(s);
-    if (bgSol.solvable && bgSol.moves.length > 0) {
-      set({
-        solution: bgSol,
-        initialOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
-        currentOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
-      });
-    }
+  // Cancel any in-flight solve
+  if (bgSolverTimerId) { clearTimeout(bgSolverTimerId); bgSolverTimerId = null; }
+  if (bgSolveCancel) { bgSolveCancel(); bgSolveCancel = null; }
+
+  const { plugin: p } = get();
+  if (!p) return;
+
+  // Delay 500ms before starting the solve (debounce rapid state changes)
+  bgSolverTimerId = setTimeout(() => {
+    bgSolverTimerId = null;
+    const { plugin: currentP, gameState: currentS, gameId: currentId } = get();
+    if (!currentP || currentS !== savedState || currentId !== savedGameId) return;
+
+    bgSolveCancel = runSolverOffThread(
+      currentP,
+      currentS,
+      (bgSol) => {
+        bgSolveCancel = null;
+        if (bgSol.solvable && bgSol.moves.length > 0) {
+          set({
+            solution: bgSol,
+            initialOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
+            currentOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
+          });
+        }
+      },
+      () => { bgSolveCancel = null; /* background solve errors are silent */ },
+    ).cancel;
   }, 500);
 }
 
@@ -104,10 +178,10 @@ function scheduleBackgroundSolve(
 // 关卡生成 — 尝试 generateLevel，失败则 fallback 到 initialState
 // ═══════════════════════════════════════════════════════════════
 
-function generatePlayableState(plugin: GamePlugin): GameState {
+function generatePlayableState(plugin: GamePlugin, difficultyRange?: [number, number]): GameState {
   try {
     const level = plugin.generateLevel({
-      difficultyRange: [10, 50],
+      difficultyRange: difficultyRange ?? [1, 100],
       size: 5,
       requireUniqueSolution: false,
     });
@@ -153,6 +227,8 @@ interface GameStore {
 
   language: string;
   soundEnabled: boolean;
+  difficultyRange: [number, number];
+  setDifficultyRange: (range: [number, number]) => void;
 
   loadGame: (gameId: string) => void;
   loadCustomState: (state: GameState) => void;
@@ -201,11 +277,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   educationOpen: false,
   language: 'zh-CN',
   soundEnabled: true,
+  difficultyRange: [1, 100],
 
   loadGame: (gameId) => {
+    clearTimers();
     const plugin = getGame(gameId);
     if (!plugin) return;
-    const state = generatePlayableState(plugin);
+    const state = generatePlayableState(plugin, get().difficultyRange);
 
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
@@ -233,7 +311,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       educationOpen: false,
     });
 
-    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state, gameId);
     if (hasAI) scheduleAI(get);
   },
 
@@ -337,9 +415,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   newLevel: () => {
-    const { plugin } = get();
+    clearTimers();
+    const { plugin, difficultyRange } = get();
     if (!plugin) return;
-    const state = generatePlayableState(plugin);
+    const state = generatePlayableState(plugin, difficultyRange);
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
     const sol = isFastGame ? plugin.solve(state) : null;
@@ -362,7 +441,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       elapsed: 0,
     });
 
-    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state, get().gameId!);
     if (hasAI) scheduleAI(get);
   },
 
@@ -390,7 +469,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       elapsed: 0,
     });
 
-    if (!isFastGame) scheduleBackgroundSolve(get, set, state);
+    if (!isFastGame) scheduleBackgroundSolve(get, set, state, get().gameId!);
     if (hasAI) scheduleAI(get);
   },
 
@@ -399,6 +478,26 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!plugin || !gameState) return;
 
     set({ solverStatus: 'running', solveError: null });
+
+    // Web Worker for fifteen — A* blocks main thread if run synchronously
+    if (plugin.metadata.id === 'fifteen') {
+      runSolverOffThread(plugin, gameState, (solution) => {
+        const { gameState: s } = get();
+        if (!s) return;
+        set({
+          solution,
+          solverStatus: 'done',
+          solvePlayback: true,
+          solveStepIndex: 0,
+          prePlaybackHistoryIndex: get().historyIndex,
+          hintMove: null,
+          hintHighlight: null,
+        });
+      }, (errMsg) => {
+        set({ solverStatus: 'idle', solveError: errMsg });
+      });
+      return;
+    }
 
     setTimeout(() => {
       const { plugin: p, gameState: s } = get();
@@ -526,6 +625,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   nextPlaybackStep: () => {
     if (get().adversarialPlayback) return; // 对抗播放时禁用手动步进
+    if (!get().solvePlayback) return; // 防止 stopPlayback 后的竞态
     const { solution, solveStepIndex } = get();
     if (!solution) return;
 
@@ -589,6 +689,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
+  setDifficultyRange: (range) => set({ difficultyRange: range }),
 
   tick: () => {
     const { startTime } = get();

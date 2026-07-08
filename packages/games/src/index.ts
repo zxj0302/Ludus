@@ -5,13 +5,12 @@ export * from './sokoban';
 export * from './sudoku';
 export * from './nim';
 export * from './wythoff';
+export * from './fifteen';
 
-// Board components — Lights Out doesn't re-export from its index, export explicitly
-export { LightsOutBoard } from './lights-out/render';
-
-// Types
+// Types — used by apps/web components (statusCards, viz, hooks)
 export type { LightsOutState, LightsOutMove } from './lights-out/types';
 export type { SokobanState, SokobanMove } from './sokoban/types';
 export type { SudokuState, SudokuMove } from './sudoku/types';
 export type { NimState, NimMove } from './nim/types';
 export type { WythoffState, WythoffMove } from './wythoff/types';
+export type { FifteenState, FifteenMove } from './fifteen/types';

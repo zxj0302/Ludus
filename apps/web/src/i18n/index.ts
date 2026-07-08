@@ -10,10 +10,11 @@ const resources: Record<string, { translation: Record<string, string> }> = {
 };
 
 for (const entry of getAllEntries()) {
+  if (!entry.i18n) continue;
   const zh = resources['zh-CN']!;
   const enLoc = resources.en!;
-  Object.assign(zh.translation, entry.i18n.zhCN);
-  Object.assign(enLoc.translation, entry.i18n.en);
+  Object.assign(zh.translation, entry.i18n.zhCN ?? {});
+  Object.assign(enLoc.translation, entry.i18n.en ?? {});
 }
 
 i18n.use(initReactI18next).init({
