@@ -234,27 +234,24 @@ interface LayoutNode {
 function SearchTreePanel({ tree, solutionIds, lineSteps }: { tree: SearchTreeNode[]; solutionIds: number[]; lineSteps?: LineSolveTraceStep[] }) {
   if (tree.length === 0) return null;
 
-  // If only 1 root node (no backtracking happened), build a linear tree from line-solve steps
-  let displayTree = tree;
-  if (tree.length === 1 && lineSteps && lineSteps.length > 0) {
-    displayTree = [];
-    // Root node
-    displayTree.push({ ...tree[0]!, id: 0, parentId: null });
-    // One node per line-solve step
-    for (let i = 0; i < lineSteps.length; i++) {
-      const step = lineSteps[i]!;
-      displayTree.push({
-        id: i + 1,
-        parentId: i, // chain: 0 → 1 → 2 → ...
-        cell: undefined,
-        guess: undefined,
-        depth: i + 1,
-        result: i === lineSteps.length - 1 ? 'solved' : 'branch',
-        newCells: step.determinedIndices.length,
-      });
-    }
-    solutionIds = [lineSteps.length]; // last node is solution
+  // If only 1 root node — no backtracking happened. Show explanation.
+  if (tree.length === 1 && tree[0]!.parentId === null) {
+    return (
+      <div className="bg-white rounded-lg p-4 border border-warm-stone-200 text-center">
+        <div className="text-3xl mb-2">🔍</div>
+        <div className="text-sm font-semibold text-warm-stone-700 mb-1">此谜题由纯线求解完成</div>
+        <div className="text-xs text-warm-stone-500">
+          线求解（约束传播）无需猜测即确定了所有格子。
+          <br />
+          请切换到「📐 线求解推理」标签页查看推理过程，
+          <br />
+          或生成更高难度的谜题以查看带分支的回溯搜索树。
+        </div>
+      </div>
+    );
   }
+
+  const displayTree = tree;
 
   // Build parent→children map
   const childrenMap = new Map<number | null, SearchTreeNode[]>();

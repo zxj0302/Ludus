@@ -99,17 +99,16 @@ export function generateNonogramLevel(config: LevelConfig): Level {
   const targetScore = rangeLo + (rangeHi - rangeLo) * rng();
 
   if (targetScore <= 33) {
-    // Easy: 5×5 to 6×6
-    width = randInt(rng, 5, 6);
-    height = randInt(rng, 5, 6);
+    // Easy: 5×5
+    width = 5; height = 5;
   } else if (targetScore <= 66) {
-    // Medium: 7×7 to 9×9
-    width = randInt(rng, 7, 9);
-    height = randInt(rng, 7, 9);
+    // Medium: 5×5 to 7×7
+    width = randInt(rng, 5, 7);
+    height = randInt(rng, 5, 7);
   } else {
-    // Hard: 10×10 (balanced between solvability and backtracking requirement)
-    width = 10;
-    height = 10;
+    // Hard: 7×7 to 8×8
+    width = randInt(rng, 7, 8);
+    height = randInt(rng, 7, 8);
   }
 
   let bestResult: {
@@ -118,7 +117,7 @@ export function generateNonogramLevel(config: LevelConfig): Level {
   } | null = null;
   let bestDistance = Infinity;
 
-  const maxAttempts = targetScore <= 33 ? 50 : 80;
+  const maxAttempts = 100;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Generate a random pattern
@@ -144,12 +143,7 @@ export function generateNonogramLevel(config: LevelConfig): Level {
 
     const lineSolveCells = solveResult.stats.lineSolveCells;
     const maxBacktrackDepth = solveResult.stats.maxDepth;
-    const backtrackCount = solveResult.stats.backtracks;
     const clues = totalClueCount(rowClues, colClues);
-
-    // For medium+hard: must require at least some backtracking
-    const minBacktracks = targetScore <= 33 ? 0 : targetScore <= 66 ? 1 : 2;
-    if (backtrackCount < minBacktracks) continue;
 
     const difficulty = computeNonogramDifficulty(
       width, height, lineSolveCells, totalCells, maxBacktrackDepth, clues,

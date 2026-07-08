@@ -181,6 +181,7 @@ nonogramEntry.visualization = {
 import { SokobanToolbar } from './components/SokobanToolbar';
 import { FifteenToolbar } from './components/FifteenToolbar';
 import { WaterJugToolbar } from './components/WaterJugToolbar';
+import { NonogramToolbar } from './components/NonogramToolbar';
 
 sokobanEntry.ui = {
   ...sokobanEntry.ui,
@@ -193,4 +194,8 @@ fifteenEntry.ui = {
 
 waterJugEntry.ui = {
   toolbarSlot: WaterJugToolbar as any,
+};
+
+nonogramEntry.ui = {
+  toolbarSlot: NonogramToolbar as any,
 };
