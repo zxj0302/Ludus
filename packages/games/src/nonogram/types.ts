@@ -31,11 +31,3 @@ export interface NonogramMove extends Move {
   action: 'fill' | 'cross';
 }
 
-/** Minimum grid size for generation */
-export const MIN_GRID_SIZE = 5;
-/** Maximum grid size for generation */
-export const MAX_GRID_SIZE = 20;
-/** Minimum fill density for generated patterns */
-export const MIN_FILL_DENSITY = 0.35;
-/** Maximum fill density for generated patterns */
-export const MAX_FILL_DENSITY = 0.65;

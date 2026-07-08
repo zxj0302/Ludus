@@ -26,7 +26,7 @@ export function computeNonogramDifficulty(
 ): Difficulty {
   // 1. Grid size score: 0–40
   // 5×5=25 → 0, 20×20=400 → 40
-  const sizeScore = Math.round((Math.min(totalCells, 400) - 25) / (400 - 25) * 40);
+  const sizeScore = Math.max(0, Math.round((Math.min(totalCells, 400) - 25) / (400 - 25) * 40));
 
   // 2. Line-solve ratio score: 0–30
   // lineSolveRatio = 1 means line solver determined all cells (easy)

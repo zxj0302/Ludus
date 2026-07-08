@@ -476,3 +476,4 @@
 	  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
 	  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
 	  - 281 测试全过，typecheck 零错误，vite build 8.32s
+	- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。

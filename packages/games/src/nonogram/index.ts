@@ -15,7 +15,7 @@ const metadata = {
   id: 'nonogram',
   nameKey: 'game.nonogram.name',
   descriptionKey: 'game.nonogram.description',
-  category: 'category.constraintSatisfaction',
+  category: 'category.constraint-satisfaction',
   icon: '🧩',
   isFastSolver: false, // Backtracking solver — may be slow on large grids
   tags: ['nonogram', 'ノノグラム', 'CSP', '约束满足', '回溯', 'NP-complete', 'picross'],

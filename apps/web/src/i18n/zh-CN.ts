@@ -262,6 +262,8 @@ const zhCN = {
     'education.waterJugFill': '装满第 {{jug}} 个壶',
     'education.waterJugEmpty': '倒空第 {{jug}} 个壶',
     'education.waterJugPour': '从第 {{from}} 壶倒水到第 {{to}} 壶',
+    'education.nonogramFill': '填充第 {{row}} 行第 {{col}} 列',
+    'education.nonogramCross': '标记第 {{row}} 行第 {{col}} 列为空',
   },
 };
 

@@ -262,6 +262,8 @@ const en = {
     'education.waterJugFill': 'Fill jug {{jug}}',
     'education.waterJugEmpty': 'Empty jug {{jug}}',
     'education.waterJugPour': 'Pour jug {{from}} → jug {{to}}',
+    'education.nonogramFill': 'Fill row {{row}} col {{col}}',
+    'education.nonogramCross': 'Mark row {{row}} col {{col}} as empty',
   },
 };
 

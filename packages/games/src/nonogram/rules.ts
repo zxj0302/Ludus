@@ -82,8 +82,14 @@ export function createInitialState(
 }
 
 export function legalMoves(state: NonogramState): NonogramMove[] {
-  // All cells are legal moves — players can toggle fill/cross on any undetermined cell
-  return [];
+  const moves: NonogramMove[] = [];
+  for (let r = 0; r < state.height; r++) {
+    for (let c = 0; c < state.width; c++) {
+      moves.push({ row: r, col: c, action: 'fill' });
+      moves.push({ row: r, col: c, action: 'cross' });
+    }
+  }
+  return moves;
 }
 
 export function applyMove(state: NonogramState, move: NonogramMove): NonogramState {

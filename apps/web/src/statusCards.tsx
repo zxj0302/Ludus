@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { GameState, Solution } from '@ludus/core';
 import { computeNimSum, isWythoffPPosition, isSolvable, gcd } from '@ludus/games';
 import type {
-  LightsOutState, SokobanState, SudokuState, NimState, WythoffState, WaterJugState,
+  LightsOutState, SokobanState, SudokuState, NimState, WythoffState, WaterJugState, NonogramState,
 } from '@ludus/games';
 import { KnowledgeCard } from './components/KnowledgeCard';
 
@@ -167,6 +167,26 @@ export function StatusCard({ gameId, gameState, solution }: Props) {
               value={caps.reduce((p, c) => p * (c + 1), 1)}
               colorClass="text-warm-stone-600"
             />
+          </div>
+        </KnowledgeCard>
+      );
+    }
+    case 'nonogram': {
+      const s = gameState as NonogramState | null;
+      const filledCount = s?.grid?.flat().filter(c => c === 1).length ?? 0;
+      const totalCells = (s?.width ?? 0) * (s?.height ?? 0);
+      const maxRowClues = Math.max(...(s?.rowClues ?? []).map(r => r.length), 0);
+      const maxColClues = Math.max(...(s?.colClues ?? []).map(c => c.length), 0);
+      return (
+        <KnowledgeCard title={t('education.currentState')} icon="🧩">
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <StatCell label={t('nonogram.cells')} value={`${filledCount}/${totalCells}`} colorClass="text-clarity-teal-dark" />
+            <StatCell label={t('nonogram.lineSolved')} value={s?.lineSolveCells ?? '—'} colorClass="text-logic-indigo-700" />
+            <StatCell label={t('nonogram.backtrackDepth')} value={s?.maxBacktrackDepth ?? '—'} />
+          </div>
+          <div className="mt-3 pt-3 border-t border-warm-stone-200 grid grid-cols-2 gap-2 text-sm">
+            <StatCell label={t('nonogram.uniqueSolution')} value={s ? '✅' : '—'} colorClass="text-clarity-teal-dark" />
+            <StatCell label={`${s?.width ?? '?'}×${s?.height ?? '?'}`} value={`${maxRowClues}/${maxColClues}`} />
           </div>
         </KnowledgeCard>
       );

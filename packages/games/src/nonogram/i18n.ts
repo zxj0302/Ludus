@@ -1,6 +1,6 @@
 export const nonogramI18n = {
   zhCN: {
-    'game.nonogram.name': 'ノノグラム',
+    'game.nonogram.name': '图形填空',
     'game.nonogram.description': '根据数字线索填充网格，揭示隐藏图案 — 约束满足 × 回溯搜索',
     'nonogram.rowClues': '行线索',
     'nonogram.colClues': '列线索',
@@ -18,7 +18,6 @@ export const nonogramI18n = {
     'nonogram.clickToFill': '点击填充',
     'nonogram.rightClickToCross': '右键标记空格',
     'nonogram.keyboardHint': '方向键移动 · 空格填充 · X 标记空格',
-    'category.constraintSatisfaction': '约束满足',
   },
   en: {
     'game.nonogram.name': 'Nonogram',
@@ -39,6 +38,5 @@ export const nonogramI18n = {
     'nonogram.clickToFill': 'Click to fill',
     'nonogram.rightClickToCross': 'Right-click to mark empty',
     'nonogram.keyboardHint': 'Arrows to move · Space to fill · X to mark empty',
-    'category.constraintSatisfaction': 'Constraint Satisfaction',
   },
 };

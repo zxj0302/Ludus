@@ -125,12 +125,6 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     const pattern = generatePattern(width, height, rng);
     const { rowClues, colClues } = computeClues(pattern);
 
-    // Quick skip: empty or full rows/cols are boring
-    const hasEmptyRow = rowClues.some(r => r.length === 0);
-    const hasEmptyCol = colClues.some(c => c.length === 0);
-    const hasFullRow = rowClues.some(r => r.length === 1 && r[0] === width);
-    const hasFullCol = colClues.some(c => c.length === 1 && c[0] === height);
-
     // Allow some empty/full rows but not too many
     const emptyRowCount = rowClues.filter(r => r.length === 0).length;
     const fullRowCount = rowClues.filter(r => r.length === 1 && r[0] === width).length;

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { Solution, GameState, Move, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
-import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove, WaterJugMove } from '@ludus/games';
+import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove, WaterJugMove, NonogramMove } from '@ludus/games';
 import { getGameEntry } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
@@ -84,6 +84,11 @@ function formatMove(
       if (m.type === 'fill') return t('education.waterJugFill', { jug: m.jugIndex + 1 });
       if (m.type === 'empty') return t('education.waterJugEmpty', { jug: m.jugIndex + 1 });
       return t('education.waterJugPour', { from: m.from + 1, to: m.to + 1 });
+    }
+    case 'nonogram': {
+      const m = move as NonogramMove;
+      if (m.action === 'fill') return t('education.nonogramFill', { row: m.row + 1, col: m.col + 1 });
+      return t('education.nonogramCross', { row: m.row + 1, col: m.col + 1 });
     }
     default:
       return `${index + 1}. ${JSON.stringify(move)}`;
