@@ -49,7 +49,7 @@ const metadata = {
 export const nonogramPlugin: GamePlugin<NonogramState, NonogramMove> = {
   metadata,
   initialState: () => {
-    // Default: 5×5 heart pattern
+    // Default: 5×5 heart pattern (fully line-solvable, good for first impression)
     const heart: boolean[][] = [
       [false, true, false, true, false],
       [true, true, true, true, true],
