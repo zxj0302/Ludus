@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）— 第 7 款游戏 倒水谜题已完成**。下一步：Nonogram 或横切能力。
-- **MVP 范围**：7 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅），超 MVP 目标。
+- **当前阶段**：**阶段 5（增量游戏）— 8 款游戏已完成**。下一步：Connect 4（博弈树）或阶段 6 横切能力。
+- **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，281 个测试（全过），Vite 构建成功。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：27 个测试文件，281 测试全过。
+- **测试覆盖**：27 个测试文件，331 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -142,11 +142,12 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-7 款游戏全部完成（超 MVP 目标）。倒水谜题难度系统已校准。
+8 款游戏全部完成（超 MVP 目标）。B.6 建议序列已穷尽。
+Nonogram 回溯搜索树可视化已添加，生成器已调整为中高难度需要回溯。
 
-1. **下一款增量游戏**：按 B.6 建议顺序，下一款是 Nonogram 数织（§4 CSP）或 Connect 4（博弈树）
-2. **Sokoban 生成器升级**（反向行走/模板/进化算法）— 当前为 Microban 选关
-3. **横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
+1. **下一款增量游戏**：Connect 4（四子棋，Minimax + α-β 剪枝）— 填补博弈树搜索空白
+2. **或阶段 6 横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
+3. **其他候选**：Minesweeper（CSP/概率推理）、Maze（图论/搜索可视化）
 
 ## 🐛 KNOWN ISSUES
 
@@ -477,3 +478,13 @@
 	  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
 	  - 281 测试全过，typecheck 零错误，vite build 8.32s
 	- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。
+- [2026-07-08] **Nonogram 回溯搜索树可视化 + 生成器强化**：
+  - **回溯搜索树可视化**（NonogramTraceViz.tsx）：SVG 树展示回溯分支过程。Leaf-counting 布局算法（叶节点依次排布，内部节点居中于子节点）。颜色编码：灰=线求解根节点、蓝=分支节点、绿=得解、红=矛盾。节点显示：格坐标(R行C列) + 猜测(■/✕) + 新确定格子数。Tab 切换线求解步骤 / 回溯搜索树。
+  - **求解器增强**（solver.ts）：新增 `isFullyLineSolvable()` 导出函数，供生成器判断谜题是否纯线求解。
+  - **生成器强化**（generator.ts）：
+    - 网格尺寸升级：Easy 5×5、Medium 6×6–8×8、Hard 8×8–10×10（之前 Hard 仅 7×7–8×8）
+    - 填充密度差异化：Easy 40-60%、Medium 30-45%、Hard 25-40%
+    - Hard 谜题强制要求回溯（`backtracks > 0`），Medium 偏好回溯
+    - Pattern 生成小块化（Hard 下 maxBlockSize=2 vs Easy=4）
+  - **i18n**：新增 7 个翻译 key × 2 语言（回溯树标签、Tab、统计等）
+  - 331 测试全过，typecheck 零错误，vite build 8.04s

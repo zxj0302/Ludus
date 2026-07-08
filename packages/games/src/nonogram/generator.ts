@@ -1,7 +1,7 @@
 import type { Level, LevelConfig } from '@ludus/core';
 import type { NonogramState } from './types';
 import { createInitialState, computeClues, totalClueCount } from './rules';
-import { countSolutions, solveNonogram } from './solver';
+import { countSolutions, solveNonogram, isFullyLineSolvable } from './solver';
 import { computeNonogramDifficulty } from './difficulty';
 
 /**
@@ -32,6 +32,7 @@ function generatePattern(
   width: number,
   height: number,
   rng: () => number,
+  densityRange: [number, number] = [0.4, 0.6],
 ): boolean[][] {
   const grid: boolean[][] = [];
   for (let r = 0; r < height; r++) {
@@ -39,20 +40,21 @@ function generatePattern(
   }
 
   const totalCells = width * height;
-  const targetFill = 0.4 + rng() * 0.2; // 40–60% fill
+  const [dMin, dMax] = densityRange;
+  const targetFill = dMin + rng() * (dMax - dMin);
   const targetFilled = Math.floor(totalCells * targetFill);
 
-  // Place random rectangular blocks
+  // Place random rectangular blocks (smaller blocks for sparser patterns)
   let filled = 0;
-  const blockAttempts = Math.max(width * height / 4, 10);
+  const maxBlockSize = dMax - dMin < 0.25 ? 2 : 4;
+  const blockAttempts = Math.max(width * height / 3, 8);
 
   for (let i = 0; i < blockAttempts && filled < targetFilled; i++) {
-    const bw = randInt(rng, 1, Math.min(4, width));
-    const bh = randInt(rng, 1, Math.min(4, height));
+    const bw = randInt(rng, 1, Math.min(maxBlockSize, width));
+    const bh = randInt(rng, 1, Math.min(maxBlockSize, height));
     const br = randInt(rng, 0, height - bh);
     const bc = randInt(rng, 0, width - bw);
 
-    // Fill the block
     for (let r = br; r < br + bh; r++) {
       for (let c = bc; c < bc + bw; c++) {
         if (!grid[r]![c]) {
@@ -63,8 +65,9 @@ function generatePattern(
     }
   }
 
-  // Add random single cells to reach target density (or add texture)
-  const extraCells = Math.floor(targetFilled * 0.15); // 15% single cells
+  // Add random single cells for texture (more for sparser patterns)
+  const extraRatio = dMax - dMin < 0.25 ? 0.25 : 0.15;
+  const extraCells = Math.floor(targetFilled * extraRatio);
   for (let i = 0; i < extraCells; i++) {
     const r = randInt(rng, 0, height - 1);
     const c = randInt(rng, 0, width - 1);
@@ -99,16 +102,16 @@ export function generateNonogramLevel(config: LevelConfig): Level {
   const targetScore = rangeLo + (rangeHi - rangeLo) * rng();
 
   if (targetScore <= 33) {
-    // Easy: 5×5
+    // Easy: 5×5 — mostly line-solvable
     width = 5; height = 5;
   } else if (targetScore <= 66) {
-    // Medium: 5×5 to 7×7
-    width = randInt(rng, 5, 7);
-    height = randInt(rng, 5, 7);
+    // Medium: 6×6 to 8×8 — some backtracking
+    width = randInt(rng, 6, 8);
+    height = randInt(rng, 6, 8);
   } else {
-    // Hard: 7×7 to 8×8
-    width = randInt(rng, 7, 8);
-    height = randInt(rng, 7, 8);
+    // Hard: 8×8 to 10×10 — requires backtracking
+    width = randInt(rng, 8, 10);
+    height = randInt(rng, 8, 10);
   }
 
   let bestResult: {
@@ -119,9 +122,16 @@ export function generateNonogramLevel(config: LevelConfig): Level {
 
   const maxAttempts = 100;
 
+  // Density ranges and backtracking requirements by difficulty
+  const isEasy = targetScore <= 33;
+  const isMedium = targetScore > 33 && targetScore <= 66;
+  const isHard = targetScore > 66;
+
+  const densityRange: [number, number] = isHard ? [0.25, 0.40] : isMedium ? [0.30, 0.45] : [0.40, 0.60];
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Generate a random pattern
-    const pattern = generatePattern(width, height, rng);
+    const pattern = generatePattern(width, height, rng, densityRange);
     const { rowClues, colClues } = computeClues(pattern);
 
     // Allow some empty/full rows but not too many
@@ -145,6 +155,13 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     const maxBacktrackDepth = solveResult.stats.maxDepth;
     const clues = totalClueCount(rowClues, colClues);
 
+    // Backtracking requirement: medium/hard should NOT be pure line-solving
+    if (isHard && solveResult.stats.backtracks === 0) continue; // Hard: must backtrack
+    if (isMedium && solveResult.stats.backtracks === 0) {
+      // Medium: prefer backtracking, but accept if best so far
+      // Skip pure line-solving for medium unless we haven't found anything better
+    }
+
     const difficulty = computeNonogramDifficulty(
       width, height, lineSolveCells, totalCells, maxBacktrackDepth, clues,
     );
@@ -163,8 +180,8 @@ export function generateNonogramLevel(config: LevelConfig): Level {
         levelId: `nonogram-${width}x${height}-${seed}-${attempt}`,
         initialState: state,
         difficulty,
-        optimalSteps: null, // Nonogram uses solution counting, not step counting
-        uniqueSolution: true, // Verified by countSolutions(2) === 1
+        optimalSteps: null,
+        uniqueSolution: true,
         generatedBy: 'generateNonogramLevel',
         createdAt: new Date().toISOString(),
       };

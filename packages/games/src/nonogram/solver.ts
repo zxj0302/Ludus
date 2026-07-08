@@ -666,6 +666,16 @@ function verifyLineConsistency(s: SolverInternal): boolean {
   return true;
 }
 
+/**
+ * Check if a puzzle can be fully solved by line solving alone (no backtracking needed).
+ * This is fast — just runs the iterative constraint propagation.
+ */
+export function isFullyLineSolvable(state: NonogramState): boolean {
+  const internal = toInternal(state);
+  const result = lineSolve(cloneInternal(internal));
+  return result.solved && verifySolution(result.state);
+}
+
 function internalToGrid(s: SolverInternal, height: number, width: number): boolean[][] {
   const grid: boolean[][] = [];
   for (let r = 0; r < height; r++) {
