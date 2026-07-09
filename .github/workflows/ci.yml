@@ -51,46 +51,5 @@ jobs:
       - name: Verify pages base path
         run: grep -q 'src="/Ludus/assets/' apps/web/dist/index.html
 
-  deploy:
-    name: Deploy GitHub Pages
-    needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Enable pnpm
-        run: corepack enable && corepack prepare pnpm@9.15.9 --activate
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build for GitHub Pages
-        run: pnpm build:pages
-
-      - name: SPA fallback for client-side routes
-        run: cp apps/web/dist/index.html apps/web/dist/404.html
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: apps/web/dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  # Pages deploy disabled: personal accounts cannot set private visibility.
+  # Use pnpm dev / pnpm dev:desktop for local-only access.

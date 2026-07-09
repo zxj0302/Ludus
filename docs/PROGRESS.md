@@ -142,10 +142,10 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-阶段 7：CI + GitHub Pages 部署已配置。推送 `master` 后 Actions 自动构建并发布。
+阶段 7：CI 已配置；GitHub Pages 公开部署已关闭（个人账号不支持私有 Pages）。
 
-1. **一次性设置**：GitHub 仓库 Settings → Pages → Source 选 **GitHub Actions**
-2. **阶段 7 续**：`build:desktop` 生产包（需 Rust ≥1.85）或移动端验证
+1. **本机游玩**：`pnpm dev`（浏览器）或 `pnpm dev:desktop`（桌面壳，仅本机）
+2. **阶段 7 续**：`build:desktop` 生产包（需 Rust ≥1.85）
 3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
 
 ## 🐛 KNOWN ISSUES
