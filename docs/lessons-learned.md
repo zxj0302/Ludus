@@ -1,12 +1,12 @@
 ---
 name: Ludus 开发经验总结
-description: 从 Lights Out 端到端样板及后续 4 款游戏、架构重构中积累的坑、惯例、偏好——后续游戏开发必读
+description: 从 Lights Out 端到端样板及 8 款游戏、架构重构中积累的坑、惯例、偏好——后续游戏开发必读
 type: reference
 originSessionId: 2e40e0e3-e977-4b67-8ad6-d599f64981a9
 ---
 # Ludus 开发经验总结 — 后续游戏开发参考
 
-> 从阶段 4（Lights Out）到阶段 5（Sokoban/Sudoku/Nim/Wythoff）及 ADR-023 架构重构中积累的教训、惯例与偏好。
+> 从阶段 4（Lights Out）到阶段 8 款游戏及 ADR-023 架构重构、阶段 6–7 横切能力中积累的教训、惯例与偏好。
 > 新游戏的开发者应在动工前通读本文。
 
 ---
@@ -200,9 +200,9 @@ const t0 = performance.now();
 timeMs: Math.round(performance.now() - t0),
 ```
 
-### 6.3 Worker 当前状态
+### 6.3 Worker 分流（已实现）
 
-Worker 基础设施已就绪但 **store 尚未实际分流**。新游戏如果求解可能耗时（如 Sudoku DLX），应实现 `shouldUseWorker` 分流逻辑。
+`gameStore` 通过 `usesWebWorker(plugin)` 读取 `plugin.metadata.webWorker`，对 Lights Out / Fifteen / Sokoban 走 `runSolverOffThread`（Worker 或 setTimeout fallback）。`requestSolve` 与 `requestHint` 均走同一路径。新游戏若求解耗时，在 manifest 声明 `webWorker: true` 并实现 Worker handler 即可。
 
 ---
 
@@ -252,18 +252,17 @@ Worker 基础设施已就绪但 **store 尚未实际分流**。新游戏如果�
 
 ## 9. 下次开发新游戏时的检查清单
 
-- [ ] 游戏目录自包含：types/rules/solver/generator/difficulty/render/manifest/i18n（solver + generator 在游戏目录内，不依赖 core）
-- [ ] `GamePluginEntry` 导出（BoardComponent / isOwnState / moveToHighlight / i18n / education / 可选 ui / 可选 ai / 可选 visualization）
-- [ ] solver 纯 TS、框架无关、带 trace（`SolverTrace` 类型注册在 `vizComponents.tsx`）
+- [ ] `GamePluginEntry` 导出（BoardComponent / isOwnState / moveToHighlight / i18n / education / 可选 ui.statusCard / 可选 ai / 可选 visualization）
+- [ ] solver 纯 TS、框架无关、带 trace（可视化在 `entrySetup.tsx` 注入，按 `trace.type` 匹配）
 - [ ] generator 构造法优先，保可解 + 验证唯一/最优
-- [ ] `GameMetadata` 所有字段齐备（含 `icon`、i18n key 化）
-- [ ] i18n key 中英双份（i18n.ts 导出或在 manifest.ts 中定义）
+- [ ] `GameMetadata` 所有字段齐备（含 `icon`、i18n key 化、`webWorker` 若需离线程求解）
+- [ ] i18n key 中英双份（各游戏 `i18n.ts` 或 manifest）
 - [ ] 五段式教学内容 L2/L3 × zh/en（4 个 .md，放在 `packages/education/src/content/<game>/`）
-- [ ] registry 注册：`registry.set(entry.plugin.metadata.id, entry)`
-- [ ] Web 层注册入口（entrySetup.ts 注入 web 专属组件如 Sokoban toolbar）
-- [ ] 单元测试：求解器正确性 + 生成器唯一解/最优解验证 + 规则引擎
+- [ ] registry 注册 + `getGameEntry()`
+- [ ] **`entrySetup.tsx` 一个区块**：education `?raw`、viz lazy 组件、toolbar（通用 `GeneratorToolbar` 或专属如 Sokoban）
+- [ ] 可选 `education-ui.tsx`：`formatEducationMove` + `ui.statusCard`
+- [ ] 单元测试：求解器 + 生成器 + 规则；`load-smoke.test.ts` 冒烟
 - [ ] 所有字符串走 `t()`，无硬编码
 - [ ] 动画用 `transform`/`opacity`，不用 `width` transition
 - [ ] 重面板用 latch pattern 保持挂载
 - [ ] `getDifficulty` 与 `computeDifficulty` 公式一致
-- [ ] **验证零改动**：新增游戏 = 加目录 + registry 一行，不改任何已有文件

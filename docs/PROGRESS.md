@@ -5,7 +5,7 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、文档 ✅；待打 **v0.1.0** tag。
+- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、v0.1.0 tag 已推送；审查修复 + P2 清理待提交。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，384 个测试（全过），CI 就绪，Release workflow 就绪。
@@ -142,11 +142,12 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-阶段 7 release 工件就绪。下一步：打 tag 触发 Release。
+审查修复 + P2 清理已本地验证（384 测试全过）。下一步：
 
-1. **打 v0.1.0 tag**：`git tag v0.1.0 && git push origin v0.1.0` → Actions 自动构建 Windows 安装包
-2. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
-3. **或移动端**：`pnpm sync:mobile` + 真机验证
+1. **提交并推送**：P1（HubHeroCard / gameStore Worker 提示 / release 门禁）+ P2 清理
+2. **确认 Release**：GitHub Actions `v0.1.0` 是否产出 Windows 安装包；若需包含审查修复可打 `v0.1.1`
+3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
+4. **或移动端**：`pnpm sync:mobile` + 真机验证
 
 ## 🐛 KNOWN ISSUES
 
@@ -156,7 +157,7 @@
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 下一阶段优先级已确认：**阶段 6 横切能力**（Hub → 进度 → 打包），Connect 4 暂缓。
+- 阶段 6 / 7 横切与发布已基本完成；下一阶段可选：6c 教育出题参数、移动端验证、或 Phase 5 下一款游戏。
 
 ## 📝 SESSION LOG
 
@@ -541,9 +542,7 @@
 - **阶段 7 起步 — GitHub Actions CI** ✅：
   - `.github/workflows/ci.yml`：push/PR 触发；typecheck + 384 测试 + web/shell/pages build + 相对路径校验
   - 本地验证全绿
-- **阶段 7 — GitHub Pages 预览部署** ✅：
-  - `pnpm build:pages`（`base: /Ludus/`）+ router `basename` + `404.html` SPA 回退
-  - CI `deploy` job：push `master` 自动发布 → https://zxj0302.github.io/Ludus/
+- **阶段 7 — GitHub Pages**（已关闭公开 deploy，个人账号不支持私有可见性）
 - [2026-07-09] **阶段 6d — Tauri/Capacitor 套壳可行性**：
   - `apps/web build:shell`（Vite `--mode shell`，`base: './'`）
   - `apps/desktop`：Tauri 2 最小壳 + 图标 + `rust-toolchain.toml`
@@ -553,4 +552,5 @@
 - [2026-07-09] **阶段 6d 本机验证 + beforeDevCommand 修复**：
   - 桌面壳 `pnpm dev:desktop` 可打开并游玩；`beforeDevCommand` 改为 `pnpm --filter ludus-web dev`（避免相对路径随 cwd 解析错误）
   - Vite dev：`host 127.0.0.1` + `strictPort 5173`（WebView2 兼容）
-- [2026-07-09] **阶段 7 — 首个 release 工件**：CHANGELOG、CONTRIBUTING、07-release.md、release.yml；README 更新；本机 build:desktop 成功
+- [2026-07-09] **P2 清理**：移除死路由/Toolbar 重导出/statusExtension；CI 去掉 build:pages；更新 lessons-learned、02-architecture、.gitignore
+- [2026-07-09] **P2 清理（续）**：移除未用 `pauseTimer`；`prependHistory` 加 `isOwnState` 校验；02-architecture 去 ProgressiveDisclosure、补 8 游戏

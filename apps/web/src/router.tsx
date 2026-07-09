@@ -10,7 +10,6 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <HubPage /> },
       { path: 'game/:gameId', element: <GamePage /> },
-      { path: 'game/:gameId/level/:levelId', element: <GamePage /> },
     ],
   },
 ];

@@ -216,6 +216,54 @@ function persistGameProgress(
   });
 }
 
+function applyHintFromSolution(
+  get: () => GameStore,
+  set: (partial: Partial<GameStore>) => void,
+  savedState: GameState,
+  savedGameId: string,
+  solution: Solution,
+) {
+  const { plugin, gameState: s, gameId: gid } = get();
+  if (!plugin || !s || s !== savedState || gid !== savedGameId) {
+    set({ solverStatus: 'idle' });
+    return;
+  }
+
+  const isAdversarial = !!plugin.ai;
+
+  if (isAdversarial && (s as Record<string, unknown>).phase === 'choosing') {
+    const playerStarts = getPlayerStarts(solution);
+    set({
+      hintMove: null,
+      hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
+      solution,
+      solverStatus: 'done',
+      solveError: null,
+    });
+    return;
+  }
+
+  if (solution.solvable && solution.moves.length > 0) {
+    set({
+      hintMove: solution.moves[0]!,
+      hintHighlight: null,
+      currentOptimalSteps: solution.stats.solutionLength > 0 ? solution.stats.solutionLength : null,
+      solution,
+      solverStatus: 'done',
+      solveError: null,
+    });
+  } else {
+    set({
+      hintMove: null,
+      hintHighlight: null,
+      currentOptimalSteps: null,
+      solution,
+      solverStatus: 'done',
+      solveError: isAdversarial ? i18n.t('game.status.noWinningMove') : null,
+    });
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // 关卡生成 — 尝试 generateLevel，失败则 fallback 到 initialState
 // ═══════════════════════════════════════════════════════════════
@@ -288,7 +336,6 @@ interface GameStore {
   setLanguage: (lang: string) => void;
   toggleSound: () => void;
   tick: () => void;
-  pauseTimer: () => void;
   flushProgress: () => void;
 }
 
@@ -713,44 +760,27 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { plugin, gameState, solverStatus } = get();
     if (!plugin || !gameState || solverStatus === 'running') return;
 
+    const savedState = gameState;
+    const savedGameId = plugin.metadata.id;
     set({ solverStatus: 'running' });
+
+    if (usesWebWorker(plugin)) {
+      runSolverOffThread(
+        plugin,
+        gameState,
+        (solution) => applyHintFromSolution(get, set, savedState, savedGameId, solution),
+        () => set({ solverStatus: 'idle', solveError: i18n.t('game.status.workerError', { message: 'failed' }) }),
+      );
+      return;
+    }
+
     scheduleTimeout(() => {
       const { plugin: p, gameState: s } = get();
-      if (!p || !s) return;
-      const solution = p.solve(s);
-      const isAdversarial = !!p.ai;
-
-      if (isAdversarial && (s as Record<string, unknown>).phase === 'choosing') {
-        const playerStarts = getPlayerStarts(solution);
-        set({
-          hintMove: null,
-          hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
-          solution,
-          solverStatus: 'done',
-          solveError: null,
-        });
+      if (!p || !s || s !== savedState) {
+        set({ solverStatus: 'idle' });
         return;
       }
-
-      if (solution.solvable && solution.moves.length > 0) {
-        set({
-          hintMove: solution.moves[0]!,
-          hintHighlight: null,
-          currentOptimalSteps: solution.stats.solutionLength > 0 ? solution.stats.solutionLength : null,
-          solution,
-          solverStatus: 'done',
-          solveError: null,
-        });
-      } else {
-        set({
-          hintMove: null,
-          hintHighlight: null,
-          currentOptimalSteps: null,
-          solution,
-          solverStatus: 'done',
-          solveError: isAdversarial ? i18n.t('game.status.noWinningMove') : null,
-        });
-      }
+      applyHintFromSolution(get, set, savedState, savedGameId, p.solve(s));
     }, 50);
   },
 
@@ -825,13 +855,6 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const { startTime } = get();
     if (startTime) {
       set({ elapsed: Date.now() - startTime });
-    }
-  },
-
-  pauseTimer: () => {
-    const { startTime } = get();
-    if (startTime) {
-      set({ elapsed: Date.now() - startTime, startTime: null });
     }
   },
 

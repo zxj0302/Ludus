@@ -27,7 +27,7 @@ apps/web (React + Vite)
     │
     ├── apps/desktop (Tauri 2)
     │     frontendDist → ../../web/dist
-    │     devUrl       → http://localhost:5173
+    │     devUrl       → http://127.0.0.1:5173
     │
     └── apps/mobile (Capacitor 6)
           webDir → ../web/dist

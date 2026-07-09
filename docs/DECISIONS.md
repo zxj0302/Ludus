@@ -171,7 +171,7 @@
 - **决策**：使用 **React Router v6**（`createBrowserRouter`）。路由结构：
   - `/` — Hub 首页（游戏合集）
   - `/game/:gameId` — 游戏视图（关卡选择 + 游戏棋盘）
-  - `/game/:gameId/level/:levelId` — 指定关卡直链（可选，用于分享）
+  - ~~`/game/:gameId/level/:levelId`~~ — 关卡直链（v0.1 未实现，已移除路由；Sokoban 关卡在 toolbar 内选择）
   - 未来：`/stats`、`/settings`
 - **理由**：
   - 生态最成熟、文档最全、社区问题最少

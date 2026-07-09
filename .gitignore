@@ -35,5 +35,13 @@ pnpm-debug.log*
 # Test coverage
 coverage/
 
+# Rust / Tauri
+target/
+
+# Capacitor
+android/
+ios/
+.capacitor/
+
 # Claude Code local settings (per-user, not shared)
 .claude/settings.local.json

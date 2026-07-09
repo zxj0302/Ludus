@@ -184,15 +184,13 @@ nonogramEntry.visualization = {
 // ═══════════════════════════════════════════════════════════════
 
 import { SokobanToolbar } from './components/SokobanToolbar';
-import { FifteenToolbar } from './components/FifteenToolbar';
-import { WaterJugToolbar } from './components/WaterJugToolbar';
-import { NonogramToolbar } from './components/NonogramToolbar';
+import { GeneratorToolbar } from './components/GeneratorToolbar';
 
 const TOOLBAR_SLOTS: Partial<Record<keyof typeof ENTRY_MAP, ComponentType<{ onNewLevel: () => void; dispatch?: (action: { type: string; payload: unknown }) => void }>>> = {
   'sokoban': SokobanToolbar,
-  'fifteen': FifteenToolbar,
-  'water-jug': WaterJugToolbar,
-  'nonogram': NonogramToolbar,
+  'fifteen': GeneratorToolbar,
+  'water-jug': GeneratorToolbar,
+  'nonogram': GeneratorToolbar,
 };
 
 for (const [gameId, toolbar] of Object.entries(TOOLBAR_SLOTS)) {

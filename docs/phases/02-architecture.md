@@ -16,8 +16,8 @@
 │                           (Capacitor)                        │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │                packages/ui                            │   │
-│  │  GameToolbar  GameStatusBar  ProgressiveDisclosure    │   │
-│  │  MarkdownRenderer  ErrorBoundary                      │   │
+│  │  GameToolbar  GameStatusBar  DifficultySelector       │   │
+│  │  GeneratorToolbar  MarkdownRenderer  ErrorBoundary    │   │
 │  └──────────────────────────────────────────────────────┘   │
 │  (viz 组件在 apps/web 按 trace.type 懒加载，不独立成包)     │
 │  (i18n 字符串归入各游戏目录，共享 key 在 apps/web)          │
@@ -36,6 +36,7 @@
 │  │  每游戏 = 一个自包含目录 (types/rules/solver/         │   │
 │  │  generator/difficulty/render/manifest/i18n)            │   │
 │  │  ├── lights-out/  sokoban/  sudoku/  nim/  wythoff/   │   │
+│  │  ├── fifteen/  water-jug/  nonogram/                 │   │
 │  │  registry.ts  — 动态注册/发现, 新增游戏=加一行        │   │
 │  └──────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
@@ -116,8 +117,8 @@ packages:
 | `@ludus/core`      | `packages/core`      | 类型定义(GamePlugin/Level/State/Solution)、Zod Schema、版本化 Migrator、Worker 消息协议。**零游戏专属代码**。                  | 仅 zod                                |
 | `@ludus/games`     | `packages/games`     | 各游戏模块（每游戏自包含 types/rules/solver/generator/difficulty/render/manifest/i18n）、GamePluginEntry 注册表、共享类型 BoardProps | `@ludus/core`、react、framer-motion |
 | `@ludus/education` | `packages/education` | 教学内容 Markdown 文件（L2/L3 × zh-CN/en），通过 Vite ?raw import 加载                                                              | `@ludus/core`                       |
-| `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、ProgressiveDisclosure、ErrorBoundary、MarkdownRenderer                                     | `@ludus/core`、react                |
-| `ludus-web`        | `apps/web`           | Vite + React SPA，静态部署入口。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/SokobanToolbar                            | 所有 packages                         |
+| `@ludus/ui`        | `packages/ui`        | React 组件库：GameToolbar、GameStatusBar、DifficultySelector、ErrorBoundary、MarkdownRenderer；`GeneratorToolbar` 在 apps/web | `@ludus/core`、react                |
+| `ludus-web`        | `apps/web`           | Vite + React SPA。组装层：i18n init、教育内容注册、可视化组件注册、GameShell/GeneratorToolbar/SokobanToolbar                            | 所有 packages                         |
 | `ludus-desktop`    | `apps/desktop`       | Tauri 壳，内嵌 Web，可选原生 API 调用（阶段 6）                                                                                      | `ludus-web` (复用)                  |
 | `ludus-mobile`     | `apps/mobile`        | Capacitor 壳，内嵌 Web（阶段 6）                                                                                                     | `ludus-web` (复用)                  |
 
@@ -364,7 +365,7 @@ export interface GamePluginEntry<S extends GameState = GameState, M extends Move
   isOwnState(state: GameState): state is S;
   moveToHighlight?(move: M, state: S): HighlightCell | null;
   i18n: { namespace: string; zhCN: Record<string, string>; en: Record<string, string> };
-  ui?: { toolbarSlot?: React.ComponentType<ToolbarSlotProps>; statusExtension?: React.ComponentType<StatusExtensionProps> };
+  ui?: { toolbarSlot?: React.ComponentType<ToolbarSlotProps>; statusCard?: React.ComponentType<StatusCardProps> };
   levelSelector?: React.ComponentType<LevelSelectorSlotProps>;
   education: { content: Record<string, string> };
   visualization?: { matchTrace(trace: SolverTrace): boolean; Component: React.ComponentType<VisualizationProps> };
@@ -621,18 +622,11 @@ Ludus/
 │   │       │   ├── render.tsx      # NimBoard ★
 │   │       │   ├── manifest.ts     # metadata + manifest ★
 │   │       │   ├── i18n.ts         # 游戏专属 i18n 字符串 ★
-│   │       │   └── toolbar.tsx     # 先后手选择 ★
-│   │       └── wythoff/
-│   │           ├── index.tsx       # wythoffEntry: GamePluginEntry (含 Board wrapper) ★
-│   │           ├── types.ts        # WythoffState, WythoffMove ★
-│   │           ├── rules.ts        # legalMoves, applyMove, isSolved, getDifficulty ★
-│   │           ├── solver.ts       # Beatty 序列求解器 ★
-│   │           ├── generator.ts    # 随机生成器 ★
-│   │           ├── difficulty.ts   # maxStone 难度公式 ★
-│   │           ├── render.tsx      # WythoffBoard ★
-│   │           ├── manifest.ts     # metadata + manifest ★
-│   │           ├── i18n.ts         # 游戏专属 i18n 字符串 ★
-│   │           └── toolbar.tsx     # 先后手选择 ★
+│   │       │   └── education-ui.tsx # statusCard + formatEducationMove ★
+│   │       ├── wythoff/           # 结构同 nim ★
+│   │       ├── fifteen/          # A* 求解 + 15 谜题 ★
+│   │       ├── water-jug/        # BFS + 裴蜀定理 ★
+│   │       └── nonogram/         # 线求解 + 回溯（Canvas 渲染）★
 │   │
 │   ├── education/
 │   │   ├── package.json      # @ludus/education
@@ -644,17 +638,20 @@ Ludus/
 │   │           ├── sokoban/        # 同上 ★
 │   │           ├── sudoku/         # 同上 ★
 │   │           ├── nim/            # 同上 ★
-│   │           └── wythoff/        # 同上 ★
+│   │           ├── wythoff/        # 同上 ★
+│   │           ├── fifteen/        # 同上 ★
+│   │           ├── water-jug/      # 同上 ★
+│   │           └── nonogram/       # 同上 ★
 │   │
 │   └── ui/
 │       ├── package.json      # @ludus/ui
 │       ├── tsconfig.json
 │       └── src/
 │           ├── index.ts ★
-│           ├── GameToolbar.tsx     # 通用工具栏（撤销/重做/重置/求解/提示/新关卡）★
-│           ├── GameStatusBar.tsx   # 状态栏（步数/最优/用时/求解状态）★
-│           ├── ProgressiveDisclosure.tsx  # L1/L2/L3 渐进揭示容器 ★
-│           ├── MarkdownRenderer.tsx # KaTeX + Markdown 渲染 ★
+│           ├── GameToolbar.tsx     # 通用工具栏 ★
+│           ├── GameStatusBar.tsx   # 状态栏 ★
+│           ├── DifficultySelector.tsx  # 难度四档选择器 ★
+│           ├── MarkdownRenderer.tsx # KaTeX + Markdown ★
 │           └── ErrorBoundary.tsx   # 错误边界 ★
 │
 ├── apps/
@@ -669,25 +666,22 @@ Ludus/
 │   │       ├── entrySetup.tsx  # Web 层 entry 增强（education content + viz + toolbar 注入）★
 │   │       ├── i18n/          # 共享 UI i18n 资源 + init ★
 │   │       ├── stores/
-│   │       │   └── gameStore.ts  # Zustand store（零游戏专属引用）★
+│   │       │   ├── gameStore.ts      # Zustand 游戏状态 ★
+│   │       │   └── progressStore.ts  # localStorage 进度 ★
 │   │       ├── components/
-│   │       │   ├── GameShell.tsx       # 游戏框架（board + toolbar + statusBar + sidebar）★
-│   │       │   ├── EducationPanel.tsx  # 侧边栏（五段式 + 可视化 + 步骤列表）★
-│   │       │   ├── KnowledgeCard.tsx   # Bento 知识卡 ★
-│   │       │   ├── SokobanToolbar.tsx  # Sokoban 关卡选择器 ★
-│   │       │   └── ...                # HubPage, GamePage 等 ★
-│   │       ├── statusCards.tsx    # 游戏状态卡片（按 gameId 渲染）★
-│   │       └── workers/
-│   │           └── solver.worker.ts  # 求解器 Web Worker 入口 ★
+│   │       │   ├── GameShell.tsx / HubPage.tsx / GamePage.tsx / EducationPanel.tsx ★
+│   │       │   ├── GeneratorToolbar.tsx / SokobanToolbar.tsx ★
+│   │       │   └── *Viz.tsx（算法可视化，懒加载）★
+│   │       ├── entrySetup.tsx    # education + viz + toolbar 注入 ★
+│   │       └── workers/solver.worker.ts ★
 │   │
-│   ├── desktop/              # Tauri 壳（○ 阶段 6）
-│   │   └── ...
+│   ├── desktop/              # Tauri 2 套壳（✅ 阶段 6d）
+│   │   └── src-tauri/        # tauri.conf.json, Cargo.toml
 │   │
-│   └── mobile/               # Capacitor 壳（○ 阶段 6）
-│       └── ...
+│   └── mobile/               # Capacitor 6 配置（✅ 阶段 6d）
+│       └── capacitor.config.ts
 │
-└── tests/                    # E2E / 集成测试（阶段 7）
-    └── ...
+└── .github/workflows/        # CI + Release（阶段 7）★
 ```
 
 ---
@@ -706,7 +700,7 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 
 - `packages/core/src/worker/` 定义 Worker task 抽象
 - `apps/web/src/workers/solver.worker.ts` 是 Web Worker 入口，import 各游戏 solver
-- `apps/web/src/components/GameShell.tsx` 负责检测求解耗时：< 500ms 同步执行，> 500ms 提交 Worker
+- `apps/web/src/stores/gameStore.ts` 通过 `usesWebWorker()` + `runSolverOffThread` 分流；`requestSolve` / `requestHint` / 后台求解均走 Worker 或 fallback
 
 ---
 
@@ -717,7 +711,7 @@ Core 定义 `GamePlugin` 接口（含 `renderBackend` 声明），但**不包含
 - GamePlugin 接口 v1.0 + **GamePluginEntry**（全自包含插件入口）：覆盖 metadata/state/moves/solve/generate/difficulty/ai/BoardComponent/i18n/education/viz 全生命周期。
 - 3 个 zod schema：Level、GameStateSnapshot、EducationContent，均含 `schemaVersion` 字段 + migrator 框架。
 - 平台 × 能力矩阵：Web/Desktop/Mobile 各有 9 项能力标注（Full/Degraded/Unavailable），含降级策略。
-- **每款游戏自包含**：types/rules/solver/generator/difficulty/render/manifest/i18n。新增游戏 = 加目录 + registry 一行，零改动已有代码。
+- **每款游戏自包含**：types/rules/solver/generator/difficulty/render/manifest/i18n。新增游戏 = 加目录 + registry 一行 + `entrySetup.tsx` 一个区块。
 
 ---
 

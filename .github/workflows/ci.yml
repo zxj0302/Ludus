@@ -45,11 +45,5 @@ jobs:
       - name: Verify shell relative asset paths
         run: grep -q 'src="./assets/' apps/web/dist/index.html
 
-      - name: Build pages (GitHub Pages)
-        run: pnpm build:pages
-
-      - name: Verify pages base path
-        run: grep -q 'src="/Ludus/assets/' apps/web/dist/index.html
-
   # Pages deploy disabled: personal accounts cannot set private visibility.
   # Use pnpm dev / pnpm dev:desktop for local-only access.

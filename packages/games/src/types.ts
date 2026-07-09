@@ -46,11 +46,6 @@ export interface ToolbarSlotProps {
   dispatch?: (action: { type: string; payload: unknown }) => void;
 }
 
-export interface StatusExtensionProps {
-  state: GameState;
-  isWin: boolean;
-}
-
 export interface LevelSelectorSlotProps {
   onLoadState: (state: GameState) => void;
 }
@@ -97,8 +92,6 @@ export interface GamePluginEntry<
   ui?: {
     /** 工具栏右侧插槽（难度选择器等） */
     toolbarSlot?: ComponentType<ToolbarSlotProps>;
-    /** 状态栏扩展信息（已废弃，请用 statusCard） */
-    statusExtension?: ComponentType<StatusExtensionProps>;
     /** 教育侧边栏状态卡片 */
     statusCard?: ComponentType<StatusCardProps<S>>;
   };

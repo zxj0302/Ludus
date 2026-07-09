@@ -34,7 +34,7 @@ export function HubHeroCard() {
     >
       <Link
         to={`/game/${record.gameId}`}
-        state={{ resume: true }}
+        state={{ resume: !record.isSolved }}
         className="bento-card block p-6 sm:p-8 no-underline group
                    hover:shadow-card-hover transition-all duration-200
                    bg-gradient-to-br from-logic-indigo-50 to-warm-stone-50"

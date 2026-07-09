@@ -30,7 +30,7 @@ export function GameShell({ gameId }: Props) {
     disclosureLevel: s.disclosureLevel, setDisclosureLevel: s.setDisclosureLevel,
     educationOpen: s.educationOpen, setEducationOpen: s.setEducationOpen,
     historyIndex: s.historyIndex, history: s.history,
-    startTime: s.startTime, elapsed: s.elapsed, tick: s.tick, pauseTimer: s.pauseTimer,
+    startTime: s.startTime, elapsed: s.elapsed, tick: s.tick,
   })));
 
   const {
@@ -89,14 +89,17 @@ export function GameShell({ gameId }: Props) {
       case 'loadState':
         useGameStore.getState().loadCustomState(action.payload as GameState);
         break;
-      case 'prependHistory':
+      case 'prependHistory': {
+        const payload = action.payload as GameState;
+        if (!entry?.isOwnState(payload)) break;
         useGameStore.setState(s => ({
-          history: [action.payload as GameState, ...s.history],
+          history: [payload, ...s.history],
           historyIndex: s.historyIndex + 1,
         }));
         break;
+      }
     }
-  }, []);
+  }, [entry]);
 
   // 同步侧边栏高度到左侧列，实现底部对齐
   const leftColumnRef = useRef<HTMLDivElement>(null);
