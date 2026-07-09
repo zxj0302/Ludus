@@ -1,0 +1,22 @@
+{
+  "name": "ludus-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ludus 移动端 — Capacitor WebView 套壳",
+  "scripts": {
+    "sync": "pnpm --filter ludus-web build:shell && pnpm exec cap sync",
+    "open:android": "pnpm exec cap open android",
+    "open:ios": "pnpm exec cap open ios",
+    "add:android": "pnpm exec cap add android",
+    "add:ios": "pnpm exec cap add ios",
+    "typecheck": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  }
+}

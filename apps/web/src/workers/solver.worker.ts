@@ -2,6 +2,7 @@
 // ⚠️ 直接从 solver 源文件 import，绕过 barrel(index.ts) —— barrel 引用了 React/framer-motion 等浏览器依赖，Worker 环境无 window
 import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
+import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
 import type { WorkerRequest, WorkerResponse } from '@ludus/core';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
@@ -70,6 +71,17 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             id,
             type,
             error: err instanceof Error ? err.message : 'Unknown Worker error in fifteen solver',
+          });
+        }
+      } else if (gameId === 'sokoban') {
+        try {
+          const solution = solveSokobanBFS(state as unknown as import('@ludus/games/src/sokoban/types').SokobanState);
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in sokoban solver',
           });
         }
       } else {

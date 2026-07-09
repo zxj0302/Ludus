@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "pnpm --filter ludus-web dev",
     "build": "pnpm -r build",
+    "build:shell": "pnpm --filter ludus-web build:shell",
+    "build:pages": "pnpm --filter ludus-web build:pages",
+    "dev:desktop": "pnpm --filter ludus-desktop dev",
+    "build:desktop": "pnpm --filter ludus-desktop build",
+    "sync:mobile": "pnpm --filter ludus-mobile sync",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "pnpm -r typecheck"

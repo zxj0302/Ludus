@@ -6,6 +6,7 @@ import { solveNonogram, countSolutions } from './solver';
 import { nonogramEducationManifest, nonogramVisualizationManifest } from './manifest';
 import { NonogramBoard } from './render';
 import { nonogramI18n } from './i18n';
+import { formatNonogramMove, NonogramStatusCard } from './education-ui';
 import type { NonogramState, NonogramMove } from './types';
 
 export { solveNonogram, nonogramI18n, countSolutions, computeClues };
@@ -121,5 +122,7 @@ export const nonogramEntry: GamePluginEntry<NonogramState, NonogramMove> = {
     return { row: move.row, col: move.col };
   },
   i18n: { namespace: 'nonogram', zhCN: nonogramI18n.zhCN, en: nonogramI18n.en },
+  formatEducationMove: formatNonogramMove,
+  ui: { statusCard: NonogramStatusCard },
   education: { content: {} },
 };

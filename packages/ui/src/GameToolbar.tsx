@@ -16,6 +16,8 @@ interface Props {
   isSolved: boolean;
   solvePlayback: boolean;
   hasHint: boolean;
+  /** 对抗游戏自动播放时禁用手动步进 */
+  adversarialPlayback?: boolean;
   /** 替换"+新关卡"按钮的内容 */
   newLevelSlot?: React.ReactNode;
 }
@@ -41,17 +43,18 @@ export function GameToolbar({
   onUndo, onRedo, onReset, onNewLevel, onSolve, onHint,
   onStopPlayback, onPrevStep, onNextStep,
   canUndo, canRedo, isSolving, isSolved,
-  solvePlayback, hasHint, newLevelSlot,
+  solvePlayback, hasHint, newLevelSlot, adversarialPlayback,
 }: Props) {
   const { t } = useTranslation();
 
   if (solvePlayback) {
+    const stepDisabled = !!adversarialPlayback;
     return (
       <div className="bento-card p-3 flex items-center justify-center gap-2 flex-wrap">
-        <Btn onClick={onPrevStep}>◀</Btn>
-        <Btn onClick={onNextStep}>▶ {t('game.toolbar.nextStep')}</Btn>
+        <Btn onClick={onPrevStep} disabled={stepDisabled}>◀</Btn>
+        <Btn onClick={onNextStep} disabled={stepDisabled}>▶ {t('game.toolbar.nextStep')}</Btn>
         <div className="w-px h-5 bg-warm-stone-200 mx-1" />
-        <Btn onClick={onStopPlayback}>■ {t('game.toolbar.reset')}</Btn>
+        <Btn onClick={onStopPlayback}>■ {t('game.toolbar.stopPlayback')}</Btn>
       </div>
     );
   }

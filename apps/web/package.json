@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:shell": "tsc && vite build --mode shell",
+    "build:pages": "tsc && vite build --mode pages",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest"

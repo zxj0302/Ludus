@@ -36,6 +36,14 @@ interface AlgorithmTraceData {
   solutionNodeIds: number[];
 }
 
+interface NonogramVizData {
+  nodesExplored?: number;
+  backtracks?: number;
+  timeMs?: number;
+  algorithmTrace?: AlgorithmTraceData;
+  solutionGrid?: boolean[][] | null;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Line-solving step detail
 // ═══════════════════════════════════════════════════════════════
@@ -370,12 +378,12 @@ export function NonogramTraceViz({ trace, solution }: Props) {
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState<'line' | 'backtrack'>('line');
 
-  const data = trace.visualizationData as any;
-  const algo = data?.algorithmTrace as AlgorithmTraceData | undefined;
+  const data = trace.visualizationData as NonogramVizData | undefined;
+  const algo = data?.algorithmTrace;
   const steps = algo?.lineSteps ?? [];
   const searchTree = algo?.searchTree ?? [];
   const nodesExplored = data?.nodesExplored ?? solution.stats.nodesExplored;
-  const backtracks = data?.backtracks ?? (solution.stats as any).backtracks ?? 0;
+  const backtracks = data?.backtracks ?? 0;
   const timeMs = data?.timeMs ?? solution.stats.timeMs;
 
   const hasBacktrackTree = searchTree.length > 1;

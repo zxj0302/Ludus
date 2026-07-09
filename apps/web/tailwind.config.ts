@@ -4,6 +4,7 @@ export default {
     './index.html',
     './src/**/*.{ts,tsx}',
     '../../packages/games/src/**/*.{ts,tsx}',
+    '../../packages/ui/src/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
@@ -55,6 +56,8 @@ export default {
           700: '#0f7664',
           800: '#115e51',
           900: '#134e44',
+          light: '#ccfbef',
+          dark: '#14b897',
         },
       },
       fontFamily: {

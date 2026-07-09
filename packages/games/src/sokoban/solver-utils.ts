@@ -123,8 +123,8 @@ export function isDeadlock(state: SokobanState): boolean {
       for (const pair of along) {
         const d1r = pair[0]![0]!, d1c = pair[0]![1]!;
         const d2r = pair[1]![0]!, d2c = pair[1]![1]!;
-        const b1 = isWall(state, b.row + d1r, b.col + d1c);
-        const b2 = isWall(state, b.row + d2r, b.col + d2c);
+        const b1 = isWall(state, b.row + d1r, b.col + d1c) || isBox(state, b.row + d1r, b.col + d1c);
+        const b2 = isWall(state, b.row + d2r, b.col + d2c) || isBox(state, b.row + d2r, b.col + d2c);
         if (!b1 || !b2) { stuck = false; break; }
       }
       if (stuck) return true;
@@ -215,8 +215,8 @@ export function computeSokobanDifficulty(state: SokobanState): Difficulty {
   const clamped = Math.max(0, Math.min(100, score));
 
   const labelKey =
-    clamped <= 20 ? 'difficulty.easy' :
-    clamped <= 50 ? 'difficulty.medium' :
+    clamped <= 33 ? 'difficulty.easy' :
+    clamped <= 66 ? 'difficulty.medium' :
     'difficulty.hard';
 
   return {

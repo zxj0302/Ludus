@@ -55,7 +55,7 @@ export function generateFifteenLevel(config: LevelConfig): Level {
     schemaVersion: 1,
     gameId: 'fifteen',
     levelId: `fifteen-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    initialState: { grid: state.grid } as unknown as Record<string, unknown>,
+    initialState: { grid: state.grid, scrambleDepth: depth } as unknown as Record<string, unknown>,
     difficulty,
     optimalSteps: null,
     uniqueSolution: false,

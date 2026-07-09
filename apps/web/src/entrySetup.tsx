@@ -57,33 +57,32 @@ import l2enNO from '@ludus/education/src/content/nonogram/l2.en.md?raw';
 import l3zhNO from '@ludus/education/src/content/nonogram/l3.zh-CN.md?raw';
 import l3enNO from '@ludus/education/src/content/nonogram/l3.en.md?raw';
 
-lightsOutEntry.education = {
-  content: { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
-};
-sokobanEntry.education = {
-  content: { 'L2.zh-CN': l2zhSK, 'L2.en': l2enSK, 'L3.zh-CN': l3zhSK, 'L3.en': l3enSK },
-};
-sudokuEntry.education = {
-  content: { 'L2.zh-CN': l2zhSU, 'L2.en': l2enSU, 'L3.zh-CN': l3zhSU, 'L3.en': l3enSU },
-};
-nimEntry.education = {
-  content: { 'L2.zh-CN': l2zhNI, 'L2.en': l2enNI, 'L3.zh-CN': l3zhNI, 'L3.en': l3enNI },
-};
-wythoffEntry.education = {
-  content: { 'L2.zh-CN': l2zhWY, 'L2.en': l2enWY, 'L3.zh-CN': l3zhWY, 'L3.en': l3enWY },
+// Declarative entry setup — add new games here only
+const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
+  'lights-out': { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
+  'sokoban':    { 'L2.zh-CN': l2zhSK, 'L2.en': l2enSK, 'L3.zh-CN': l3zhSK, 'L3.en': l3enSK },
+  'sudoku':     { 'L2.zh-CN': l2zhSU, 'L2.en': l2enSU, 'L3.zh-CN': l3zhSU, 'L3.en': l3enSU },
+  'nim':        { 'L2.zh-CN': l2zhNI, 'L2.en': l2enNI, 'L3.zh-CN': l3zhNI, 'L3.en': l3enNI },
+  'wythoff':    { 'L2.zh-CN': l2zhWY, 'L2.en': l2enWY, 'L3.zh-CN': l3zhWY, 'L3.en': l3enWY },
+  'fifteen':    { 'L2.zh-CN': l2zhFF, 'L2.en': l2enFF, 'L3.zh-CN': l3zhFF, 'L3.en': l3enFF },
+  'water-jug':  { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
+  'nonogram':   { 'L2.zh-CN': l2zhNO, 'L2.en': l2enNO, 'L3.zh-CN': l3zhNO, 'L3.en': l3enNO },
 };
 
-fifteenEntry.education = {
-  content: { 'L2.zh-CN': l2zhFF, 'L2.en': l2enFF, 'L3.zh-CN': l3zhFF, 'L3.en': l3enFF },
-};
+const ENTRY_MAP = {
+  'lights-out': lightsOutEntry,
+  'sokoban': sokobanEntry,
+  'sudoku': sudokuEntry,
+  'nim': nimEntry,
+  'wythoff': wythoffEntry,
+  'fifteen': fifteenEntry,
+  'water-jug': waterJugEntry,
+  'nonogram': nonogramEntry,
+} as const;
 
-waterJugEntry.education = {
-  content: { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
-};
-
-nonogramEntry.education = {
-  content: { 'L2.zh-CN': l2zhNO, 'L2.en': l2enNO, 'L3.zh-CN': l3zhNO, 'L3.en': l3enNO },
-};
+for (const [gameId, entry] of Object.entries(ENTRY_MAP)) {
+  entry.education = { content: EDUCATION_CONTENT[gameId]! };
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 2. Visualization — viz 组件（lazy import）
@@ -106,7 +105,9 @@ lightsOutEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'matrix-transform',
   Component: (({ solution, solveStepIndex, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback />}>
-      <MatrixViz solution={solution} solveStepIndex={solveStepIndex} gameState={gameState as any} />
+      {lightsOutEntry.isOwnState(gameState) && (
+        <MatrixViz solution={solution} solveStepIndex={solveStepIndex} gameState={gameState} />
+      )}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -115,7 +116,7 @@ sokobanEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'search-tree',
   Component: (({ gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback height="h-80" />}>
-      {gameState && <BFSTreeViz gameState={gameState as any} />}
+      {gameState && sokobanEntry.isOwnState(gameState) && <BFSTreeViz gameState={gameState} />}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -133,7 +134,9 @@ nimEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'nim-xor',
   Component: (({ trace, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback />}>
-      {gameState && <NimTreeViz key={(gameState as any).piles?.join(',')} trace={trace} state={gameState as any} />}
+      {gameState && nimEntry.isOwnState(gameState) && (
+        <NimTreeViz key={gameState.piles.join(',')} trace={trace} state={gameState} />
+      )}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -142,7 +145,9 @@ wythoffEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'wythoff-beatty',
   Component: (({ trace, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback />}>
-      {gameState && <WythoffTreeViz key={(gameState as any).piles?.join(',')} trace={trace} state={gameState as any} />}
+      {gameState && wythoffEntry.isOwnState(gameState) && (
+        <WythoffTreeViz key={gameState.piles.join(',')} trace={trace} state={gameState} />
+      )}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -151,7 +156,7 @@ fifteenEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'a-star-search',
   Component: (({ trace, solution, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback height="h-80" />}>
-      <FifteenTreeViz trace={trace} solution={solution} gameState={gameState as any} />
+      <FifteenTreeViz trace={trace} solution={solution} gameState={gameState} />
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -160,7 +165,7 @@ waterJugEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'bfs-state-search',
   Component: (({ trace, solution, gameState }: VisualizationProps) => (
     <Suspense fallback={<Fallback height="h-80" />}>
-      <WaterJugTreeViz trace={trace} solution={solution} gameState={gameState as any} />
+      <WaterJugTreeViz trace={trace} solution={solution} gameState={gameState} />
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -183,19 +188,16 @@ import { FifteenToolbar } from './components/FifteenToolbar';
 import { WaterJugToolbar } from './components/WaterJugToolbar';
 import { NonogramToolbar } from './components/NonogramToolbar';
 
-sokobanEntry.ui = {
-  ...sokobanEntry.ui,
-  toolbarSlot: SokobanToolbar as any,
+const TOOLBAR_SLOTS: Partial<Record<keyof typeof ENTRY_MAP, ComponentType<{ onNewLevel: () => void; dispatch?: (action: { type: string; payload: unknown }) => void }>>> = {
+  'sokoban': SokobanToolbar,
+  'fifteen': FifteenToolbar,
+  'water-jug': WaterJugToolbar,
+  'nonogram': NonogramToolbar,
 };
 
-fifteenEntry.ui = {
-  toolbarSlot: FifteenToolbar as any,
-};
-
-waterJugEntry.ui = {
-  toolbarSlot: WaterJugToolbar as any,
-};
-
-nonogramEntry.ui = {
-  toolbarSlot: NonogramToolbar as any,
-};
+for (const [gameId, toolbar] of Object.entries(TOOLBAR_SLOTS)) {
+  const entry = ENTRY_MAP[gameId as keyof typeof ENTRY_MAP];
+  if (entry && toolbar) {
+    entry.ui = { ...entry.ui, toolbarSlot: toolbar };
+  }
+}

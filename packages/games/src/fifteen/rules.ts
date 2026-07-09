@@ -1,6 +1,7 @@
 import type { Difficulty } from '@ludus/core';
 import type { FifteenState, FifteenMove } from './types';
 import { GOAL_GRID, SIZE } from './types';
+import { computeFifteenDifficulty } from './difficulty';
 import { manhattanDistance } from './solver';
 
 export type { FifteenState, FifteenMove };
@@ -48,21 +49,17 @@ export function isSolved(state: FifteenState): boolean {
 }
 
 export function getDifficulty(state: FifteenState): Difficulty {
-  // Use Manhattan distance as a proxy for difficulty.
-  // Max Manhattan distance for 4×4 15-puzzle = 60 (sum of each tile's max possible distance).
-  // Higher Manhattan distance → further from goal → harder puzzle.
+  // Prefer generator scramble depth for consistency with level metadata
+  if (state.scrambleDepth != null) {
+    return computeFifteenDifficulty(state.scrambleDepth);
+  }
+  // Runtime fallback: Manhattan distance proxy
   const dist = manhattanDistance(state.grid);
   const maxDist = 60;
   const score = Math.min(100, Math.round((dist / maxDist) * 100));
-
   let labelKey: string;
   if (score <= 33) labelKey = 'difficulty.easy';
   else if (score <= 66) labelKey = 'difficulty.medium';
   else labelKey = 'difficulty.hard';
-
-  return {
-    score,
-    factors: { manhattanDistance: dist },
-    labelKey,
-  };
+  return { score, factors: { manhattanDistance: dist }, labelKey };
 }

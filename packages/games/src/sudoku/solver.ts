@@ -159,6 +159,7 @@ interface SearchState {
   maxDepth: number;
   startTime: number;
   timeLimitMs: number;
+  timedOut: boolean;
 }
 
 function search(
@@ -167,12 +168,13 @@ function search(
   depth: number,
   chosenRows: number[],
   limit: number,
-  solutions: number[][] | null, // null = find first only; array = collect all
+  solutions: number[][] | null,
   initialGrid: number[],
 ): boolean {
   const { header } = matrix;
 
   if (state.timeLimitMs > 0 && performance.now() - state.startTime > state.timeLimitMs) {
+    state.timedOut = true;
     return solutions ? solutions.length >= limit : false;
   }
 
@@ -292,7 +294,8 @@ export function solveSudoku(grid: number[]): SudokuSolution {
     nodesExplored: 0,
     maxDepth: 0,
     startTime,
-    timeLimitMs: 5000, // 5 second safety timeout
+    timeLimitMs: 5000,
+    timedOut: false,
   };
 
   const chosenRows: number[] = [];
@@ -327,7 +330,7 @@ export function solveSudoku(grid: number[]): SudokuSolution {
  * Count solutions up to a limit (for uniqueness checking).
  * @param grid flat length-81 array
  * @param limit stop counting at this number
- * @returns number of solutions found (capped at limit)
+ * @returns number of solutions found (capped at limit), or -1 on timeout
  */
 export function countSudokuSolutions(grid: number[], limit: number = 2): number {
   const matrix = buildMatrix();
@@ -340,11 +343,13 @@ export function countSudokuSolutions(grid: number[], limit: number = 2): number 
     maxDepth: 0,
     startTime: performance.now(),
     timeLimitMs: 10000,
+    timedOut: false,
   };
 
   const chosenRows: number[] = [];
   const solutions: number[][] = [];
   search(matrix, state, 0, chosenRows, limit, solutions, grid);
+  if (state.timedOut) return -1;
   return solutions.length;
 }
 

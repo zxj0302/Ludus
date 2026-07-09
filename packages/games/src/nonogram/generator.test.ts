@@ -4,7 +4,7 @@ import { isSolved } from './rules';
 import { countSolutions } from './solver';
 import type { LevelConfig } from '@ludus/core';
 import type { NonogramState } from './types';
-import { FILLED } from './types';
+import { FILLED, CROSS } from './types';
 
 describe('Nonogram — generator', () => {
   const baseConfig: LevelConfig = {
@@ -38,9 +38,7 @@ describe('Nonogram — generator', () => {
 
     for (let r = 0; r < state.height; r++) {
       for (let c = 0; c < state.width; c++) {
-        if (state.solution[r]![c]) {
-          state.grid[r]![c] = FILLED;
-        }
+        state.grid[r]![c] = state.solution[r]![c] ? FILLED : CROSS;
       }
     }
     expect(isSolved(state)).toBe(true);
@@ -103,7 +101,7 @@ describe('Nonogram — generator', () => {
   it('generates different levels on repeated calls', () => {
     const ids = new Set<string>();
     for (let i = 0; i < 5; i++) {
-      const level = generateNonogramLevel({ ...baseConfig, difficultyRange: [1, 33], seed: i + 1000 } as any);
+      const level = generateNonogramLevel({ ...baseConfig, difficultyRange: [1, 33], seed: i + 1000 });
       ids.add(level.levelId);
     }
     expect(ids.size).toBeGreaterThanOrEqual(3);

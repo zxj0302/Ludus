@@ -110,14 +110,42 @@ export function applyMove(state: NonogramState, move: NonogramMove): NonogramSta
   };
 }
 
+/** Check whether filled runs in a line match the clue array */
+function runsMatchClues(filled: boolean[], clues: number[]): boolean {
+  const runs: number[] = [];
+  let run = 0;
+  for (const cell of filled) {
+    if (cell) {
+      run++;
+    } else if (run > 0) {
+      runs.push(run);
+      run = 0;
+    }
+  }
+  if (run > 0) runs.push(run);
+  if (runs.length === 0 && clues.length === 0) return true;
+  if (runs.length !== clues.length) return false;
+  return runs.every((r, i) => r === clues[i]);
+}
+
 export function isSolved(state: NonogramState): boolean {
-  const { grid, solution, width, height } = state;
+  const { grid, rowClues, colClues, width, height } = state;
+
+  // All cells must be determined (no EMPTY remaining)
   for (let r = 0; r < height; r++) {
     for (let c = 0; c < width; c++) {
-      const filled = grid[r]![c] === FILLED;
-      const shouldBeFilled = solution[r]![c]!;
-      if (filled !== shouldBeFilled) return false;
+      if (grid[r]![c] === EMPTY) return false;
     }
+  }
+
+  // Validate against row/column clues (not hidden solution pattern)
+  for (let r = 0; r < height; r++) {
+    const line = Array.from({ length: width }, (_, c) => grid[r]![c] === FILLED);
+    if (!runsMatchClues(line, rowClues[r]!)) return false;
+  }
+  for (let c = 0; c < width; c++) {
+    const line = Array.from({ length: height }, (_, r) => grid[r]![c] === FILLED);
+    if (!runsMatchClues(line, colClues[c]!)) return false;
   }
   return true;
 }

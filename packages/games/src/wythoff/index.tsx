@@ -12,9 +12,10 @@ import {
 import type { WythoffState, WythoffMove } from './types';
 import { wythoffEducationManifest, wythoffVisualizationManifest } from './manifest';
 import { findWythoffWinningMove, isWythoffPPosition } from './solver';
-import type { GamePluginEntry } from '../types';
+import type { BoardProps, GamePluginEntry } from '../types';
 import { WythoffBoard } from './render';
 import { wythoffI18n } from './i18n';
+import { formatWythoffMove, WythoffStatusCard } from './education-ui';
 export { wythoffI18n };
 
 export { WythoffBoard };
@@ -86,7 +87,7 @@ export const wythoffPlugin: GamePlugin<WythoffState, WythoffMove> = {
 };
 
 // Board wrapper — 处理 Wythoff 专属的 onChooseHand
-const WythoffBoardEntry = (props: any) => (
+const WythoffBoardEntry = (props: BoardProps<WythoffState, WythoffMove>) => (
   <WythoffBoard
     state={props.state}
     onMove={props.onMove}
@@ -102,7 +103,7 @@ const WythoffBoardEntry = (props: any) => (
 
 export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
   plugin: wythoffPlugin,
-  BoardComponent: WythoffBoardEntry as any,
+  BoardComponent: WythoffBoardEntry,
   isOwnState: (state): state is WythoffState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as WythoffState).piles),
   moveToHighlight: (move) => {
@@ -113,5 +114,7 @@ export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
     return null;
   },
   i18n: { namespace: 'wythoff', zhCN: wythoffI18n.zhCN, en: wythoffI18n.en },
+  formatEducationMove: formatWythoffMove,
+  ui: { statusCard: WythoffStatusCard },
   education: { content: {} },
 };

@@ -15,4 +15,7 @@ const routes: RouteObject[] = [
   },
 ];
 
-export const router = createBrowserRouter(routes);
+/** Strip Vite trailing slash — React Router basename must not end with `/`. */
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
+
+export const router = createBrowserRouter(routes, { basename });

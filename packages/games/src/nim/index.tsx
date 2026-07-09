@@ -13,9 +13,10 @@ import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
 import { findWinningMove } from './solver';
 
-import type { GamePluginEntry } from '../types';
+import type { BoardProps, GamePluginEntry } from '../types';
 import { NimBoard } from './render';
 import { nimI18n } from './i18n';
+import { formatNimMove, NimStatusCard } from './education-ui';
 export { nimI18n };
 
 export { NimBoard };
@@ -87,7 +88,7 @@ export const nimPlugin: GamePlugin<NimState, NimMove> = {
 // ═══════════════════════════════════════════════════════════════
 
 // Board wrapper — 处理 Nim 专属的 onChooseHand
-const NimBoardEntry = (props: any) => (
+const NimBoardEntry = (props: BoardProps<NimState, NimMove>) => (
   <NimBoard
     state={props.state}
     onMove={props.onMove}
@@ -103,7 +104,7 @@ const NimBoardEntry = (props: any) => (
 
 export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   plugin: nimPlugin,
-  BoardComponent: NimBoardEntry as any,
+  BoardComponent: NimBoardEntry,
   isOwnState: (state): state is NimState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as NimState).piles),
   moveToHighlight: (move) => {
@@ -113,5 +114,7 @@ export const nimEntry: GamePluginEntry<NimState, NimMove> = {
     return null;
   },
   i18n: { namespace: 'nim', zhCN: nimI18n.zhCN, en: nimI18n.en },
+  formatEducationMove: formatNimMove,
+  ui: { statusCard: NimStatusCard },
   education: { content: {} },
 };

@@ -1,32 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import type { BoardProps } from '../types';
 import type { LightsOutState, LightsOutMove } from './types';
 
-interface Props {
-  state: LightsOutState;
-  onMove: (move: LightsOutMove) => void;
-  disabled?: boolean;
-  highlightCell?: { row: number; col: number } | null;
-}
-
-const ON_COLOR = '#ffb41e';
-const ON_BORDER = '#db6f04';
-const OFF_COLOR = '#e7e0d8';
-const OFF_BORDER = '#d4cbc2';
-const HIGHLIGHT_RING = '#5feacb';
-
-export function LightsOutBoard({ state, onMove, disabled = false, highlightCell }: Props) {
+export function LightsOutBoard({
+  state, onMove, disabled = false, highlightCell,
+}: BoardProps<LightsOutState, LightsOutMove>) {
+  const { t } = useTranslation();
   const { n, grid } = state;
   const cellSize = Math.max(48, Math.min(80, 320 / n));
 
   return (
     <div
+      className="grid justify-center gap-1"
       style={{
-        display: 'grid',
         gridTemplateColumns: `repeat(${n}, ${cellSize}px)`,
         gridTemplateRows: `repeat(${n}, ${cellSize}px)`,
-        gap: 4,
-        justifyContent: 'center',
       }}
     >
       {grid.map((cell, idx) => {
@@ -35,33 +25,24 @@ export function LightsOutBoard({ state, onMove, disabled = false, highlightCell 
         const isHighlighted = highlightCell?.row === row && highlightCell?.col === col;
         const isOn = cell === 1;
 
-        const bg = isOn ? ON_COLOR : OFF_COLOR;
-        const border = isOn ? ON_BORDER : OFF_BORDER;
-        const hoverBg = isOn ? ON_COLOR : '#d4cbc2';
-
         return (
           <motion.button
             key={idx}
             type="button"
             disabled={disabled}
             onClick={() => onMove({ row, col })}
-            style={{
-              width: cellSize,
-              height: cellSize,
-              borderRadius: 12,
-              border: `2px solid ${border}`,
-              outline: 'none',
-              backgroundColor: bg,
-              cursor: disabled ? 'not-allowed' : 'pointer',
-              opacity: disabled ? 0.6 : 1,
-              boxShadow: isOn ? '0 4px 12px rgba(255, 180, 30, 0.3)' : undefined,
-              ...(isHighlighted ? { boxShadow: `0 0 0 3px ${HIGHLIGHT_RING}` } : {}),
-            }}
-            whileHover={!disabled ? { backgroundColor: hoverBg } : undefined}
+            className={`
+              rounded-xl border-2 outline-none transition-colors
+              ${isOn
+                ? 'bg-game-amber-400 border-game-amber-600 shadow-md shadow-game-amber-400/30'
+                : 'bg-warm-stone-200 border-warm-stone-300'}
+              ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+              ${isHighlighted ? 'ring-[3px] ring-clarity-teal-light' : ''}
+            `}
+            style={{ width: cellSize, height: cellSize }}
+            whileHover={!disabled ? { scale: 1.02 } : undefined}
             whileTap={!disabled ? { scale: 0.9 } : undefined}
-            animate={{ backgroundColor: bg }}
-            transition={{ duration: 0.15 }}
-            aria-label={`Row ${row + 1}, Column ${col + 1}, ${isOn ? 'on' : 'off'}`}
+            aria-label={t('lightsOut.cellAria', { row: row + 1, col: col + 1, state: isOn ? t('lightsOut.on') : t('lightsOut.off') })}
             aria-pressed={isOn}
           />
         );

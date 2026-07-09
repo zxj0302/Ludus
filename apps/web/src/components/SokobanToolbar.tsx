@@ -10,7 +10,7 @@ interface Props {
   onNewLevel: () => void;
 }
 
-export function SokobanToolbar({ onNewLevel }: Props) {
+export function SokobanToolbar({ onNewLevel: _onNewLevel }: Props) {
   const { t } = useTranslation();
   const collections = useSokobanLevels(true);
   const [selectedCollection, setSelectedCollection] = useState('builtin');

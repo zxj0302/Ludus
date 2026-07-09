@@ -6,6 +6,7 @@ import { getGame, getGameEntry } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
+import { GeneratorToolbar } from './GeneratorToolbar';
 import { EducationPanel } from './EducationPanel';
 import { useSound } from '../hooks/useSound';
 import { shouldRunGenericPlayback } from './playbackMode';
@@ -41,10 +42,17 @@ export function GameShell({ gameId }: Props) {
     historyIndex, history, startTime, elapsed, tick,
   } = store;
 
-  const isWin: boolean = !solvePlayback && plugin && gameState ? plugin.isSolved(gameState) : false;
   const stepCount = historyIndex;
   const optimalSteps = initialOptimalSteps;
   const remainingSteps = currentOptimalSteps;
+
+  // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
+  const stateMatchesPlugin = entry && gameState ? entry.isOwnState(gameState) : false;
+
+  const isWin: boolean =
+    stateMatchesPlugin && !solvePlayback && plugin && gameState
+      ? plugin.isSolved(gameState)
+      : false;
 
   useEffect(() => {
     if (!startTime || isWin) return;
@@ -70,10 +78,10 @@ export function GameShell({ gameId }: Props) {
   }, [solvePlayback, adversarialPlayback, nextPlaybackStep, playStep]);
 
   const handleMove = useCallback((move: Move) => {
-    if (isWin || solvePlayback) return;
+    if (isWin || solvePlayback || solverStatus === 'running') return;
     applyMove(move);
     playToggle(); vibrate(5);
-  }, [isWin, solvePlayback, applyMove, playToggle, vibrate]);
+  }, [isWin, solvePlayback, solverStatus, applyMove, playToggle, vibrate]);
 
   // 游戏专属动作分发（Board 组件通过 entry.dispatch 调用）
   const handleDispatch = useCallback((action: { type: string; payload: unknown }) => {
@@ -103,9 +111,6 @@ export function GameShell({ gameId }: Props) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-
-  // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
-  const stateMatchesPlugin = entry && gameState ? entry.isOwnState(gameState) : false;
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -180,10 +185,14 @@ export function GameShell({ gameId }: Props) {
             canUndo={historyIndex > 0} canRedo={historyIndex < history.length - 1}
             isSolving={solverStatus === 'running'} isSolved={isWin}
             solvePlayback={solvePlayback}
+            adversarialPlayback={adversarialPlayback}
             hasHint={!!hintMove}
             newLevelSlot={
-              entry?.ui?.toolbarSlot ? <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} /> :
-              undefined
+              entry?.ui?.toolbarSlot ? (
+                <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} />
+              ) : (
+                <GeneratorToolbar onNewLevel={newLevel} />
+              )
             }
           />
 
@@ -193,7 +202,7 @@ export function GameShell({ gameId }: Props) {
                 <entry.BoardComponent
                   state={gameState}
                   onMove={handleMove}
-                  disabled={isWin || solvePlayback}
+                  disabled={isWin || solvePlayback || solverStatus === 'running'}
                   highlightCell={highlightCell}
                   dispatch={handleDispatch}
                 />
@@ -204,56 +213,32 @@ export function GameShell({ gameId }: Props) {
           </div>
         </div>
 
-        {/* 桌面端侧边栏 — 收起时 height:0 防止内容撑高 flex 容器 */}
-        <div
-          className={`hidden lg:block shrink-0 overflow-hidden
-            ${educationOpen ? 'w-[40%]' : 'w-0'}`}
-          style={{
-            height: !educationOpen ? 0 :
-              leftColumnHeight != null ? leftColumnHeight :
-              undefined,
-          }}
-        >
-          <motion.div
-            initial={false}
-            animate={{
-              x: educationOpen ? 0 : 30,
-              opacity: educationOpen ? 1 : 0,
+        {/* 侧边栏 — 单实例 EducationPanel，响应式定位 */}
+        {educationOpen && (
+          <div
+            className="fixed inset-0 top-16 z-20 bg-white overflow-y-auto lg:static lg:inset-auto lg:z-auto lg:bg-transparent lg:shrink-0 lg:w-[40%] lg:flex lg:flex-col lg:min-h-0"
+            style={{
+              height: leftColumnHeight != null ? leftColumnHeight : undefined,
             }}
-            transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
-            className="lg:sticky lg:top-24 max-h-full overflow-y-auto ml-6"
           >
-            <EducationPanel
-              gameId={gameId} open={educationOpen}
-              onClose={() => setEducationOpen(false)}
-              disclosureLevel={disclosureLevel}
-              onChangeDisclosureLevel={setDisclosureLevel}
-              solution={solution}
-              solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
-              gameState={gameState}
-            />
-          </motion.div>
-        </div>
-
-        {/* 移动端：侧边栏作为全屏覆盖层 — translateX 滑入 */}
-        <motion.div
-          initial={false}
-          animate={{
-            x: educationOpen ? 0 : '100%',
-          }}
-          transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
-          className="fixed inset-0 top-16 z-20 bg-white overflow-y-auto lg:hidden"
-        >
-          <EducationPanel
-            gameId={gameId} open={educationOpen}
-            onClose={() => setEducationOpen(false)}
-            disclosureLevel={disclosureLevel}
-            onChangeDisclosureLevel={setDisclosureLevel}
-            solution={solution}
-            solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
-            gameState={gameState}
-          />
-        </motion.div>
+            <motion.div
+              initial={false}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
+              className="flex-1 min-h-0 overflow-y-auto lg:ml-6"
+            >
+              <EducationPanel
+                gameId={gameId} open={educationOpen}
+                onClose={() => setEducationOpen(false)}
+                disclosureLevel={disclosureLevel}
+                onChangeDisclosureLevel={setDisclosureLevel}
+                solution={solution}
+                solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
+                gameState={gameState}
+              />
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

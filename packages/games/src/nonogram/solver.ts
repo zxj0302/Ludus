@@ -426,8 +426,9 @@ function backtrackSolve(
   guessCell?: { row: number; col: number },
   guessValue?: 'fill' | 'cross',
 ): { result: 'solved' | 'contradiction' } {
-  // Hard cap on exploration (prevents runaway on pathological puzzles)
-  if (stats.searchTree.length >= 200) {
+  // Dynamic cap: scales with grid size (prevents runaway on pathological puzzles)
+  const maxSearchNodes = s.width * s.height * 50;
+  if (stats.searchTree.length >= maxSearchNodes) {
     return { result: 'contradiction' };
   }
 
@@ -590,7 +591,8 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
       newCells: initial.determined,
     });
   } else {
-    backtrackSolve(internal, 1, 0, stats, solutions);
+    // Start backtracking from line-solved partial state (matches countSolutions)
+    backtrackSolve(cloneInternal(initial.state), 1, 0, stats, solutions);
   }
 
   const elapsed = Math.round(performance.now() - t0);

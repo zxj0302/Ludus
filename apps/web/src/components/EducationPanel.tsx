@@ -1,9 +1,8 @@
 import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { Solution, GameState, Move, SolverTrace } from '@ludus/core';
+import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
-import type { LightsOutMove, SokobanMove, SudokuMove, NimMove, WythoffMove, FifteenMove, WaterJugMove, NonogramMove } from '@ludus/games';
 import { getGameEntry } from '@ludus/games';
 import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
@@ -45,55 +44,6 @@ const SECTION_STYLES = {
   create: { icon: '\u{1F3A8}', borderColor: 'var(--violet-600)',           bgColor: 'var(--violet-50)',       headerColor: 'var(--violet-700)' },
 };
 
-function formatMove(
-  gameId: string, move: Move, index: number, playersFirst: boolean,
-  t: (key: string, opts?: Record<string, unknown>) => string,
-): string {
-  const isPlayer = playersFirst ? index % 2 === 0 : index % 2 === 1;
-  switch (gameId) {
-    case 'lights-out': {
-      const m = move as LightsOutMove;
-      return t('education.pressCell', { row: m.row + 1, col: m.col + 1 });
-    }
-    case 'sokoban': {
-      const m = move as SokobanMove;
-      return t(`education.move.${m.direction}`, m.direction as any);
-    }
-    case 'sudoku': {
-      const m = move as SudokuMove;
-      return t('education.sudokuCell', { row: m.row + 1, col: m.col + 1, value: m.value });
-    }
-    case 'nim': {
-      const m = move as NimMove;
-      return (isPlayer ? '🧑 ' : '🤖 ') + t('education.nimMove', { pile: m.pileIndex + 1, count: m.removeCount });
-    }
-    case 'wythoff': {
-      const m = move as WythoffMove;
-      const icon = isPlayer ? '🧑 ' : '🤖 ';
-      if (m.type === 'both') return icon + t('education.wythoffMoveBoth', { count: m.removeCount });
-      return icon + t('education.wythoffMoveSingle', { pile: (m.pileIndex ?? 0) + 1, count: m.removeCount });
-    }
-    case 'fifteen': {
-      const m = move as FifteenMove;
-      const row = Math.floor(m.tileIndex / 4);
-      const col = m.tileIndex % 4;
-      return t('education.fifteenMove', { row: row + 1, col: col + 1 });
-    }
-    case 'water-jug': {
-      const m = move as WaterJugMove;
-      if (m.type === 'fill') return t('education.waterJugFill', { jug: m.jugIndex + 1 });
-      if (m.type === 'empty') return t('education.waterJugEmpty', { jug: m.jugIndex + 1 });
-      return t('education.waterJugPour', { from: m.from + 1, to: m.to + 1 });
-    }
-    case 'nonogram': {
-      const m = move as NonogramMove;
-      if (m.action === 'fill') return t('education.nonogramFill', { row: m.row + 1, col: m.col + 1 });
-      return t('education.nonogramCross', { row: m.row + 1, col: m.col + 1 });
-    }
-    default:
-      return `${index + 1}. ${JSON.stringify(move)}`;
-  }
-}
 
 const knownStages = new Set(STAGES.map(s => s.key));
 
@@ -122,9 +72,16 @@ function splitSections(md: string): { key: string; english: string; chinese: str
   return sections;
 }
 
-const SectionCard = React.memo(function SectionCard({ section }: { section: { key: string; english: string; chinese: string; body: string } }) {
+const SectionCard = React.memo(function SectionCard({
+  section, language,
+}: {
+  section: { key: string; english: string; chinese: string; body: string };
+  language: string;
+}) {
   const style = SECTION_STYLES[section.key as keyof typeof SECTION_STYLES];
   if (!style) return <MarkdownRenderer content={section.body} />;
+
+  const title = language.startsWith('zh') ? section.chinese : section.english;
 
   return (
     <motion.div
@@ -140,7 +97,7 @@ const SectionCard = React.memo(function SectionCard({ section }: { section: { ke
       >
         <span className="text-base">{style.icon}</span>
         <h3 className="text-sm font-semibold" style={{ color: style.headerColor }}>
-          {section.chinese} · {section.english}
+          {title}
         </h3>
       </div>
       <div className="px-4 py-3">
@@ -300,12 +257,12 @@ export function EducationPanel({
             >
               <span className="text-base">📊</span>
               <h3 className="text-sm font-semibold" style={{ color: 'var(--sky-blue-700)' }}>
-                {t('education.liveAnalysis')} · Live Analysis
+                {t('education.liveAnalysis')}
               </h3>
             </div>
             <div className="p-4 space-y-4">
               {gameState && (
-                <StatusCard gameId={gameId} gameState={gameState} solution={solution} solvePlayback={solvePlayback} solveStepIndex={solveStepIndex} />
+                <StatusCard gameId={gameId} gameState={gameState} solution={solution} />
               )}
 
               {solution?.trace && (() => {
@@ -326,7 +283,8 @@ export function EducationPanel({
                 if (hasMoves) {
                   // Nonogram: show solution as a visual grid instead of a step list
                   if (gameId === 'nonogram') {
-                    const solGrid = (solution.trace?.visualizationData as any)?.solutionGrid as boolean[][] | null;
+                    const vizData = solution.trace?.visualizationData as { solutionGrid?: boolean[][] | null } | undefined;
+                    const solGrid = vizData?.solutionGrid ?? null;
                     const w = solGrid?.[0]?.length ?? 0;
                     const h = solGrid?.length ?? 0;
                     title = t('education.optimalSolution', { count: solution.moves.length });
@@ -365,7 +323,9 @@ export function EducationPanel({
                         {solution.moves.map((m, i) => {
                           const isCurrentStep = solvePlayback && i === solveStepIndex;
                           const isPastStep = solvePlayback && i < solveStepIndex;
-                          const label = formatMove(gameId, m, i, playersFirst, t);
+                          const label = entry?.formatEducationMove
+                            ? entry.formatEducationMove(m, i, { playersFirst, t })
+                            : `${i + 1}. ${JSON.stringify(m)}`;
                           return (
                             <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
                               text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
@@ -405,7 +365,7 @@ export function EducationPanel({
         {sections.length > 0 ? (
           <div className="space-y-3">
             {sections.map(section => (
-              <SectionCard key={section.key} section={section} />
+              <SectionCard key={section.key} section={section} language={language} />
             ))}
           </div>
         ) : rawMd ? (

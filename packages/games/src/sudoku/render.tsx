@@ -1,16 +1,12 @@
 // packages/games/src/sudoku/render.tsx
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import type { BoardProps } from '../types';
 import type { SudokuState, SudokuMove } from './types';
 
-interface Props {
-  state: SudokuState;
-  onMove: (move: SudokuMove) => void;
-  disabled?: boolean;
-  highlightCell?: { row: number; col: number; value?: number } | null;
-}
-
-export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
+export function SudokuBoard({ state, onMove, disabled = false, highlightCell }: BoardProps<SudokuState, SudokuMove>) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
   const { n, grid, givenMask } = state;
 
@@ -123,7 +119,11 @@ export function SudokuBoard({ state, onMove, disabled, highlightCell }: Props) {
                 ${isGiven ? 'bg-warm-stone-100' : ''}
                 transition-colors
               `}
-              aria-label={`Row ${r + 1}, Column ${c + 1}${v !== 0 ? `, ${v}` : isHL && highlightCell?.value ? `, hint ${highlightCell.value}` : ', empty'}${isGiven ? ', given' : ''}`}
+              aria-label={t('sudoku.cellAria', {
+                row: r + 1, col: c + 1,
+                value: v !== 0 ? String(v) : (isHL && highlightCell?.value ? String(highlightCell.value) : t('sudoku.empty')),
+                given: isGiven ? t('sudoku.given') : '',
+              })}
             >
               {v !== 0 ? v : (isHL && highlightCell?.value != null ? <span className="text-warm-stone-300">{highlightCell.value}</span> : '')}
             </motion.button>

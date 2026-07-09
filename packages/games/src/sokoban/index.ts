@@ -14,6 +14,7 @@ import { sokobanEducationManifest, sokobanVisualizationManifest } from './manife
 import type { GamePluginEntry } from '../types';
 import { SokobanBoard } from './render';
 import { sokobanI18n } from './i18n';
+import { formatSokobanMove, SokobanStatusCard } from './education-ui';
 export { sokobanI18n };
 import { DIRECTION_DELTA } from './types';
 import {
@@ -35,6 +36,7 @@ const metadata = {
   descriptionKey: 'game.sokoban.description',
   category: 'category.search',
   icon: '📦',
+  isFastSolver: false,
   tags: ['BFS', '搜索', 'PSPACE', '死锁检测', 'puzzle'],
   renderBackend: 'dom' as const,
   platformSupport: [
@@ -91,7 +93,7 @@ export const sokobanPlugin: GamePlugin<SokobanState, SokobanMove> = {
 
 export const sokobanEntry: GamePluginEntry<SokobanState, SokobanMove> = {
   plugin: sokobanPlugin,
-  BoardComponent: SokobanBoard as any,
+  BoardComponent: SokobanBoard,
   isOwnState: (state): state is SokobanState =>
     state != null && 'walls' in state && 'player' in state && 'boxes' in state,
   moveToHighlight: (move, state) => {
@@ -102,5 +104,7 @@ export const sokobanEntry: GamePluginEntry<SokobanState, SokobanMove> = {
     return null;
   },
   i18n: { namespace: 'sokoban', zhCN: sokobanI18n.zhCN, en: sokobanI18n.en },
+  formatEducationMove: formatSokobanMove,
+  ui: { statusCard: SokobanStatusCard },
   education: { content: {} },
 };

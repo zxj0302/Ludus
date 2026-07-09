@@ -46,6 +46,9 @@ export const lightsOutI18n = {
     'education.litRatio': '点亮率',
     'education.optimalSolution': '最优解（{{count}} 步）',
     'education.pressCell': '按 ({{row}}, {{col}})',
+    'lightsOut.cellAria': '第{{row}}行第{{col}}列，{{state}}',
+    'lightsOut.on': '亮',
+    'lightsOut.off': '灭',
   },
   en: {
     'game.lights-out.name': 'Lights Out',
@@ -94,5 +97,8 @@ export const lightsOutI18n = {
     'education.litRatio': 'Lit Ratio',
     'education.optimalSolution': 'Optimal Solution ({{count}} moves)',
     'education.pressCell': 'Press ({{row}}, {{col}})',
+    'lightsOut.cellAria': 'Row {{row}}, Column {{col}}, {{state}}',
+    'lightsOut.on': 'on',
+    'lightsOut.off': 'off',
   },
 };

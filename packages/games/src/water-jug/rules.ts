@@ -90,7 +90,9 @@ export function isSolved(state: WaterJugState): boolean {
 }
 
 export function getDifficulty(state: WaterJugState): Difficulty {
-  // Use BFS optimal depth for accurate difficulty scoring (water jug is fast-solver: < 1ms)
+  if (!isSolvable(state.capacities, state.target)) {
+    return computeWaterJugDifficulty(state, 0);
+  }
   const solution = solveWaterJug(state);
   const optimalDepth = solution.solvable ? solution.stats.solutionLength : 0;
   return computeWaterJugDifficulty(state, optimalDepth);

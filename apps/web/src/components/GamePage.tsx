@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../stores/gameStore';
 import { GameShell } from './GameShell';
@@ -7,15 +7,25 @@ import { GameShell } from './GameShell';
 export function GamePage() {
   const { t } = useTranslation();
   const { gameId } = useParams<{ gameId: string }>();
+  const location = useLocation();
+  const resume = !!(location.state as { resume?: boolean } | null)?.resume;
   const loadGame = useGameStore(s => s.loadGame);
+  const flushProgress = useGameStore(s => s.flushProgress);
   const storeGameId = useGameStore(s => s.gameId);
   const gameState = useGameStore(s => s.gameState);
 
   useEffect(() => {
     if (gameId) {
-      loadGame(gameId);
+      loadGame(gameId, { resume });
     }
-  }, [gameId, loadGame]);
+  }, [gameId, resume, loadGame]);
+
+  // 离开游戏页或切换 gameId 时保存进度；与 loadGame 分 effect，避免 Strict Mode 下 cleanup 干扰加载
+  useEffect(() => {
+    return () => {
+      flushProgress();
+    };
+  }, [gameId, flushProgress]);
 
   if (!gameId) {
     return <div className="text-center py-20 text-warm-stone-500">{t('game.noGame')}</div>;

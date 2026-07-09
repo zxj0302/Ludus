@@ -13,10 +13,22 @@ import type { GamePlugin, GameState, Move, SolverTrace, Solution } from '@ludus/
 export interface BoardProps<S extends GameState = GameState, M extends Move = Move> {
   state: S;
   onMove: (move: M) => void;
-  disabled: boolean;
-  highlightCell: HighlightCell | null;
+  disabled?: boolean;
+  highlightCell?: HighlightCell | null;
   /** 游戏专属动作分发（loadState, prependHistory 等） */
   dispatch?: (action: { type: string; payload: unknown }) => void;
+}
+
+/** 教育面板走子格式化上下文 */
+export interface FormatMoveContext {
+  playersFirst: boolean;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}
+
+/** 状态卡片 Props */
+export interface StatusCardProps<S extends GameState = GameState> {
+  gameState: S;
+  solution: Solution | null;
 }
 
 // ---- 高亮坐标 ----
@@ -78,12 +90,17 @@ export interface GamePluginEntry<
     en: Record<string, string>;
   };
 
+  /** 教育面板走子描述格式化 */
+  formatEducationMove?: (move: M, index: number, ctx: FormatMoveContext) => string;
+
   /** 可选 UI 扩展 */
   ui?: {
     /** 工具栏右侧插槽（难度选择器等） */
     toolbarSlot?: ComponentType<ToolbarSlotProps>;
-    /** 状态栏扩展信息 */
+    /** 状态栏扩展信息（已废弃，请用 statusCard） */
     statusExtension?: ComponentType<StatusExtensionProps>;
+    /** 教育侧边栏状态卡片 */
+    statusCard?: ComponentType<StatusCardProps<S>>;
   };
 
   /** 可选关卡选择器（Sokoban 等需要） */

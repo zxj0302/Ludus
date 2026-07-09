@@ -30,8 +30,8 @@ export function getDifficulty(state: LightsOutState): Difficulty {
   const score = Math.round(sizeFactor * 25 + moveFactor * 50 + nonUniquePenalty);
   const clamped = Math.max(0, Math.min(100, score));
 
-  const labelKey = clamped <= 20 ? 'difficulty.easy'
-    : clamped <= 50 ? 'difficulty.medium'
+  const labelKey = clamped <= 33 ? 'difficulty.easy'
+    : clamped <= 66 ? 'difficulty.medium'
     : 'difficulty.hard';
 
   return {

@@ -10,6 +10,7 @@ export { solveFifteen };
 import { fifteenEducationManifest, fifteenVisualizationManifest } from './manifest';
 import { FifteenBoard } from './render';
 import { fifteenI18n } from './i18n';
+import { formatFifteenMove, FifteenStatusCard } from './education-ui';
 
 export { fifteenI18n };
 
@@ -77,5 +78,7 @@ export const fifteenEntry: GamePluginEntry<FifteenState, FifteenMove> = {
     return { row: Math.floor(idx / SIZE), col: idx % SIZE };
   },
   i18n: { namespace: 'fifteen', zhCN: fifteenI18n.zhCN, en: fifteenI18n.en },
+  formatEducationMove: formatFifteenMove,
+  ui: { statusCard: FifteenStatusCard },
   education: { content: {} },
 };

@@ -1,0 +1,6 @@
+# Tauri / Capacitor generated artifacts
+src-tauri/target/
+src-tauri/gen/
+android/
+ios/
+.capacitor/

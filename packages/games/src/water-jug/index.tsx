@@ -6,6 +6,7 @@ import { solveWaterJug } from './solver';
 import { waterJugEducationManifest, waterJugVisualizationManifest } from './manifest';
 import { WaterJugBoard } from './render';
 import { waterJugI18n } from './i18n';
+import { formatWaterJugMove, WaterJugStatusCard } from './education-ui';
 import type { WaterJugState, WaterJugMove } from './types';
 
 export { solveWaterJug, waterJugI18n, gcd, isSolvable };
@@ -15,7 +16,7 @@ const metadata = {
   id: 'water-jug',
   nameKey: 'game.waterJug.name',
   descriptionKey: 'game.waterJug.description',
-  category: 'category.numberTheory',
+  category: 'category.number-theory',
   icon: '💧',
   isFastSolver: true, // BFS on small state space — instant solve
   tags: ['water-jug', '倒水', 'BFS', '裴蜀定理', 'GCD', '状态空间搜索', '数论'],
@@ -86,5 +87,7 @@ export const waterJugEntry: GamePluginEntry<WaterJugState, WaterJugMove> = {
     return null;
   },
   i18n: { namespace: 'water-jug', zhCN: waterJugI18n.zhCN, en: waterJugI18n.en },
+  formatEducationMove: formatWaterJugMove,
+  ui: { statusCard: WaterJugStatusCard },
   education: { content: {} },
 };

@@ -93,7 +93,7 @@ function generatePattern(
  */
 export function generateNonogramLevel(config: LevelConfig): Level {
   const [rangeLo, rangeHi] = config.difficultyRange ?? [1, 100];
-  const seed = (config as any).seed ?? Date.now();
+  const seed = config.seed ?? Date.now();
   const rng = mulberry32(seed);
 
   let width: number;

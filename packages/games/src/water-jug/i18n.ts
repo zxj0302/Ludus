@@ -31,7 +31,7 @@ export const waterJugI18n = {
     'waterJug.selected': '已选中',
     'waterJug.clickTarget': '点此接收水',
     'waterJug.tapHint': '操作提示',
-    'category.numberTheory': '数论',
+    'category.number-theory': '数论',
   },
   en: {
     'game.waterJug.name': 'Water Jug Puzzle',
@@ -65,6 +65,6 @@ export const waterJugI18n = {
     'waterJug.selected': 'Selected',
     'waterJug.clickTarget': 'Click to receive water',
     'waterJug.tapHint': 'Controls',
-    'category.numberTheory': 'Number Theory',
+    'category.number-theory': 'Number Theory',
   },
 };

@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 5（增量游戏）— 8 款游戏已完成**。下一步：Connect 4（博弈树）或阶段 6 横切能力。
+- **当前阶段**：**阶段 7 测试/发布** — CI 起步 ✅。阶段 6 已完成（含 6d 桌面壳本机验证 ✅）。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo（core / games / education / ui）+ apps/web，281 个测试（全过），Vite 构建成功。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，384 个测试（全过），CI + GitHub Pages 部署就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：27 个测试文件，331 测试全过。
+- **测试覆盖**：40 个测试文件，384 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -142,31 +142,21 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-8 款游戏全部完成（超 MVP 目标）。B.6 建议序列已穷尽。
-Nonogram 回溯搜索树可视化已添加，生成器已调整为中高难度需要回溯。
+阶段 7：CI + GitHub Pages 部署已配置。推送 `master` 后 Actions 自动构建并发布。
 
-1. **下一款增量游戏**：Connect 4（四子棋，Minimax + α-β 剪枝）— 填补博弈树搜索空白
-2. **或阶段 6 横切能力**：合集主界面优化、进度与成就、关卡设计单元通用 UI
-3. **其他候选**：Minesweeper（CSP/概率推理）、Maze（图论/搜索可视化）
+1. **一次性设置**：GitHub 仓库 Settings → Pages → Source 选 **GitHub Actions**
+2. **阶段 7 续**：`build:desktop` 生产包（需 Rust ≥1.85）或移动端验证
+3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
 
 ## 🐛 KNOWN ISSUES
 
-- 音效文件（.mp3 audio sprite）尚未制作，`useSound` hook 与 Howler.js 封装已就绪
-- 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器有 fallback 处理
-- `LightsOutBoard` 的 `aria-label`（`render.tsx`）为硬编码英文，因 packages/games 无 react-i18next 依赖
-- Sokoban BFS 求解器在主线程执行，中大关卡可能超时或卡 UI——Worker 基础设施就绪但未接入
+- 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器在 `requireUnique/requireOptimal` 时抛错
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
-- Nim/Wythoff render.tsx 有 60-70% 代码重复，可提取共享石子/堆组件
-- ~~15-Puzzle A* 求解器在主线程执行~~ ✅ 已修复：Web Worker 离线程求解，不阻塞 UI
-- ~~15-Puzzle `getDifficulty` 始终返回 score=0~~ ✅ 已修复：改用曼哈顿距离动态计算难度
-- ~~FifteenTreeViz 有少量硬编码英文~~ ✅ 已修复：全部替换为 i18n key
-- ~~15-Puzzle 侧边栏无状态卡片~~ ✅ 已修复：statusCards.tsx 新增 `case 'fifteen'`
-- ~~EducationPanel formatMove 缺少 fifteen case~~ ✅ 已修复：显示可读的走子描述
-- ~~15-Puzzle 教学内容过于稀疏~~ ✅ 已扩展：L2 ~30→~80行，L3 ~89→~200行，对齐 Lights Out 标准
+- `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 下一阶段：Sokoban 生成器升级 vs 倒水问题 vs Nonogram vs 横切能力（进度/成就/i18n 完善）？
+- 下一阶段优先级已确认：**阶段 6 横切能力**（Hub → 进度 → 打包），Connect 4 暂缓。
 
 ## 📝 SESSION LOG
 
@@ -489,13 +479,80 @@ Nonogram 回溯搜索树可视化已添加，生成器已调整为中高难度�
   - **i18n**：新增 7 个翻译 key × 2 语言（回溯树标签、Tab、统计等）
   - 331 测试全过，typecheck 零错误，vite build 8.04s
 - [2026-07-09] **Nonogram i18n 审计与修复**：
-  - **Bug 修复**：`statusCards.tsx` 唯一解判断 `s ? '✅' : '—'`（state 永远存在，死代码）→ 直接 `'✅'` + 注释（生成器保证唯一解）
-  - **i18n 硬编码修复**（`NonogramTraceViz.tsx`）：~15 处硬编码中文/英文改为 `t()` 调用
-    - StepDetail 标题栏（行/列、线索、合法排列、确定格子）
-    - 排列标签、更多排列提示、交集箭头、必然填/必然空图例
-    - 回溯树解释块（标题 + 说明 + 4 色图例 + 节点格式说明）
-    - 线求解步数后缀 `' steps'`、tooltip 中 `'Row'/'Col'/' cells'`
-    - 根节点标签 `'初始线求解'`
-  - **新增 i18n key**：19 个 key × 2 语言（`nonogram.row/col/lineStepHeader/placement/morePlacements/intersection/mustFill/mustEmpty/lineSolveSteps/initialLineSolve/btExplanationTitle/btExplanationBody/btLegendRoot/btLegendBranch/btLegendSolved/btLegendContradiction/btNodeFormat/lineStepTooltip` + `nonogram.lineSolveSteps`）
-  - **死代码清理**：`generator.ts` 中 Medium 空 if 块 → 注释说明意图
+  - **Bug 修复**：`statusCards.tsx` 唯一解判断死代码 → 生成器保证唯一解
+  - **i18n 硬编码修复**（`NonogramTraceViz.tsx`）：~15 处硬编码改为 `t()` 调用
+  - **新增 i18n key**：19 个 key × 2 语言
   - 331 测试全过，typecheck 零错误，vite build 7.40s
+- [2026-07-09] **全项目审查修复（36+ 项）**：
+  - **P0 Bug**：Nonogram `solveNonogram` 回溯起点修正（`initial.state`）；`isSolved` 改为线索验证；gameStore 对抗播放 timer 可取消（`playbackController.ts`）；`adversarialPlayback` 全路径清理
+  - **P1 Store**：异步求解 stale check；慢速游戏走子后 debounce 重求解；`reset`/`loadCustomState` 清 timer；求解中禁棋盘；`solveInFlight` 防并行
+  - **P2 求解器**：Lights Out 生成器重复格重试 + requireUnique fallback 抛错；Sokoban 边死锁加 `isBox`；Water Jug `isSolvable` 短路；Nonogram 动态节点上限；Sudoku 超时返回 -1；Fifteen `scrambleDepth` 统一难度
+  - **架构**：`GamePluginEntry` 新增 `formatEducationMove` + `ui.statusCard`；8 款游戏各 `education-ui.tsx`；`statusCards.tsx` 去游戏分支；Worker 按 `webWorker` 元数据路由（Lights Out/Fifteen/Sokoban）；Sokoban `isFastSolver: false`
+  - **UI/i18n**：Lights Out/Sudoku Tailwind + aria i18n；EducationPanel 单实例 + 语言感知标题；entrySetup 声明式注册表
+  - 331 测试全过，typecheck 零错误，vite build 5.80s
+- [2026-07-09] **审查收尾工件**：
+  - **StonePile 接入**：Nim/Wythoff `render.tsx` 迁移至共享 `packages/games/src/ui/StonePile.tsx`（含 `hintActive`、空堆占位）
+  - **Sokoban Tailwind 化**：`render.tsx` 去除颜色常量内联 style，改用 design tokens；`BoardProps` 对齐；方向键 aria i18n
+  - **风格统一**：Lights Out 难度阈值对齐 33/66；App 页脚/语言选择器 i18n；GameToolbar 演示停止按钮文案修正；对抗播放时禁用手动步进
+  - **KNOWN ISSUES 清理**：音效已用 Web Audio API 合成（非空壳）；移除已完成的收尾项
+  - 331 测试全过，typecheck 零错误
+- [2026-07-09] **审查收尾工件（续）**：
+  - **类型安全**：`entrySetup.tsx` 去除全部 `as any`（`isOwnState` 收窄）；`NonogramTraceViz`/`EducationPanel` 补全 viz 数据类型
+  - **难度统一**：Sokoban 难度标签阈值对齐 33/66；新增 `lights-out/difficulty.test.ts`、`sokoban/difficulty.test.ts`
+  - **Nonogram 生成器**：`config.seed` 直接使用（移除 `as any`）
+  - 测试全过，typecheck 零错误
+- [2026-07-09] **阶段 6a — Hub 主界面增强**：
+  - **搜索**：按游戏名、描述、分类、标签实时筛选（中英双语）
+  - **分类芯片**：5 个领域一键过滤（线性代数 / 约束满足 / 博弈论 / 搜索 / 数论）
+  - **空状态**：无匹配时提示 + 清除筛选按钮；游戏计数显示
+  - **纯函数**：`apps/web/src/utils/hubFilters.ts` + 6 单元测试
+  - 345 测试全过，typecheck 零错误
+- [2026-07-09] **阶段 6b — 进度 localStorage + Hero 继续游戏**：
+  - **progressStore**：zustand persist（`ludus-progress-v1`），每游戏记录快照/通关次数/最近游玩
+  - **gameStore 集成**：走子/撤销/重置/新关卡时自动保存；`loadGame({ resume })` 从快照恢复
+  - **HubHeroCard**：最近游戏大卡 + 进度条 + 通关次数；点击带 `resume: true` 恢复状态
+  - **GamePage**：路由 `location.state.resume` 区分「继续」vs「新开局」
+  - 354 测试全过，typecheck 零错误
+- [2026-07-09] **阶段 6b 修复 — 计时持久化**：
+  - `GameProgressRecord` 新增 `elapsedMs`；离开游戏时 `flushProgress()` 保存用时
+  - 继续游戏：`startTime = now - savedElapsed`，计时从上次累计值接着走
+  - 已通关恢复：冻结 `elapsed`，不重启计时器
+  - 新关卡/重置/新开局：计时归零
+  - 359 测试全过
+- [2026-07-09] **阶段 6c — 关卡设计单元通用 UI**：
+  - **`@ludus/ui` `DifficultySelector`**：简单/中等/困难/随机四档（33/66 阈值），统一视觉
+  - **`GeneratorToolbar`**：连接 `gameStore.difficultyRange` + 一键生成
+  - **7 款游戏接入**：Lights Out / Sudoku / Nim / Wythoff / Fifteen / 倒水 / Nonogram 默认显示；Sokoban 保留关卡选择器
+  - 删除 3 份重复 toolbar 实现（改为 re-export）
+  - 361 测试全过，typecheck 零错误
+- [2026-07-09] **Bug 修复 — 游戏页永久「加载中」**：
+  - **根因**：6b 进度恢复后 `isOwnState` 校验失败 / Hub 链接残留 `resume:true` / `loadGame` 内 `solve` 抛错中断加载
+  - **修复**：`loadGame` 恢复前校验 `isOwnState`、不匹配回退 `initialState`；Hub 网格显式 `resume:false`；`GamePage` 拆分 load/flush effect；`GameShell` 在 `isOwnState` 通过后再调 `isSolved`
+  - 新增 `packages/games/src/load-smoke.test.ts`（8 游戏 generate + isOwnState 冒烟）
+  - 377 测试全过，typecheck 零错误
+- [2026-07-09] **UI 修复 — 侧边栏卡片 + 推箱子到位显示**：
+  - Tailwind 补全 `clarity-teal` light/dark 别名；扫描 `packages/ui`
+  - 侧边栏滚动容器改为 `flex + min-h-0` 布局
+  - 推箱子到位：饱和 teal 渐变 + 描边 + ✓ 标记
+- [2026-07-09] **阶段 6e — Hub 游玩统计条**：
+  - `hubStats.ts` + `HubStatsBar.tsx`：总通关 / 开局次数 / 已尝试 / 已通关游戏
+  - 成就占位徽章「即将推出」；数据来自 `progressStore` localStorage
+  - 3 单元测试；380 测试全过
+- **阶段 7 起步 — GitHub Actions CI** ✅：
+  - `.github/workflows/ci.yml`：push/PR 触发；typecheck + 384 测试 + web/shell/pages build + 相对路径校验
+  - 本地验证全绿
+- **阶段 7 — GitHub Pages 预览部署** ✅：
+  - `pnpm build:pages`（`base: /Ludus/`）+ router `basename` + `404.html` SPA 回退
+  - CI `deploy` job：push `master` 自动发布 → https://zxj0302.github.io/Ludus/
+- [2026-07-09] **阶段 6d — Tauri/Capacitor 套壳可行性**：
+  - `apps/web build:shell`（Vite `--mode shell`，`base: './'`）
+  - `apps/desktop`：Tauri 2 最小壳 + 图标 + `rust-toolchain.toml`
+  - `apps/mobile`：Capacitor 6 配置 + sync 脚本
+  - `docs/phases/06d-cross-platform-shell.md`；`shellPackaging.test.ts`
+  - 383 测试全过；`build:shell` 验证相对路径 `./assets/...`
+- [2026-07-09] **阶段 6d 本机验证 + beforeDevCommand 修复**：
+  - 桌面壳 `pnpm dev:desktop` 可打开并游玩；`beforeDevCommand` 改为 `pnpm --filter ludus-web dev`（避免相对路径随 cwd 解析错误）
+  - Vite dev：`host 127.0.0.1` + `strictPort 5173`（WebView2 兼容）
+- [2026-07-09] **阶段 7 — GitHub Pages 预览部署**：
+  - `build:pages` + router `basename`；CI deploy job 发布至 https://zxj0302.github.io/Ludus/
+  - 384 测试全过（+1 pages 配置测试）

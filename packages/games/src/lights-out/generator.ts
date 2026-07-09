@@ -72,17 +72,20 @@ export function generateLightsOutLevel(config: LevelConfig & {
 
     const pressedCells = new Set<number>();
 
-    for (let step = 0; step < moveCount; step++) {
+    let step = 0;
+    let pickRetries = 0;
+    const maxPickRetries = moveCount * 3;
+    while (step < moveCount && pickRetries < maxPickRetries) {
       const idx = Math.floor(rand() * N);
       const row = Math.floor(idx / n);
       const col = idx % n;
 
-      // 同一格点多次无意义（XOR 抵消），跳过
-      if (pressedCells.has(idx)) continue;
+      if (pressedCells.has(idx)) { pickRetries++; continue; }
 
       pressedCells.add(idx);
       applyMoveToGrid(currentGrid, n, row, col);
       moves.push({ row, col });
+      step++;
     }
 
     // 构建 GF(2) 方程组求解
@@ -123,7 +126,11 @@ export function generateLightsOutLevel(config: LevelConfig & {
     };
   }
 
-  // fallback: return a simple level
+  // fallback: only when unique/optimal not required
+  if (requireUnique || requireOptimal) {
+    throw new Error(`Failed to generate lights-out level (n=${n}) meeting requirements after ${maxAttempts} attempts`);
+  }
+
   const fallbackGrid = new Array(N).fill(0);
   for (let i = 0; i < Math.min(minMoves, 5); i++) {
     const idx = Math.floor(rand() * N);

@@ -91,14 +91,14 @@ describe('Nonogram — rules', () => {
     });
 
     it('clues and solution are deep copies', () => {
-      const { rowClues, colClues } = computeClues(heart);
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const heartCopy = heart.map(r => [...r]);
+      const { rowClues, colClues } = computeClues(heartCopy);
+      const state = createInitialState(5, 5, rowClues, colClues, heartCopy);
 
-      // Modify original — state should be unaffected
       rowClues[0]![0] = 999;
       expect(state.rowClues[0]![0]).toBe(1);
 
-      heart[0]![0] = true;
+      heartCopy[0]![0] = true;
       expect(state.solution[0]![0]).toBe(false);
     });
   });
@@ -155,12 +155,9 @@ describe('Nonogram — rules', () => {
 
     it('exact solution → solved', () => {
       const state = createInitialState(5, 5, rowClues, colClues, heart);
-      // Fill all cells that should be filled
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
-          if (heart[r]![c]) {
-            state.grid[r]![c] = FILLED;
-          }
+          state.grid[r]![c] = heart[r]![c] ? FILLED : CROSS;
         }
       }
       expect(isSolved(state)).toBe(true);

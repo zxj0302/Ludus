@@ -50,7 +50,7 @@ export function App() {
       </main>
 
       <footer className="py-6 text-center text-xs text-warm-stone-400">
-        Ludus — MIT License — {new Date().getFullYear()}
+        {t('app.footer', { year: new Date().getFullYear() })}
       </footer>
     </div>
   );
@@ -75,6 +75,7 @@ function SoundToggle() {
 }
 
 function LanguageSwitcher() {
+  const { t } = useTranslation();
   const setLanguage = useGameStore(s => s.setLanguage);
   const language = useGameStore(s => s.language);
 
@@ -84,9 +85,10 @@ function LanguageSwitcher() {
       onChange={e => setLanguage(e.target.value)}
       className="text-xs bg-warm-stone-100 border border-warm-stone-300 rounded-btn px-2.5 py-1.5
                  cursor-pointer font-medium text-warm-stone-700 hover:border-warm-stone-400 transition-colors"
+      aria-label={t('app.language')}
     >
-      <option value="zh-CN">中文</option>
-      <option value="en">English</option>
+      <option value="zh-CN">{t('app.language.zh')}</option>
+      <option value="en">{t('app.language.en')}</option>
     </select>
   );
 }
