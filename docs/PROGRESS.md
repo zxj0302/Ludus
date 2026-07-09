@@ -5,7 +5,7 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、v0.1.0 tag 已推送；审查修复 + P2 清理待提交。
+- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、v0.1.0 tag 已推送；审查修复 + P2 清理已提交（`d06fbdb`）。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，384 个测试（全过），CI 就绪，Release workflow 就绪。
@@ -142,12 +142,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-审查修复 + P2 清理已本地验证（384 测试全过）。下一步：
+审查修复 + P2 清理已推送（`d06fbdb`）。下一步：
 
-1. **提交并推送**：P1（HubHeroCard / gameStore Worker 提示 / release 门禁）+ P2 清理
-2. **确认 Release**：GitHub Actions `v0.1.0` 是否产出 Windows 安装包；若需包含审查修复可打 `v0.1.1`
-3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
-4. **或移动端**：`pnpm sync:mobile` + 真机验证
+1. **确认 Release**：GitHub Actions `v0.1.0` 是否产出 Windows 安装包；若要包含审查修复可打 `v0.1.1` tag
+2. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
+3. **或移动端**：`pnpm sync:mobile` + 真机验证
 
 ## 🐛 KNOWN ISSUES
 
@@ -554,3 +553,4 @@
   - Vite dev：`host 127.0.0.1` + `strictPort 5173`（WebView2 兼容）
 - [2026-07-09] **P2 清理**：移除死路由/Toolbar 重导出/statusExtension；CI 去掉 build:pages；更新 lessons-learned、02-architecture、.gitignore
 - [2026-07-09] **P2 清理（续）**：移除未用 `pauseTimer`；`prependHistory` 加 `isOwnState` 校验；02-architecture 去 ProgressiveDisclosure、补 8 游戏
+- [2026-07-09] **提交推送**：`d06fbdb` fix: post-audit cleanup and harden release CI（P1+P2+LICENSE）
