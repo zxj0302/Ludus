@@ -488,3 +488,14 @@ Nonogram 回溯搜索树可视化已添加，生成器已调整为中高难度�
     - Pattern 生成小块化（Hard 下 maxBlockSize=2 vs Easy=4）
   - **i18n**：新增 7 个翻译 key × 2 语言（回溯树标签、Tab、统计等）
   - 331 测试全过，typecheck 零错误，vite build 8.04s
+- [2026-07-09] **Nonogram i18n 审计与修复**：
+  - **Bug 修复**：`statusCards.tsx` 唯一解判断 `s ? '✅' : '—'`（state 永远存在，死代码）→ 直接 `'✅'` + 注释（生成器保证唯一解）
+  - **i18n 硬编码修复**（`NonogramTraceViz.tsx`）：~15 处硬编码中文/英文改为 `t()` 调用
+    - StepDetail 标题栏（行/列、线索、合法排列、确定格子）
+    - 排列标签、更多排列提示、交集箭头、必然填/必然空图例
+    - 回溯树解释块（标题 + 说明 + 4 色图例 + 节点格式说明）
+    - 线求解步数后缀 `' steps'`、tooltip 中 `'Row'/'Col'/' cells'`
+    - 根节点标签 `'初始线求解'`
+  - **新增 i18n key**：19 个 key × 2 语言（`nonogram.row/col/lineStepHeader/placement/morePlacements/intersection/mustFill/mustEmpty/lineSolveSteps/initialLineSolve/btExplanationTitle/btExplanationBody/btLegendRoot/btLegendBranch/btLegendSolved/btLegendContradiction/btNodeFormat/lineStepTooltip` + `nonogram.lineSolveSteps`）
+  - **死代码清理**：`generator.ts` 中 Medium 空 if 块 → 注释说明意图
+  - 331 测试全过，typecheck 零错误，vite build 7.40s

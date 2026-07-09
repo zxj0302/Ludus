@@ -45,13 +45,17 @@ const DETERMINED_FILL = '#22c55e';
 const DETERMINED_EMPTY = '#ef4444';
 
 function StepDetail({ step }: { step: LineSolveTraceStep }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white rounded-lg p-3 border border-warm-stone-200">
       <div className="text-xs font-semibold text-warm-stone-700 mb-2">
-        {step.lineType === 'row' ? '行' : '列'} {step.lineIndex + 1}
-        {' — '}线索: [{step.clues.join(', ')}]
-        {' — '}共 {step.totalPlacements} 种合法排列
-        {' — 确定 '}{step.determinedIndices.length} 个格子
+        {t('nonogram.lineStepHeader', {
+          type: t(step.lineType === 'row' ? 'nonogram.row' : 'nonogram.col'),
+          index: step.lineIndex + 1,
+          clues: step.clues.join(', '),
+          total: step.totalPlacements,
+          determined: step.determinedIndices.length,
+        })}
       </div>
 
       <div className="flex flex-col gap-1">
@@ -59,7 +63,7 @@ function StepDetail({ step }: { step: LineSolveTraceStep }) {
         {step.placements.slice(0, 8).map((placement, pi) => (
           <div key={pi} className="flex items-center gap-1">
             <span className="text-[10px] text-warm-stone-400 w-16 shrink-0">
-              {pi === 0 ? '排列' : ''}
+              {pi === 0 ? t('nonogram.placement') : ''}
             </span>
             <div className="flex">
               {placement.map((filled, i) => (
@@ -72,13 +76,13 @@ function StepDetail({ step }: { step: LineSolveTraceStep }) {
 
         {step.totalPlacements > step.placements.length && (
           <div className="text-[10px] text-warm-stone-400 ml-16">
-            ... 还有 {step.totalPlacements - step.placements.length} 种排列
+            {t('nonogram.morePlacements', { count: step.totalPlacements - step.placements.length })}
           </div>
         )}
 
         {/* Result: intersection → determined cells */}
         <div className="flex items-center gap-1 mt-1 pt-1 border-t border-warm-stone-200">
-          <span className="text-[10px] text-warm-stone-700 font-semibold w-16 shrink-0">交集 →</span>
+          <span className="text-[10px] text-warm-stone-700 font-semibold w-16 shrink-0">{t('nonogram.intersection')}</span>
           <div className="flex">
             {Array.from({ length: step.length }).map((_, i) => {
               const detIdx = step.determinedIndices.indexOf(i);
@@ -101,10 +105,10 @@ function StepDetail({ step }: { step: LineSolveTraceStep }) {
 
         <div className="flex gap-3 mt-1 ml-16 text-[10px]">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: DETERMINED_FILL }} /> 必然填
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: DETERMINED_FILL }} /> {t('nonogram.mustFill')}
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: DETERMINED_EMPTY }} /> 必然空
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: DETERMINED_EMPTY }} /> {t('nonogram.mustEmpty')}
           </span>
         </div>
       </div>
@@ -145,14 +149,14 @@ interface LayoutNode {
   y: number;
 }
 
-function computeTreeLayout(root: TreeNodeData): { layout: LayoutNode[]; canvasW: number; canvasH: number } {
-  const xMap = new Map<number, number>();
+function computeTreeLayout(root: TreeNodeData): { layout: LayoutNode[]; canvasW: number; canvasH: number; treePixelW: number } {
+  const unitMap = new Map<number, number>(); // nodeId → leaf-position unit (0, 0.5, 1, 1.25, 2, ...)
   let leafSeq = 0;
 
   // Step 1: assign leaf positions (inorder)
   function assignLeaves(tn: TreeNodeData) {
     if (tn.children.length === 0) {
-      xMap.set(tn.node.id, leafSeq++);
+      unitMap.set(tn.node.id, leafSeq++);
     } else {
       for (const c of tn.children) assignLeaves(c);
     }
@@ -163,31 +167,32 @@ function computeTreeLayout(root: TreeNodeData): { layout: LayoutNode[]; canvasW:
   function centerParents(tn: TreeNodeData) {
     if (tn.children.length > 0) {
       for (const c of tn.children) centerParents(c);
-      const childXs = tn.children.map(c => xMap.get(c.node.id)!);
-      const minX = Math.min(...childXs);
-      const maxX = Math.max(...childXs);
-      xMap.set(tn.node.id, (minX + maxX) / 2);
+      const childUnits = tn.children.map(c => unitMap.get(c.node.id)!);
+      unitMap.set(tn.node.id, (Math.min(...childUnits) + Math.max(...childUnits)) / 2);
     }
   }
   centerParents(root);
 
-  // Step 3: build layout nodes
-  const layout: LayoutNode[] = [];
+  // Step 3: convert leaf-position units → pixel coordinates
+  const PIXEL_STEP = BT_NODE_W + BT_LEAF_GAP; // horizontal advance per leaf slot
   let maxDepth = 0;
+  const layout: LayoutNode[] = [];
 
   function collect(tn: TreeNodeData) {
-    const x = xMap.get(tn.node.id) ?? 0;
+    const unitX = unitMap.get(tn.node.id) ?? 0;
+    const pixelX = unitX * PIXEL_STEP; // convert units to pixels
     const y = tn.node.depth * BT_LEVEL_H;
     if (tn.node.depth > maxDepth) maxDepth = tn.node.depth;
-    layout.push({ node: tn.node, x, y });
+    layout.push({ node: tn.node, x: pixelX, y });
     for (const c of tn.children) collect(c);
   }
   collect(root);
 
-  const canvasW = Math.max(300, (leafSeq - 1) * (BT_NODE_W + BT_LEAF_GAP) + BT_NODE_W + 48);
+  const treePixelW = leafSeq <= 1 ? BT_NODE_W : (leafSeq - 1) * PIXEL_STEP + BT_NODE_W;
+  const canvasW = Math.max(300, treePixelW + 48);
   const canvasH = Math.max(120, (maxDepth + 1) * BT_LEVEL_H + 32);
 
-  return { layout, canvasW, canvasH };
+  return { layout, canvasW, canvasH, treePixelW };
 }
 
 // Node style helpers
@@ -205,9 +210,9 @@ function btNodeStyle(n: SearchTreeNode) {
   return BT_COLORS.branch;
 }
 
-function btNodeLabel(n: SearchTreeNode): string {
+function btNodeLabel(n: SearchTreeNode, t: (key: string) => string): string {
   if (n.depth === 0 && !n.guess) {
-    return `初始线求解 +${n.newCells}`;
+    return `${t('nonogram.initialLineSolve')} +${n.newCells}`;
   }
   const cell = n.cell;
   const coord = cell ? `R${cell.row + 1}C${cell.col + 1}` : '?';
@@ -221,11 +226,11 @@ function BacktrackTree({ searchTree }: { searchTree: SearchTreeNode[] }) {
   const { t } = useTranslation();
 
   const root = useMemo(() => buildTree(searchTree), [searchTree]);
-  const { layout, canvasW, canvasH } = useMemo(
-    () => root ? computeTreeLayout(root) : { layout: [], canvasW: 300, canvasH: 120 },
+  const { layout, canvasW, canvasH, treePixelW } = useMemo(
+    () => root ? computeTreeLayout(root) : { layout: [], canvasW: 300, canvasH: 120, treePixelW: 0 },
     [root],
   );
-  const offsetX = canvasW / 2;
+  const offsetX = treePixelW > 0 ? (canvasW - treePixelW) / 2 : 0;
 
   // Build edge data
   const edges = useMemo(() => {
@@ -288,20 +293,28 @@ function BacktrackTree({ searchTree }: { searchTree: SearchTreeNode[] }) {
         </span>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-3 text-[10px] text-warm-stone-500">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm border" style={{ background: BT_COLORS.root.bg, borderColor: BT_COLORS.root.border }} /> 线求解
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm border" style={{ background: BT_COLORS.branch.bg, borderColor: BT_COLORS.branch.border }} /> 分支
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm border" style={{ background: BT_COLORS.solved.bg, borderColor: BT_COLORS.solved.border }} /> 得解
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm border" style={{ background: BT_COLORS.contradiction.bg, borderColor: BT_COLORS.contradiction.border }} /> 矛盾
-        </span>
+      {/* Legend with explanation */}
+      <div className="mb-3 p-2 bg-white rounded-lg border border-warm-stone-200 text-[10px] leading-relaxed text-warm-stone-600">
+        <p className="mb-1.5">
+          <strong>{t('nonogram.btExplanationTitle')}</strong>{t('nonogram.btExplanationBody')}
+        </p>
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm border shrink-0" style={{ background: BT_COLORS.root.bg, borderColor: BT_COLORS.root.border }} /> {t('nonogram.btLegendRoot')}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm border shrink-0" style={{ background: BT_COLORS.branch.bg, borderColor: BT_COLORS.branch.border }} /> {t('nonogram.btLegendBranch')}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm border shrink-0" style={{ background: BT_COLORS.solved.bg, borderColor: BT_COLORS.solved.border }} /> {t('nonogram.btLegendSolved')}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm border shrink-0" style={{ background: BT_COLORS.contradiction.bg, borderColor: BT_COLORS.contradiction.border }} /> {t('nonogram.btLegendContradiction')}
+          </span>
+        </div>
+        <p className="mt-1 text-warm-stone-400">
+          {t('nonogram.btNodeFormat')}
+        </p>
       </div>
 
       {/* Tree canvas */}
@@ -336,9 +349,9 @@ function BacktrackTree({ searchTree }: { searchTree: SearchTreeNode[] }) {
                   border: `2px solid ${s.border}`,
                   color: s.text,
                 }}
-                title={btNodeLabel(ln.node)}
+                title={btNodeLabel(ln.node, t)}
               >
-                <span className="truncate">{btNodeLabel(ln.node)}</span>
+                <span className="truncate">{btNodeLabel(ln.node, t)}</span>
               </div>
             );
           })}
@@ -379,7 +392,7 @@ export function NonogramTraceViz({ trace, solution }: Props) {
           {t('nonogram.nodesExplored')}: {nodesExplored}
         </div>
         <div className="px-2 py-1 rounded bg-clarity-teal-100 text-clarity-teal-800 font-semibold">
-          {t('nonogram.lineSolved')}: {algo?.totalLineSolveIterations ?? 0} steps
+          {t('nonogram.lineSolved')}: {t('nonogram.lineSolveSteps', { count: algo?.totalLineSolveIterations ?? 0 })}
         </div>
         {backtracks > 0 && (
           <div className="px-2 py-1 rounded bg-amber-100 text-amber-800 font-semibold">
@@ -433,7 +446,11 @@ export function NonogramTraceViz({ trace, solution }: Props) {
                     onClick={() => setSelected(i)}
                     className={`px-2 py-1 rounded text-[10px] font-medium transition-all
                       ${i === selected ? 'bg-logic-indigo-600 text-white' : 'bg-warm-stone-100 text-warm-stone-600 hover:bg-warm-stone-200'}`}
-                    title={`${s.lineType === 'row' ? 'Row' : 'Col'} ${s.lineIndex + 1}: ${s.determinedIndices.length} cells`}
+                    title={t('nonogram.lineStepTooltip', {
+                      type: t(s.lineType === 'row' ? 'nonogram.row' : 'nonogram.col'),
+                      index: s.lineIndex + 1,
+                      count: s.determinedIndices.length,
+                    })}
                   >
                     {s.lineType === 'row' ? 'R' : 'C'}{s.lineIndex + 1}
                   </button>

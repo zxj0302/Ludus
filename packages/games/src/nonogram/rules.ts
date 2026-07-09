@@ -2,7 +2,6 @@ import type { Difficulty } from '@ludus/core';
 import type { NonogramState, NonogramMove, CellState } from './types';
 import { EMPTY, FILLED, CROSS } from './types';
 import { computeNonogramDifficulty } from './difficulty';
-import { solveNonogram } from './solver';
 
 export type { NonogramState, NonogramMove, CellState };
 

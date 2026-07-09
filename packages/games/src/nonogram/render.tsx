@@ -23,7 +23,6 @@ const MIN_CELL_SIZE = 12;
 const MAX_CELL_SIZE = 40;
 const CLUE_FONT_MIN = 8;
 const CLUE_FONT_MAX = 14;
-const GRID_GROUP_SIZE = 5;
 
 interface Layout {
   cellSize: number;
@@ -60,8 +59,14 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
   const { width, height, grid, rowClues, colClues, solution } = state;
 
   // ═══════════════════════════════════════════════════════════════
-  // Layout — memoized, only recomputes on dimension/clue changes
+  // Layout — recomputes on dimension/clue changes AND container resize
   // ═══════════════════════════════════════════════════════════════
+  //
+  // layoutVersion is bumped by ResizeObserver to force re-computation when
+  // the container size changes (refs don't invalidate useMemo).
+  // Initial value 0 → first render (ref null) returns null; ResizeObserver
+  // fires after mount → bumps version → useMemo re-runs with valid ref.
+  const [layoutVersion, setLayoutVersion] = useState(0);
 
   const layout = useMemo<Layout | null>(() => {
     const container = containerRef.current;
@@ -92,11 +97,12 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
       cellSize,
       rowClueWidth,
       colClueHeight,
-      canvasWidth: rowClueWidth + width * cellSize,
-      canvasHeight: colClueHeight + height * cellSize,
+      // +1 so thick border strokes aren't clipped at right/bottom canvas edge
+      canvasWidth: rowClueWidth + width * cellSize + 1,
+      canvasHeight: colClueHeight + height * cellSize + 1,
       clueFontSize,
     };
-  }, [width, height, rowClues, colClues]);
+  }, [width, height, rowClues, colClues, layoutVersion]);
 
   // Stable ref for layout (for use in mouse handlers)
   const layoutRef = useRef(layout);
@@ -117,13 +123,13 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
     paint();
   }, [layout]);
 
-  // ResizeObserver — only needs to trigger layout recalculation
+  // ResizeObserver — bumps layoutVersion to trigger useMemo re-computation
+  // (ref changes don't invalidate useMemo, so we need a state signal)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const observer = new ResizeObserver(() => {
-      // Force re-render by triggering a state update
-      setCursor(c => c ? { ...c } : null);
+      setLayoutVersion(v => v + 1);
     });
     observer.observe(container);
     return () => observer.disconnect();
@@ -239,13 +245,12 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
       ctx.strokeRect(cx + 1, cy + 1, cellSize - 2, cellSize - 2);
     }
 
-    // Grid lines — thick every 5 cells only for larger grids (≥10)
-    const useGroupLines = w >= 10 || h >= 10;
+    // Grid lines — outer border thick, internal lines thin
     for (let r = 0; r <= h; r++) {
       const y = colClueHeight + r * cellSize;
-      const isGroup = useGroupLines && r % GRID_GROUP_SIZE === 0;
-      ctx.strokeStyle = isGroup ? COLORS.thickLine : COLORS.gridLine;
-      ctx.lineWidth = isGroup ? 2 : 0.5;
+      const isBorder = r === 0 || r === h;
+      ctx.strokeStyle = isBorder ? COLORS.thickLine : COLORS.gridLine;
+      ctx.lineWidth = isBorder ? 2 : 0.5;
       ctx.beginPath();
       ctx.moveTo(rowClueWidth, y);
       ctx.lineTo(rowClueWidth + w * cellSize, y);
@@ -253,9 +258,9 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
     }
     for (let c = 0; c <= w; c++) {
       const x = rowClueWidth + c * cellSize;
-      const isGroup = useGroupLines && c % GRID_GROUP_SIZE === 0;
-      ctx.strokeStyle = isGroup ? COLORS.thickLine : COLORS.gridLine;
-      ctx.lineWidth = isGroup ? 2 : 0.5;
+      const isBorder = c === 0 || c === w;
+      ctx.strokeStyle = isBorder ? COLORS.thickLine : COLORS.gridLine;
+      ctx.lineWidth = isBorder ? 2 : 0.5;
       ctx.beginPath();
       ctx.moveTo(x, colClueHeight);
       ctx.lineTo(x, colClueHeight + h * cellSize);

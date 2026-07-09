@@ -1,7 +1,7 @@
 import type { Level, LevelConfig } from '@ludus/core';
 import type { NonogramState } from './types';
 import { createInitialState, computeClues, totalClueCount } from './rules';
-import { countSolutions, solveNonogram, isFullyLineSolvable } from './solver';
+import { countSolutions, solveNonogram } from './solver';
 import { computeNonogramDifficulty } from './difficulty';
 
 /**
@@ -155,12 +155,9 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     const maxBacktrackDepth = solveResult.stats.maxDepth;
     const clues = totalClueCount(rowClues, colClues);
 
-    // Backtracking requirement: medium/hard should NOT be pure line-solving
-    if (isHard && solveResult.stats.backtracks === 0) continue; // Hard: must backtrack
-    if (isMedium && solveResult.stats.backtracks === 0) {
-      // Medium: prefer backtracking, but accept if best so far
-      // Skip pure line-solving for medium unless we haven't found anything better
-    }
+    // Backtracking requirement: hard should NOT be pure line-solving
+    if (isHard && solveResult.stats.backtracks === 0) continue;
+    // Medium: accept pure line-solving puzzles (allows fallback if no backtracking puzzle found)
 
     const difficulty = computeNonogramDifficulty(
       width, height, lineSolveCells, totalCells, maxBacktrackDepth, clues,

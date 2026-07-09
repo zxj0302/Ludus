@@ -324,30 +324,64 @@ export function EducationPanel({
                 let title: string; let icon: string; let body: React.ReactNode;
 
                 if (hasMoves) {
-                  title = t('education.optimalSolution', { count: solution.moves.length });
-                  icon = '👆';
-                  const playersFirst = getPlayerStarts(solution);
-                  body = (
-                    <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
-                      {solution.moves.map((m, i) => {
-                        const isCurrentStep = solvePlayback && i === solveStepIndex;
-                        const isPastStep = solvePlayback && i < solveStepIndex;
-                        const label = formatMove(gameId, m, i, playersFirst, t);
-                        return (
-                          <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
-                            text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
-                            ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
-                              isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
-                              'text-warm-stone-600'}
-                          `}>
-                            <span className="w-5 text-right tabular-nums">{i + 1}.</span>
-                            <span>{label}</span>
-                            {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
+                  // Nonogram: show solution as a visual grid instead of a step list
+                  if (gameId === 'nonogram') {
+                    const solGrid = (solution.trace?.visualizationData as any)?.solutionGrid as boolean[][] | null;
+                    const w = solGrid?.[0]?.length ?? 0;
+                    const h = solGrid?.length ?? 0;
+                    title = t('education.optimalSolution', { count: solution.moves.length });
+                    icon = '👆';
+                    body = solGrid && w > 0 ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="text-[10px] text-warm-stone-500">{t('nonogram.solutionPreview')}</div>
+                        <div
+                          className="grid border-2 border-warm-stone-500"
+                          style={{
+                            gridTemplateColumns: `repeat(${w}, 1fr)`,
+                            width: Math.min(200, w * 20),
+                          }}
+                        >
+                          {solGrid.flat().map((filled, i) => (
+                            <div
+                              key={i}
+                              className="border-[0.5px] border-warm-stone-300"
+                              style={{
+                                aspectRatio: '1',
+                                background: filled ? '#292524' : '#fafaf9',
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-warm-stone-500">{t('nonogram.noTrace')}</p>
+                    );
+                  } else {
+                    title = t('education.optimalSolution', { count: solution.moves.length });
+                    icon = '👆';
+                    const playersFirst = getPlayerStarts(solution);
+                    body = (
+                      <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
+                        {solution.moves.map((m, i) => {
+                          const isCurrentStep = solvePlayback && i === solveStepIndex;
+                          const isPastStep = solvePlayback && i < solveStepIndex;
+                          const label = formatMove(gameId, m, i, playersFirst, t);
+                          return (
+                            <div key={i} ref={isCurrentStep ? currentStepRef : undefined} className={`
+                              text-xs py-1.5 px-2.5 rounded-md font-mono flex items-center gap-2 transition-colors
+                              ${isCurrentStep ? 'bg-game-amber-100 text-game-amber-700 font-bold' :
+                                isPastStep ? 'bg-clarity-teal-light/40 text-clarity-teal-dark' :
+                                'text-warm-stone-600'}
+                            `}>
+                              <span className="w-5 text-right tabular-nums">{i + 1}.</span>
+                              <span>{label}</span>
+                              {isCurrentStep && <span className="ml-auto text-[10px]">◀</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
                 } else if (isGameOver) {
                   title = t('education.gameOver');
                   icon = '🏁';

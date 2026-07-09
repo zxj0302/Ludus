@@ -426,8 +426,10 @@ function backtrackSolve(
   guessCell?: { row: number; col: number },
   guessValue?: 'fill' | 'cross',
 ): { result: 'solved' | 'contradiction' } {
-  // Early exit if we've reached the limit
-  if (solutions.length >= limit) return { result: 'contradiction' };
+  // Hard cap on exploration (prevents runaway on pathological puzzles)
+  if (stats.searchTree.length >= 200) {
+    return { result: 'contradiction' };
+  }
 
   const nodeId = stats.nextNodeId++;
   stats.nodesExplored++;
@@ -440,56 +442,67 @@ function backtrackSolve(
   const afterLineSolve = s.cells.filter(c => c !== EMPTY).length;
   const newCells = afterLineSolve - beforeLineSolve;
 
-  // Record search tree node (cap at 200)
-  if (stats.searchTree.length < 200) {
-    const node: SearchTreeNode = {
-      id: nodeId,
-      parentId,
-      cell: guessCell,
-      guess: guessValue,
-      depth,
-      result: isAllDetermined(s) && verifySolution(s) ? 'solved' : 'branch',
-      newCells,
-    };
-    stats.searchTree.push(node);
-  }
+  // Record search tree node
+  const node: SearchTreeNode = {
+    id: nodeId,
+    parentId,
+    cell: guessCell,
+    guess: guessValue,
+    depth,
+    result: isAllDetermined(s) && verifySolution(s) ? 'solved' : 'branch',
+    newCells,
+  };
+  stats.searchTree.push(node);
+
+  // Update node helper
+  const setNodeResult = (res: 'solved' | 'contradiction') => {
+    const n = stats.searchTree.find(x => x.id === nodeId);
+    if (n) n.result = res;
+  };
 
   // Check contradiction
   if (!verifyLineConsistency(s)) {
-    // Update node result
-    const node = stats.searchTree.find(n => n.id === nodeId);
-    if (node) node.result = 'contradiction';
+    setNodeResult('contradiction');
     return { result: 'contradiction' };
   }
 
   // Check if solved
   if (isAllDetermined(s)) {
     if (verifySolution(s)) {
-      solutions.push(cloneInternal(s));
-      // Update node result
-      const node = stats.searchTree.find(n => n.id === nodeId);
-      if (node) node.result = 'solved';
+      // Only collect solutions up to limit (but continue exploring for trace)
+      if (solutions.length < limit) {
+        solutions.push(cloneInternal(s));
+      }
+      setNodeResult('solved');
       return { result: 'solved' };
     }
+    setNodeResult('contradiction');
     return { result: 'contradiction' };
   }
 
-  // Phase 2: Pick a cell to branch on
+  // Phase 2: Pick a cell to branch on — always explore BOTH children
   const cell = pickCell(s);
   if (!cell) return { result: 'contradiction' };
 
   stats.backtracks++;
 
+  let anySolved = false;
+
   // Branch 1: Fill
   const s1 = cloneInternal(s);
   s1.cells[cell.row * s.width + cell.col] = FILLED;
-  const r1 = backtrackSolve(s1, limit, depth + 1, stats, solutions, nodeId, cell, 'fill');
-  if (solutions.length >= limit) return r1;
+  if (backtrackSolve(s1, limit, depth + 1, stats, solutions, nodeId, cell, 'fill').result === 'solved') {
+    anySolved = true;
+  }
 
-  // Branch 2: Cross
+  // Branch 2: Cross — always explore (never skip for early exit)
   const s2 = cloneInternal(s);
   s2.cells[cell.row * s.width + cell.col] = CROSS;
-  return backtrackSolve(s2, limit, depth + 1, stats, solutions, nodeId, cell, 'cross');
+  if (backtrackSolve(s2, limit, depth + 1, stats, solutions, nodeId, cell, 'cross').result === 'solved') {
+    anySolved = true;
+  }
+
+  return anySolved ? { result: 'solved' } : { result: 'contradiction' };
 }
 
 /**
@@ -618,6 +631,7 @@ export function solveNonogram(state: NonogramState): NonogramSolveResult {
         timeMs: elapsed,
         width: state.width,
         height: state.height,
+        solutionGrid: solution ?? null,
         algorithmTrace,
       },
     },
