@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
 import { getGameEntry } from '@ludus/games';
-import { MarkdownRenderer } from '@ludus/ui';
+import { DifficultySelector, MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
 import { StatusCard } from '../statusCards';
@@ -72,6 +72,34 @@ function splitSections(md: string): { key: string; english: string; chinese: str
   return sections;
 }
 
+export function getSectionViewModel(section: { key: string }): { showCreateLevelControl: boolean } {
+  return { showCreateLevelControl: section.key === 'create' };
+}
+
+function CreateLevelControl() {
+  const difficultyRange = useGameStore(s => s.difficultyRange);
+  const setDifficultyRange = useGameStore(s => s.setDifficultyRange);
+  const newLevel = useGameStore(s => s.newLevel);
+
+  const handlePresetChange = useCallback(
+    (range: [number, number]) => {
+      setDifficultyRange(range);
+      newLevel();
+    },
+    [setDifficultyRange, newLevel],
+  );
+
+  return (
+    <div className="mb-3 rounded-card border border-violet-200 bg-violet-50 px-3 py-3">
+      <DifficultySelector
+        value={difficultyRange}
+        onPresetChange={handlePresetChange}
+        onGenerate={newLevel}
+      />
+    </div>
+  );
+}
+
 const SectionCard = React.memo(function SectionCard({
   section, language,
 }: {
@@ -82,6 +110,7 @@ const SectionCard = React.memo(function SectionCard({
   if (!style) return <MarkdownRenderer content={section.body} />;
 
   const title = language.startsWith('zh') ? section.chinese : section.english;
+  const viewModel = getSectionViewModel(section);
 
   return (
     <motion.div
@@ -101,6 +130,7 @@ const SectionCard = React.memo(function SectionCard({
         </h3>
       </div>
       <div className="px-4 py-3">
+        {viewModel.showCreateLevelControl && <CreateLevelControl />}
         <MarkdownRenderer content={section.body} />
       </div>
     </motion.div>
