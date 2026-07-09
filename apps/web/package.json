@@ -1,6 +1,6 @@
 {
   "name": "ludus-web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Ludus Web 应用 — Vite + React SPA，静态部署入口",
   "type": "module",

@@ -4,6 +4,13 @@ All notable changes to Ludus are documented in this file.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-07-09
+
+### Fixed
+
+- Windows desktop installer blank window: shell builds no longer pass Vite's relative asset base (`./`) to React Router as `basename`.
+- Release package versions are synchronized to `0.1.1`, so future desktop bundles use the correct installer filename version.
+
 ## [0.1.0] - 2026-07-09
 
 ### Added
@@ -15,7 +22,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 通用 `DifficultySelector` + `GeneratorToolbar`（7 款游戏接入）
 - **桌面端**：Tauri 2 套壳（`pnpm dev:desktop` / `pnpm build:desktop`）
 - **移动端**：Capacitor 6 配置骨架（`pnpm sync:mobile`）
-- GitHub Actions CI：typecheck、384 测试、web/shell/pages 构建
+- GitHub Actions CI：typecheck、386 测试、web/shell 构建
 
 ### Fixed
 
@@ -34,4 +41,5 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - 4×4 / 5×5 Lights Out 在 `requireUnique` 时无法保证唯一解
 - 移动端仅配置就绪，未做设备端验证
 
+[0.1.1]: https://github.com/zxj0302/Ludus/releases/tag/v0.1.1
 [0.1.0]: https://github.com/zxj0302/Ludus/releases/tag/v0.1.0

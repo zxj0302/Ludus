@@ -87,7 +87,7 @@ Ludus/
 - [x] Phase 4：Lights Out 垂直切片
 - [x] Phase 5：8 款增量游戏
 - [x] Phase 6：Hub、进度、生成器 UI、Tauri/Capacitor 套壳
-- [ ] Phase 7：CI ✅、首个 release（v0.1.0 待打 tag）
+- [x] Phase 7：CI ✅、首个 release ✅、v0.1.1 桌面空白页修复版 ✅
 
 完整 backlog：162 款游戏（`docs/phases/00-backlog.md`）。
 

@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、v0.1.1 Windows 修复版已发布；修复 v0.1.0 安装包空白页。
+- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、v0.1.1 Windows 修复版已发布；版本号已同步到 0.1.1。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，386 个测试（全过），CI 就绪，Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，387 个测试（全过），CI 就绪，Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：41 个测试文件，386 测试全过。
+- **测试覆盖**：41 个测试文件，387 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -142,12 +142,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-桌面安装包空白页修复版 `v0.1.1` 已发布。下一步：
+桌面安装包空白页修复版 `v0.1.1` 已发布，版本号已同步到 0.1.1。下一步：
 
 1. **建议手动下载验证**：从 `v0.1.1` Release 下载 Windows 安装包，确认打开不再空白
-2. **版本号清理**：Tauri 配置仍为 `0.1.0`，导致 `v0.1.1` Release 资产文件名仍是 `Ludus_0.1.0...`；下一次补丁发布前应同步更新桌面/移动 package 与 Tauri 版本
-3. **完成移动端真机验证**：安装/配置 Android Studio SDK，确保 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 与 `adb` 可用，然后运行 `pnpm --filter ludus-mobile exec cap run android --list` / 真机运行
-4. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
+2. **完成移动端真机验证**：安装/配置 Android Studio SDK，确保 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 与 `adb` 可用，然后运行 `pnpm --filter ludus-mobile exec cap run android --list` / 真机运行
+3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
 
 ## 🐛 KNOWN ISSUES
 
@@ -155,11 +154,10 @@
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
 - 本机移动端真机运行环境未完成：Capacitor Android 工程通过 doctor，但当前机器未配置可发现的 Android SDK root，且 PATH 中无 `adb`/`emulator`
-- Release 资产版本命名未同步：`v0.1.1` tag 下的 Windows 安装包文件名仍为 `Ludus_0.1.0...`（Tauri `version` 仍为 0.1.0）
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 6 / 7 横切与发布已基本完成；当前待确认是否手动下载验证 `v0.1.1` 安装包，以及是否做版本号同步清理。
+- 阶段 6 / 7 横切与发布已基本完成；当前待确认是否手动下载验证 `v0.1.1` 安装包，或继续移动端真机验证 / 6c 教育出题参数。
 
 ## 📝 SESSION LOG
 
@@ -560,3 +558,4 @@
 - [2026-07-09] **Release + 移动端验证**：确认 `v0.1.0` Release 已产出 `.exe`/`.msi` Windows 安装包；`pnpm sync:mobile` 与 Capacitor Android doctor 通过；真机运行因本机 Android SDK/adb 未配置而阻塞。
 - [2026-07-09] **桌面安装包空白页修复**：根因是 shell 构建 `BASE_URL='./'` 被传入 React Router 作为 `basename='.'`；新增 `resolveRouterBasename` 只保留绝对部署路径，shell/桌面不再设置 basename。新增 2 个回归测试；386 测试全过，`pnpm build:desktop` 成功产出 `.exe`/`.msi`。
 - [2026-07-09] **v0.1.1 发布**：提交 `6e1a533`，推送 `v0.1.1` tag；GitHub CI 与 Release workflow 均成功，Release 已上传 `.exe`/`.msi`。注意资产文件名仍显示 `0.1.0`，需后续同步 Tauri/package 版本。
+- [2026-07-09] **版本号同步**：apps/web、apps/desktop、apps/mobile、packages/core/games/education/ui、Tauri config、Cargo.toml/Cargo.lock 全部同步到 `0.1.1`；新增 shell packaging 测试防止发布版本再次不一致；更新 CHANGELOG/README。387 测试全过，`pnpm build:desktop` 产出 `Ludus_0.1.1_x64-setup.exe` / `Ludus_0.1.1_x64_en-US.msi`。

@@ -1,6 +1,6 @@
 {
   "name": "@ludus/games",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Ludus 游戏模块层 — 每款游戏自包含，实现 GamePlugin 接口",
   "type": "module",
