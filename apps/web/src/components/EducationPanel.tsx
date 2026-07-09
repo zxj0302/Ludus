@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import { KnowledgeCard } from './KnowledgeCard';
 import { getGameEntry } from '@ludus/games';
-import { DifficultySelector, MarkdownRenderer } from '@ludus/ui';
+import { MarkdownRenderer } from '@ludus/ui';
 import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
 import { StatusCard } from '../statusCards';
 import { getPlayerStarts } from '../utils/solution';
+import { getSectionViewModel } from './educationSectionViewModel';
 
 type Stage = 'play' | 'think' | 'reveal' | 'solve' | 'create';
 
@@ -72,30 +73,13 @@ function splitSections(md: string): { key: string; english: string; chinese: str
   return sections;
 }
 
-export function getSectionViewModel(section: { key: string }): { showCreateLevelControl: boolean } {
-  return { showCreateLevelControl: section.key === 'create' };
-}
-
-function CreateLevelControl() {
-  const difficultyRange = useGameStore(s => s.difficultyRange);
-  const setDifficultyRange = useGameStore(s => s.setDifficultyRange);
-  const newLevel = useGameStore(s => s.newLevel);
-
-  const handlePresetChange = useCallback(
-    (range: [number, number]) => {
-      setDifficultyRange(range);
-      newLevel();
-    },
-    [setDifficultyRange, newLevel],
-  );
+function CreateSectionCallout() {
+  const { t } = useTranslation();
 
   return (
-    <div className="mb-3 rounded-card border border-violet-200 bg-violet-50 px-3 py-3">
-      <DifficultySelector
-        value={difficultyRange}
-        onPresetChange={handlePresetChange}
-        onGenerate={newLevel}
-      />
+    <div className="mb-3 rounded-card border border-violet-200 bg-violet-50 px-3 py-2">
+      <p className="text-xs font-semibold text-violet-800">{t('generator.createCard.title')}</p>
+      <p className="mt-1 text-xs text-warm-stone-600">{t('generator.createCard.description')}</p>
     </div>
   );
 }
@@ -130,7 +114,7 @@ const SectionCard = React.memo(function SectionCard({
         </h3>
       </div>
       <div className="px-4 py-3">
-        {viewModel.showCreateLevelControl && <CreateLevelControl />}
+        {viewModel.showCreateDesignCallout && <CreateSectionCallout />}
         <MarkdownRenderer content={section.body} />
       </div>
     </motion.div>

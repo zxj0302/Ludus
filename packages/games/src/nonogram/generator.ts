@@ -21,6 +21,24 @@ function randInt(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
 }
 
+function numParam(config: LevelConfig, key: string): number | null {
+  const value = config.gameParams?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function boolParam(config: LevelConfig, key: string): boolean | null {
+  const value = config.gameParams?.[key];
+  return typeof value === 'boolean' ? value : null;
+}
+
+function densityParam(config: LevelConfig): [number, number] | null {
+  const density = config.gameParams?.density;
+  if (density === 'sparse') return [0.25, 0.40];
+  if (density === 'dense') return [0.50, 0.70];
+  if (density === 'balanced') return [0.35, 0.55];
+  return null;
+}
+
 /**
  * Generate a random boolean pattern for a Nonogram puzzle.
  *
@@ -100,8 +118,12 @@ export function generateNonogramLevel(config: LevelConfig): Level {
   let height: number;
 
   const targetScore = rangeLo + (rangeHi - rangeLo) * rng();
+  const explicitSize = numParam(config, 'size') ?? config.size ?? null;
 
-  if (targetScore <= 33) {
+  if (explicitSize) {
+    const size = Math.max(5, Math.min(10, Math.round(explicitSize)));
+    width = size; height = size;
+  } else if (targetScore <= 33) {
     // Easy: 5×5 — mostly line-solvable
     width = 5; height = 5;
   } else if (targetScore <= 66) {
@@ -127,7 +149,9 @@ export function generateNonogramLevel(config: LevelConfig): Level {
   const isMedium = targetScore > 33 && targetScore <= 66;
   const isHard = targetScore > 66;
 
-  const densityRange: [number, number] = isHard ? [0.25, 0.40] : isMedium ? [0.30, 0.45] : [0.40, 0.60];
+  const densityRange: [number, number] = densityParam(config)
+    ?? (isHard ? [0.25, 0.40] : isMedium ? [0.30, 0.45] : [0.40, 0.60]);
+  const requireBacktracking = boolParam(config, 'requireBacktracking') ?? isHard;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Generate a random pattern
@@ -156,7 +180,7 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     const clues = totalClueCount(rowClues, colClues);
 
     // Backtracking requirement: hard should NOT be pure line-solving
-    if (isHard && solveResult.stats.backtracks === 0) continue;
+    if (requireBacktracking && solveResult.stats.backtracks === 0) continue;
     // Medium: accept pure line-solving puzzles (allows fallback if no backtracking puzzle found)
 
     const difficulty = computeNonogramDifficulty(

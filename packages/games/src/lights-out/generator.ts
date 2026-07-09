@@ -12,6 +12,16 @@ export interface GenerateOptions {
   seed?: number;
 }
 
+function numParam(config: LevelConfig, key: string, fallback: number): number {
+  const value = config.gameParams?.[key];
+  return typeof value === 'number' ? value : fallback;
+}
+
+function boolParam(config: LevelConfig, key: string, fallback: boolean): boolean {
+  const value = config.gameParams?.[key];
+  return typeof value === 'boolean' ? value : fallback;
+}
+
 // ---- 伪随机数生成器 (mulberry32) ----
 
 function mulberry32(seed: number): () => number {
@@ -40,10 +50,10 @@ export function generateLightsOutLevel(config: LevelConfig & {
   requireOptimal?: boolean;
 }): Level {
   const n = config.size ?? config.n ?? 5;
-  const minMoves = config.minMoves ?? 3;
-  const maxMoves = config.maxMoves ?? 15;
-  let requireUnique = config.requireUniqueSolution ?? config.requireUnique ?? true;
-  const requireOptimal = config.requireKnownOptimal ?? config.requireOptimal ?? true;
+  const minMoves = Math.max(1, numParam(config, 'minMoves', config.minMoves ?? 3));
+  const maxMoves = Math.max(minMoves, numParam(config, 'maxMoves', config.maxMoves ?? 15));
+  let requireUnique = boolParam(config, 'requireUniqueSolution', config.requireUniqueSolution ?? config.requireUnique ?? true);
+  const requireOptimal = boolParam(config, 'requireKnownOptimal', config.requireKnownOptimal ?? config.requireOptimal ?? true);
   const seed = config.seed ?? Date.now();
 
   const rand = mulberry32(seed);

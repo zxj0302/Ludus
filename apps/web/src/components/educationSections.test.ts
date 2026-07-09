@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getSectionViewModel } from './EducationPanel';
+import { getSectionViewModel } from './educationSectionViewModel';
 
 describe('getSectionViewModel', () => {
-  it('marks only the Create education section as generator-capable', () => {
-    expect(getSectionViewModel({ key: 'create' }).showCreateLevelControl).toBe(true);
-    expect(getSectionViewModel({ key: 'solve' }).showCreateLevelControl).toBe(false);
-    expect(getSectionViewModel({ key: 'play' }).showCreateLevelControl).toBe(false);
+  it('marks only the Create education section for a design-principle callout', () => {
+    expect(getSectionViewModel({ key: 'create' }).showCreateDesignCallout).toBe(true);
+    expect(getSectionViewModel({ key: 'solve' }).showCreateDesignCallout).toBe(false);
+    expect(getSectionViewModel({ key: 'play' }).showCreateDesignCallout).toBe(false);
   });
 });

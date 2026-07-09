@@ -53,6 +53,25 @@ describe('Nonogram — generator', () => {
     expect(state.height).toBeLessThanOrEqual(8);
   });
 
+  it('accepts size and density controls from gameParams', () => {
+    const level = generateNonogramLevel({
+      ...baseConfig,
+      difficultyRange: [1, 100],
+      seed: 123,
+      gameParams: {
+        size: 6,
+        density: 'dense',
+        requireBacktracking: false,
+      },
+    });
+    const state = level.initialState as NonogramState;
+    const filledCells = state.solution.flat().filter(Boolean).length;
+
+    expect(state.width).toBe(6);
+    expect(state.height).toBe(6);
+    expect(filledCells).toBeGreaterThan(0);
+  });
+
   it('initial state grid is all empty', () => {
     const level = generateNonogramLevel(baseConfig);
     const state = level.initialState as NonogramState;

@@ -13,6 +13,11 @@ export interface DifficultySelectorProps {
   onPresetChange: (range: [number, number], preset: DifficultyPreset) => void;
   /** Optional explicit regenerate button (same preset, new seed). */
   onGenerate?: () => void;
+  /** Optional secondary generator action shown inside the same compact dropdown. */
+  onAdvancedSelect?: () => void;
+  advancedLabelKey?: string;
+  showAdvancedUnavailable?: boolean;
+  advancedUnavailableLabelKey?: string;
   generateLabelKey?: string;
   className?: string;
 }
@@ -24,7 +29,7 @@ const wrapperClass =
 
 const selectClass =
   'appearance-none bg-transparent border-0 outline-none ' +
-  'px-2.5 py-1.5 pr-5 cursor-pointer text-xs font-medium text-warm-stone-700';
+  'w-16 px-2.5 py-1.5 pr-5 cursor-pointer text-xs font-medium text-warm-stone-700';
 
 const arrowClass =
   'pointer-events-none absolute right-1.5 text-warm-stone-400 text-[10px] leading-none';
@@ -33,10 +38,16 @@ const refreshBtnClass =
   'px-2.5 py-1.5 rounded-btn text-xs font-semibold transition-all duration-150 active:scale-[0.97] ' +
   'bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 shadow-sm';
 
+const ADVANCED_OPTION_VALUE = '__advanced_generation__';
+
 export function DifficultySelector({
   value,
   onPresetChange,
   onGenerate,
+  onAdvancedSelect,
+  advancedLabelKey = 'generator.advanced.show',
+  showAdvancedUnavailable = false,
+  advancedUnavailableLabelKey = 'generator.advanced.unavailable',
   generateLabelKey = 'game.toolbar.new',
   className = '',
 }: DifficultySelectorProps) {
@@ -45,10 +56,14 @@ export function DifficultySelector({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (e.target.value === ADVANCED_OPTION_VALUE) {
+        onAdvancedSelect?.();
+        return;
+      }
       const preset = e.target.value as DifficultyPreset;
       onPresetChange(presetToRange(preset), preset);
     },
-    [onPresetChange],
+    [onAdvancedSelect, onPresetChange],
   );
 
   return (
@@ -66,6 +81,16 @@ export function DifficultySelector({
               {t(opt.i18nKey)}
             </option>
           ))}
+          {(onAdvancedSelect || showAdvancedUnavailable) && (
+            <>
+              <option disabled value="__separator__">────────</option>
+              {onAdvancedSelect ? (
+                <option value={ADVANCED_OPTION_VALUE}>{t(advancedLabelKey)}</option>
+              ) : (
+                <option disabled value="__advanced_unavailable__">{t(advancedUnavailableLabelKey)}</option>
+              )}
+            </>
+          )}
         </select>
         <span className={arrowClass} aria-hidden="true">▾</span>
       </label>

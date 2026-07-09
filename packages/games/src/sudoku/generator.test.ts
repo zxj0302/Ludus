@@ -22,6 +22,35 @@ describe('generateSudokuLevel', () => {
     expect(clues).toBeLessThanOrEqual(36);
   });
 
+  it('accepts a clue target from gameParams', () => {
+    const level = generateSudokuLevel({
+      difficultyRange: [30, 70],
+      gameParams: {
+        clues: 36,
+      },
+    });
+    const clues = (level.initialState.grid as number[]).filter(v => v !== 0).length;
+
+    expect(clues).toBeGreaterThanOrEqual(36);
+    expect(countSudokuSolutions(level.initialState.grid as number[], 2)).toBe(1);
+  });
+
+  it('honors an explicit clue target exactly when generating advanced levels', () => {
+    const level = generateSudokuLevel({
+      difficultyRange: [30, 70],
+      gameParams: {
+        clues: 20,
+      },
+    });
+    const grid = level.initialState.grid as number[];
+    const clues = grid.filter(v => v !== 0).length;
+    const emptyCells = grid.filter(v => v === 0).length;
+
+    expect(clues).toBe(20);
+    expect(emptyCells).toBe(61);
+    expect(countSudokuSolutions(grid, 2)).toBe(1);
+  });
+
   it('produces valid givenMask', () => {
     const level = generateSudokuLevel({ difficultyRange: [0, 50] });
     const grid = level.initialState.grid as number[];

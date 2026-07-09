@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GamePlugin, GameState, Move, Solution, WorkerRequest, WorkerResponse } from '@ludus/core';
+import type { GamePlugin, GameState, Level, Move, Solution, WorkerRequest, WorkerResponse } from '@ludus/core';
 import { getGame, getGameEntry } from '@ludus/games';
 import type { DisclosureLevel } from '@ludus/ui';
 import i18n from '../i18n';
@@ -8,6 +8,7 @@ import { scheduleTimeout, clearAllPlaybackTimers } from '../utils/playbackContro
 import SolverWorker from '../workers/solver.worker?worker';
 import { buildProgressSnapshot, getCurrentElapsedMs, timerFieldsForSession } from '../utils/progressSnapshot';
 import { useProgressStore, parseRestorableSnapshot } from './progressStore';
+import { buildGeneratorLevelConfig, getGeneratorParams, type GeneratorParamValue, type GeneratorParams } from '../generatorControls';
 
 // ═══════════════════════════════════════════════════════════════
 // 通用 AI 调度 — 通过 plugin.ai 实现，不依赖具体游戏
@@ -268,16 +269,34 @@ function applyHintFromSolution(
 // 关卡生成 — 尝试 generateLevel，失败则 fallback 到 initialState
 // ═══════════════════════════════════════════════════════════════
 
-function generatePlayableState(plugin: GamePlugin, difficultyRange?: [number, number]): GameState {
+function fallbackLevel(plugin: GamePlugin): Level {
+  const initialState = plugin.initialState();
+  return {
+    schemaVersion: 1,
+    gameId: plugin.metadata.id,
+    levelId: `${plugin.metadata.id}-fallback-${Date.now()}`,
+    initialState,
+    difficulty: plugin.getDifficulty(initialState),
+    optimalSteps: null,
+    uniqueSolution: false,
+    generatedBy: 'initial-state-fallback',
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function generatePlayableLevel(
+  plugin: GamePlugin,
+  difficultyRange?: [number, number],
+  params?: GeneratorParams | null,
+): Level {
   try {
-    const level = plugin.generateLevel({
-      difficultyRange: difficultyRange ?? [1, 100],
-      size: 5,
-      requireUniqueSolution: false,
-    });
-    return level.initialState as GameState;
+    return plugin.generateLevel(buildGeneratorLevelConfig(
+      plugin.metadata.id,
+      difficultyRange ?? [1, 100],
+      params,
+    ));
   } catch {
-    return plugin.initialState();
+    return fallbackLevel(plugin);
   }
 }
 
@@ -318,6 +337,10 @@ interface GameStore {
   soundEnabled: boolean;
   difficultyRange: [number, number];
   setDifficultyRange: (range: [number, number]) => void;
+  generatorParamsByGame: Record<string, GeneratorParams>;
+  lastGeneratedLevel: Level | null;
+  setGeneratorParam: (gameId: string, key: string, value: GeneratorParamValue) => void;
+  resetGeneratorParams: (gameId: string) => void;
 
   loadGame: (gameId: string, options?: { resume?: boolean }) => void;
   loadCustomState: (state: GameState) => void;
@@ -325,7 +348,7 @@ interface GameStore {
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  newLevel: () => void;
+  newLevel: (options?: { useGeneratorParams?: boolean }) => void;
   requestSolve: () => void;
   requestHint: () => void;
   nextPlaybackStep: () => void;
@@ -367,6 +390,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   language: 'zh-CN',
   soundEnabled: true,
   difficultyRange: [1, 100],
+  generatorParamsByGame: {},
+  lastGeneratedLevel: null,
 
   loadGame: (gameId, options) => {
     clearTimers();
@@ -377,6 +402,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     let state: GameState | undefined;
     let history: GameState[] | undefined;
     let historyIndex: number | undefined;
+    let generatedLevel: Level | null = null;
     let restored = false;
 
     if (options?.resume) {
@@ -391,7 +417,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }
 
     if (!state || !history || historyIndex === undefined) {
-      state = generatePlayableState(plugin, get().difficultyRange);
+      generatedLevel = generatePlayableLevel(
+        plugin,
+        get().difficultyRange,
+        null,
+      );
+      state = generatedLevel.initialState as GameState;
       history = [state];
       historyIndex = 0;
       restored = false;
@@ -399,7 +430,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     // 最终防线：state 必须与本游戏 isOwnState 匹配，否则回退 initialState
     if (!entry?.isOwnState(state)) {
-      state = plugin.initialState();
+      generatedLevel = fallbackLevel(plugin);
+      state = generatedLevel.initialState as GameState;
       history = [state];
       historyIndex = 0;
       restored = false;
@@ -439,6 +471,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       startTime: timer.startTime,
       elapsed: timer.elapsed,
       educationOpen: false,
+      lastGeneratedLevel: restored ? null : generatedLevel,
     });
 
     persistGameProgress(gameId, plugin, state, history, historyIndex, opt, timer.elapsed, { newSession: !restored });
@@ -582,11 +615,19 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (hasAI) scheduleAI(get);
   },
 
-  newLevel: () => {
+  newLevel: (options) => {
     clearTimers();
     const { plugin, difficultyRange, gameId } = get();
     if (!plugin) return;
-    const state = generatePlayableState(plugin, difficultyRange);
+    const params = options?.useGeneratorParams
+      ? getGeneratorParams(plugin.metadata.id, get().generatorParamsByGame[plugin.metadata.id])
+      : null;
+    const level = generatePlayableLevel(
+      plugin,
+      difficultyRange,
+      params,
+    );
+    const state = level.initialState as GameState;
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
     const sol = isFastGame ? plugin.solve(state) : null;
@@ -605,6 +646,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       ...clearPlaybackState(),
       startTime: Date.now(),
       elapsed: 0,
+      lastGeneratedLevel: level,
     });
 
     persistGameProgress(gameId ?? null, plugin, state, [state], 0, opt, 0, { newSession: true });
@@ -634,6 +676,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       ...clearPlaybackState(),
       startTime: Date.now(),
       elapsed: 0,
+      lastGeneratedLevel: null,
     });
 
     const elapsedMs = getCurrentElapsedMs(get().startTime, get().elapsed);
@@ -850,6 +893,21 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
   setDifficultyRange: (range) => set({ difficultyRange: range }),
+  setGeneratorParam: (gameId, key, value) => set(s => ({
+    generatorParamsByGame: {
+      ...s.generatorParamsByGame,
+      [gameId]: {
+        ...getGeneratorParams(gameId, s.generatorParamsByGame[gameId]),
+        [key]: value,
+      },
+    },
+  })),
+  resetGeneratorParams: (gameId) => set(s => ({
+    generatorParamsByGame: {
+      ...s.generatorParamsByGame,
+      [gameId]: getGeneratorParams(gameId),
+    },
+  })),
 
   tick: () => {
     const { startTime } = get();

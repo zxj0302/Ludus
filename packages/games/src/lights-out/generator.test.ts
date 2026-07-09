@@ -21,6 +21,25 @@ describe('generateLightsOutLevel', () => {
     expect(state.grid.length).toBe(16);
   });
 
+  it('reads advanced controls from gameParams', () => {
+    const level = generateLightsOutLevel({
+      difficultyRange: [0, 100],
+      size: 3,
+      requireUniqueSolution: true,
+      requireKnownOptimal: false,
+      seed: 42,
+      gameParams: {
+        minMoves: 2,
+        maxMoves: 2,
+      },
+    });
+    const state = level.initialState as unknown as LightsOutState;
+
+    expect(state.n).toBe(3);
+    expect(level.uniqueSolution).toBe(true);
+    expect(level.generatedBy).toMatch(/reverse-solve/);
+  });
+
   it('generated level has some lights on', () => {
     const level = generateLightsOutLevel({ difficultyRange: [0, 100], minMoves: 5, maxMoves: 15 });
     const state = level.initialState as unknown as LightsOutState;

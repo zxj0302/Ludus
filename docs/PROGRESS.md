@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 6c / 7 收尾** — v0.1.1 Windows 修复版已发布；教育面板「出题」生成器控制台已完成。
+- **当前阶段**：**阶段 6c / 7 收尾** — v0.1.1 Windows 修复版已发布；高级生成器已迁入 toolbar 折叠二级面板，「出题」卡片回归关卡设计教学；移动端 Web→Capacitor Android 同步验证通过，真机/模拟器运行被本机 Android SDK root 阻塞。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，388 个测试（全过），CI 就绪，Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，398 个测试（全过），CI 就绪，Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：42 个测试文件，388 测试全过。
+- **测试覆盖**：44 个测试文件，398 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 
 ## ✅ DONE
@@ -142,22 +142,21 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-桌面安装包空白页修复版 `v0.1.1` 已发布；教育面板「出题」生成器控制台已完成。下一步：
+桌面安装包空白页修复版 `v0.1.1` 已发布；教育面板「出题」高级生成器控制台已完成。下一步：
 
-1. **手动 UX 冒烟**：打开任一游戏教育面板，切到「出题」段，确认难度选择 + 新关卡按钮可生成并刷新棋盘
-2. **完成移动端真机验证**：安装/配置 Android Studio SDK，确保 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 与 `adb` 可用，然后运行 `pnpm --filter ludus-mobile exec cap run android --list` / 真机运行
-3. **后续 6c 增强**：为每游戏增加高级生成参数 schema（尺寸、唯一解、目标步数、种子等）
+1. **完成移动端真机验证**：安装/配置 Android Studio SDK，确保 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 指向有效 SDK（常见路径 `C:\Users\27491\AppData\Local\Android\Sdk`），并把 `platform-tools`/`emulator` 加入 PATH；然后运行 `pnpm --filter ludus-mobile exec cap run android --list` / 真机运行
+2. **阶段 6c 下一个任务**：把 `apps/web/src/generatorControls.ts` 中的高级生成参数 metadata 迁移为 `GamePluginEntry` 可选自描述能力，保留当前 toolbar 折叠入口、Create 教学提示和生成契约测试
 
 ## 🐛 KNOWN ISSUES
 
-- 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——生成器在 `requireUnique/requireOptimal` 时抛错
+- 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——高级生成器 UI 已说明并在生成逻辑中降级为可解关卡
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
-- 本机移动端真机运行环境未完成：Capacitor Android 工程通过 doctor，但当前机器未配置可发现的 Android SDK root，且 PATH 中无 `adb`/`emulator`
+- 本机移动端真机运行环境未完成：`pnpm sync:mobile` 成功，Capacitor Android 工程/资源同步完成；`cap run android --list` 失败于 `ERR_SDK_NOT_FOUND: No valid Android SDK root found`，当前机器未配置可发现的 Android SDK root，且 PATH 中无 `adb`/`emulator`
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 6 / 7 横切与发布已基本完成；当前待确认是否手动 UX 验证出题控件与 `v0.1.1` 安装包，或继续移动端真机验证 / 高级生成参数 schema。
+- 阶段 6 / 7 横切与发布已基本完成；高级出题控件已手动确认无问题。移动端验证已推进到 Android 同步成功，但真机/模拟器运行依赖本机 Android SDK 配置。用户指定“让高级生成参数成为插件自描述能力”为下一个任务。
 
 ## 📝 SESSION LOG
 
@@ -560,3 +559,11 @@
 - [2026-07-09] **v0.1.1 发布**：提交 `6e1a533`，推送 `v0.1.1` tag；GitHub CI 与 Release workflow 均成功，Release 已上传 `.exe`/`.msi`。注意资产文件名仍显示 `0.1.0`，需后续同步 Tauri/package 版本。
 - [2026-07-09] **版本号同步**：apps/web、apps/desktop、apps/mobile、packages/core/games/education/ui、Tauri config、Cargo.toml/Cargo.lock 全部同步到 `0.1.1`；新增 shell packaging 测试防止发布版本再次不一致；更新 CHANGELOG/README。387 测试全过，`pnpm build:desktop` 产出 `Ludus_0.1.1_x64-setup.exe` / `Ludus_0.1.1_x64_en-US.msi`。
 - [2026-07-09] **阶段 6c 教育面板出题生成器控制台**：新增设计 spec + 实现计划；`EducationPanel` 的 Create 卡片内嵌 `DifficultySelector` + `newLevel()`，用户可在阅读出题段时选择难度并立即生成关卡。新增 `educationSections.test.ts`，388 测试全过，`pnpm build:shell` 成功。
+- [2026-07-09] **阶段 6c 高级生成器控制台**：新增 `apps/web/src/generatorControls.ts`，为 Lights Out / Sudoku / Nonogram 提供 typed generator-control metadata、默认参数、`LevelConfig.gameParams` 映射和生成摘要；`gameStore` 保存每游戏参数并记录 `lastGeneratedLevel`；`EducationPanel` Create 卡片升级为高级参数 UI；三款 generator 消费 `gameParams`（点灯尺寸/反向步数/唯一解/已知最优，数独线索数，数织尺寸/密度/回溯要求）。新增 schema/store/generator 回归测试，396 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **Bug 修复 — Sudoku 高级生成参数未严格遵循线索数**：根因是 `generateSudokuLevel` 的挖空流程只做单轮贪心唯一解校验，显式 `gameParams.clues=20` 时可能停在 26 个给定数字；新增回归测试要求 20 线索 = 61 空格且唯一解。修复为显式线索数失败时使用 17 线索唯一解模板 + 数独等价变换 + 从完整解补足给定数字，保证 17–36 目标线索数精确落地且唯一解保持。397 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **Bug 修复 — Toolbar 新关卡误用「出题」高级参数**：根因是 toolbar 与 Create 卡片共用 `gameStore.newLevel()`，而 `newLevel()` 总是读取 `generatorParamsByGame`，导致用户在「出题」设置线索数后，toolbar「新关卡」也继续套用该线索数。修复为 `newLevel()` 默认走普通难度生成；只有 Create 卡片显式调用 `newLevel({ useGeneratorParams: true })` 时才应用高级参数。新增 store 回归测试覆盖默认路径与高级路径隔离。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **开发体验清理 — EducationPanel Fast Refresh invalidation**：Vite dev server 报 `getSectionViewModel` export 与 React Fast Refresh 不兼容；将该纯 helper 从 `EducationPanel.tsx` 移到 `educationSectionViewModel.ts`，组件文件仅导出 React component，减少本地 UX 冒烟时的 HMR 噪音。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **移动端验证推进**：`pnpm sync:mobile` 成功，完成 `ludus-web build:shell` 与 Capacitor Android 资源同步（复制到 `apps/mobile/android/app/src/main/assets/public`）；`pnpm --filter ludus-mobile exec cap run android --list` 到 native-run 阶段后失败：`ERR_SDK_NOT_FOUND: No valid Android SDK root found`。本机 Java 可用、Capacitor CLI 6.2.1 可用、`cap doctor android` 报 success，但 `ANDROID_HOME`/`ANDROID_SDK_ROOT` 为空，`adb`/`emulator` 不在 PATH，常见 SDK 路径 `C:\Users\27491\AppData\Local\Android\Sdk` 不存在。下一步需安装/配置 Android Studio SDK 后继续真机/模拟器运行。
+- [2026-07-09] **阶段 6c 高级生成入口调整**：根据产品语义调整信息架构：`EducationPanel` 的「出题」卡片不再承载参数控制台，只显示“出题不是随便调参数”的教学提示；高级生成控件迁入 `GeneratorToolbar` 的折叠二级面板，并抽出 `AdvancedGeneratorToolbarPanel.tsx`。默认 toolbar「新关卡」仍走普通难度生成，折叠面板中的“按参数生成”显式调用 `newLevel({ useGeneratorParams: true })`。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **UI 调整 — 高级生成入口并入难度菜单**：为避免 toolbar 因新增“高级生成”按钮而拥挤换行，将高级生成入口放入 `DifficultySelector` 的下拉菜单中（难度项下方分隔后显示“高级生成/收起高级生成”）；选择普通难度仍立即普通生成，选择高级生成只展开/收起 `AdvancedGeneratorToolbarPanel`，参数面板仍在 toolbar 下方显示。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-09] **UI 调整 — 难度按钮宽度与高级生成可见性**：`DifficultySelector` 固定为紧凑宽度，避免“高级生成”长选项撑宽 toolbar；对尚未配置高级生成 spec 的游戏，难度菜单显示禁用项“高级生成（待支持）”，让能力状态可见但不提供不可用操作。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
