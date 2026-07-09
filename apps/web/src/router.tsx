@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 import { App } from './App';
 import { HubPage } from './components/HubPage';
 import { GamePage } from './components/GamePage';
+import { resolveRouterBasename } from './routerBase';
 
 const routes: RouteObject[] = [
   {
@@ -14,7 +15,6 @@ const routes: RouteObject[] = [
   },
 ];
 
-/** Strip Vite trailing slash — React Router basename must not end with `/`. */
-const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined;
+const basename = resolveRouterBasename(import.meta.env.BASE_URL);
 
 export const router = createBrowserRouter(routes, { basename });
