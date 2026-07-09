@@ -5,10 +5,10 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 测试/发布** — CI 起步 ✅。阶段 6 已完成（含 6d 桌面壳本机验证 ✅）。
+- **当前阶段**：**阶段 7 测试/发布** — CI ✅、Release workflow ✅、文档 ✅；待打 **v0.1.0** tag。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，384 个测试（全过），CI + GitHub Pages 部署就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，384 个测试（全过），CI 就绪，Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
 - **测试覆盖**：40 个测试文件，384 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
@@ -142,11 +142,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-阶段 7：CI 已配置；GitHub Pages 公开部署已关闭（个人账号不支持私有 Pages）。
+阶段 7 release 工件就绪。下一步：打 tag 触发 Release。
 
-1. **本机游玩**：`pnpm dev`（浏览器）或 `pnpm dev:desktop`（桌面壳，仅本机）
-2. **阶段 7 续**：`build:desktop` 生产包（需 Rust ≥1.85）
-3. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
+1. **打 v0.1.0 tag**：`git tag v0.1.0 && git push origin v0.1.0` → Actions 自动构建 Windows 安装包
+2. **或阶段 6c 续**：教育面板「出题」段嵌入生成器高级参数
+3. **或移动端**：`pnpm sync:mobile` + 真机验证
 
 ## 🐛 KNOWN ISSUES
 
@@ -553,6 +553,4 @@
 - [2026-07-09] **阶段 6d 本机验证 + beforeDevCommand 修复**：
   - 桌面壳 `pnpm dev:desktop` 可打开并游玩；`beforeDevCommand` 改为 `pnpm --filter ludus-web dev`（避免相对路径随 cwd 解析错误）
   - Vite dev：`host 127.0.0.1` + `strictPort 5173`（WebView2 兼容）
-- [2026-07-09] **阶段 7 — GitHub Pages 预览部署**：
-  - `build:pages` + router `basename`；CI deploy job 发布至 https://zxj0302.github.io/Ludus/
-  - 384 测试全过（+1 pages 配置测试）
+- [2026-07-09] **阶段 7 — 首个 release 工件**：CHANGELOG、CONTRIBUTING、07-release.md、release.yml；README 更新；本机 build:desktop 成功
