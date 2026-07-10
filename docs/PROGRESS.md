@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布**；8 款游戏 MVP 超额完成；横切与审计主线已收口。
-- **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；9 款游戏 MVP 超额完成；围堵小偷垂直切片已完成。
+- **MVP 范围**：9 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅ + 围堵小偷 ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，425 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，466 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：51 个测试文件，425 测试全过。
+- **测试覆盖**：55 个测试文件，466 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
 - **审计修复第二批**：Nonogram playable state 不再携带 `solution`；`isOwnState`/Canvas 渲染改为基于线索判定通关；高级生成失败时保留当前关卡并显示 `generatorError`，普通 toolbar 生成仍允许 fallback。
@@ -131,6 +131,12 @@
   - 新增 13 文件（9 core + 4 edu），修改 7 文件（core types/registry/barrel/entrySetup/statusCards/EducationPanel/i18n 自动合并）
   - isFastSolver: true（BFS 状态空间小，即时求解）
   - SolverTrace type 新增 `'bfs-state-search'`（packages/core/src/types/plugin.ts）
+- **阶段 5h — 围堵小偷 (Thief Siege)** ✅:
+  - Core/Game: types + rules + escape BFS solver/AI + irregular-mask generator + difficulty + plugin/board UI 全部自包含于 `packages/games/src/thief-siege/`
+  - Web: `entrySetup.tsx` 注入四份教学 raw markdown，注册 `EscapePathViz` 处理 `escape-path` trace，并接入 `GeneratorToolbar`
+  - 教学: 四份 markdown（L2/L3 × zh-CN/en），五段式结构，明确 BFS/瓶颈直觉且不声称完整 minimax
+  - 文档: `docs/games/thief-siege.md` 记录规则、模块地图、solver/generator/AI wiring 与扩展边界
+  - 验证: 55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -146,15 +152,14 @@
 
 ## 🚧 IN PROGRESS
 
-（无进行中工件）
+- 无。围堵小偷 Task 1–5 已完成并验证。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-`v0.2.0` 已打 tag 并触发 Release workflow。下一步（产品向）：
+选择下一步：
 
-1. **增量新游戏**：backlog 候选 **Connect 4**（博弈树/Alpha-Beta）或 **Peg Solitaire**（搜索）；一次一款，完整 DoD。
-2. **横切可选**：PWA 离线、Hub 成就展示、Sokoban 程序化生成器。
-3. **（暂缓）移动端真机**：Android SDK 配置后 `pnpm sync:mobile`。
+1. 若继续新游戏：为 **Angel and Devil** 写独立设计 spec（不要并入 `thief-siege`），先明确棋盘拓扑、胜负条件、有限/无限图边界与教学抽象。
+2. 若先 polish：对 `thief-siege` 做轻量手感审查（胜负反馈、路径高亮、AI delay 既有平台问题），不扩大算法范围。
 
 ## 🐛 KNOWN ISSUES
 
@@ -165,7 +170,7 @@
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 6 / 7 横切与发布已基本完成；高级出题控件已手动确认无问题。移动端真机验证暂缓，当前以 `pnpm validate:shell` 模拟验证套壳链路。
+- 移动端真机验证暂缓；日常 `pnpm validate:shell`。
 
 ## 📝 SESSION LOG
 
@@ -585,3 +590,6 @@
 - [2026-07-10] **审计第五批修复**：`gameStoreSolverRuntime.ts` 抽取 AI 调度、后台求解、对抗播放、离线程求解与提示应用；Sudoku `generateSudokuLevel` 全随机路径改用 seeded RNG，`config.seed` 可复现同一盘面。425 测试全过，`pnpm typecheck` 成功。
 - [2026-07-10] **审计收尾**：`gameStoreProgress.ts` 外置 `persistGameSession`；CI `.github/workflows/ci.yml` 改用 `pnpm validate:shell`；`shellBuildArtifacts` 在无 shell dist 时 skip。425 测试全过，`pnpm validate:shell` 成功。
 - [2026-07-10] **v0.2.0 发布**：CI `22fbba5` 绿灯；版本号同步至 `0.2.0`；更新 CHANGELOG/README/CONTRIBUTING/`07-release.md`；打 tag `v0.2.0` 触发 Release workflow 产出 Windows 安装包。
+- [2026-07-10] **围堵小偷设计启动**：用户选定方案 A（玩家放警察、AI 小偷逃边缘、警察不移动、方格+不规则轮廓）；中文名「围堵小偷」id=`thief-siege`；Angel and Devil 列为后续。写入 `docs/superpowers/specs/2026-07-10-thief-siege-design.md` 待评审。
+- [2026-07-10] **围堵小偷 spec 确认 + 实现计划**：用户确认设计；写入 `docs/superpowers/plans/2026-07-10-thief-siege.md`（Task 1–5）。下一步按计划实现。
+- [2026-07-10] **围堵小偷 Task 5 完成**：补齐 L2/L3 × zh-CN/en 教学、`EscapePathViz`、`entrySetup` wiring、`docs/games/thief-siege.md`；55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功。
