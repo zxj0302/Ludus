@@ -11,6 +11,15 @@ function randInt(rand: () => number, min: number, max: number): number {
   return min + Math.floor(rand() * (max - min + 1));
 }
 
+const ALLOWED_SIZES = [7, 9, 11] as const;
+
+function normalizeSize(raw: number): number {
+  if (raw === 7 || raw === 9 || raw === 11) return raw;
+  return ALLOWED_SIZES.reduce((best, candidate) =>
+    Math.abs(candidate - raw) < Math.abs(best - raw) ? candidate : best,
+  );
+}
+
 function chooseSize(score: number): number {
   if (score <= 33) return 7;
   if (score <= 66) return 9;
@@ -110,7 +119,7 @@ export function generateThiefSiegeLevel(config: LevelConfig): Level {
   const rand = mulberry32(seed);
   const [rangeLo, rangeHi] = config.difficultyRange ?? [1, 100];
   const targetScore = rangeLo + rand() * (rangeHi - rangeLo);
-  const size = config.size ?? chooseSize(targetScore);
+  const size = normalizeSize(config.size ?? chooseSize(targetScore));
   const maxCops = chooseMaxCops(rand, targetScore);
   const maxAttempts = 100;
 
@@ -131,17 +140,20 @@ export function generateThiefSiegeLevel(config: LevelConfig): Level {
     };
   }
 
+  const fallbackSize = 7;
   const fallbackState: ThiefSiegeState = {
-    width: 5,
-    height: 5,
+    width: fallbackSize,
+    height: fallbackSize,
     cells: [
-      'exit', 'exit', 'exit', 'exit', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'exit', 'exit', 'exit', 'exit',
+      'exit', 'exit', 'exit', 'exit', 'exit', 'exit', 'exit',
+      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
+      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
+      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
+      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
+      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
+      'exit', 'exit', 'exit', 'exit', 'exit', 'exit', 'exit',
     ],
-    thief: { row: 2, col: 2 },
+    thief: { row: 3, col: 3 },
     cops: [],
     phase: 'cop',
     currentPlayer: 0,

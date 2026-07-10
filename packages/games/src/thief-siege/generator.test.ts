@@ -56,4 +56,24 @@ describe('generateThiefSiegeLevel', () => {
     expect(hard.height).toBeGreaterThanOrEqual(easy.height);
     expect(hard.maxCops).toBeLessThanOrEqual(easy.maxCops);
   });
+
+  it('always produces board dimensions in {7, 9, 11}', () => {
+    const allowed = new Set([7, 9, 11]);
+
+    for (let seed = 1; seed <= 30; seed++) {
+      const state = stateFromSeed(seed);
+      expect(allowed.has(state.width)).toBe(true);
+      expect(allowed.has(state.height)).toBe(true);
+      expect(state.width).toBe(state.height);
+    }
+
+    const sizeOverrides = [1, 5, 8, 10, 12, 15, 7, 9, 11];
+    for (const size of sizeOverrides) {
+      const level = generateThiefSiegeLevel({ difficultyRange: [1, 100], seed: 42, size });
+      const state = level.initialState as ThiefSiegeState;
+      expect(allowed.has(state.width)).toBe(true);
+      expect(allowed.has(state.height)).toBe(true);
+      expect(state.width).toBe(state.height);
+    }
+  });
 });
