@@ -293,6 +293,7 @@ const zhCN = {
     'matrix.viewElimSteps': '点击「消元步骤」查看高斯消元过程',
 
     'category.linear-algebra': '线性代数',
+    'category.graph-theory': '图论',
     'category.search': '搜索算法',
     'category.number-theory': '数论',
 

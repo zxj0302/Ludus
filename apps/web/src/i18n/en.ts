@@ -293,6 +293,7 @@ const en = {
     'matrix.viewElimSteps': 'Click "Elimination Steps" to view the Gaussian elimination process',
 
     'category.linear-algebra': 'Linear Algebra',
+    'category.graph-theory': 'Graph Theory',
     'category.search': 'Search Algorithms',
     'category.number-theory': 'Number Theory',
 
