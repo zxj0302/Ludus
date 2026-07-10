@@ -105,9 +105,16 @@ function copPlaceMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
 }
 
 export function normalizeTerminalState(state: ThiefSiegeState): ThiefSiegeState {
-  if (state.status !== 'playing' || state.phase !== 'thief') return state;
-  if (thiefStepMoves(state).length > 0) return state;
-  return { ...state, status: 'cop-win' };
+  if (state.status !== 'playing') return state;
+
+  const steps = thiefStepMoves(state);
+  if (steps.length === 0) return { ...state, status: 'cop-win' };
+
+  if (state.phase === 'cop' && copPlaceMoves(state).length === 0) {
+    return { ...state, phase: 'thief', currentPlayer: 1 };
+  }
+
+  return state;
 }
 
 export function legalMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
@@ -155,12 +162,13 @@ export function applyMove(state: ThiefSiegeState, move: ThiefSiegeMove): ThiefSi
     };
   }
 
-  return {
+  const next: ThiefSiegeState = {
     ...normalized,
     thief: { row: move.row, col: move.col },
     phase: 'cop',
     currentPlayer: 0,
   };
+  return normalizeTerminalState(next);
 }
 
 export function isSolved(state: ThiefSiegeState): boolean {

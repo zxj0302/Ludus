@@ -96,13 +96,20 @@ describe('legalMoves — cop phase', () => {
     expect(places.some(m => m.row === 1 && m.col === 0)).toBe(false);
   });
 
-  it('returns no place moves when maxCops reached', () => {
+  it('skips cop phase when maxCops reached and thief can still move', () => {
     const s: ThiefSiegeState = {
       ...createInitialState(),
       cops: [{ row: 1, col: 1 }],
       maxCops: 1,
     };
-    expect(legalMoves(s)).toEqual([]);
+    const moves = legalMoves(s);
+    expect(moves.length).toBeGreaterThan(0);
+    expect(moves.every(m => m.type === 'step')).toBe(true);
+    expect(normalizeTerminalState(s)).toMatchObject({
+      phase: 'thief',
+      currentPlayer: 1,
+      status: 'playing',
+    });
   });
 
   it('returns empty when game is terminal', () => {
@@ -199,6 +206,25 @@ describe('applyMove — step', () => {
     expect(next.status).toBe('playing');
   });
 
+  it('normalizes back to thief phase after a step when maxCops is exhausted', () => {
+    const s: ThiefSiegeState = {
+      width: 5,
+      height: 5,
+      cells: createInitialState().cells,
+      thief: { row: 2, col: 2 },
+      cops: [{ row: 1, col: 1 }],
+      phase: 'thief',
+      currentPlayer: 1,
+      maxCops: 1,
+      status: 'playing',
+    };
+    const next = applyMove(s, { type: 'step', row: 2, col: 1 });
+    expect(next.thief).toEqual({ row: 2, col: 1 });
+    expect(next.phase).toBe('thief');
+    expect(next.currentPlayer).toBe(1);
+    expect(next.status).toBe('playing');
+  });
+
   it('thief reaching exit sets thief-win', () => {
     const s: ThiefSiegeState = {
       width: 3,
@@ -262,6 +288,19 @@ describe('normalizeTerminalState', () => {
     const next = normalizeTerminalState(s);
     expect(next.status).toBe('playing');
     expect(next).toBe(s);
+  });
+
+  it('sets cop-win when cop phase is exhausted and thief is trapped', () => {
+    const s: ThiefSiegeState = {
+      ...trappedThiefState(),
+      phase: 'cop',
+      currentPlayer: 0,
+      maxCops: 4,
+    };
+    const next = normalizeTerminalState(s);
+    expect(next.status).toBe('cop-win');
+    expect(isSolved(next)).toBe(true);
+    expect(legalMoves(next)).toEqual([]);
   });
 });
 

@@ -1,0 +1,2 @@
+- 2026-07-10: Fixed Thief Siege maxCops exhaustion soft-lock by normalizing exhausted cop turns into thief turns when the thief can move, or cop-win when trapped.
+- Verification: `pnpm --filter @ludus/games exec vitest run src/thief-siege/rules.test.ts` passed (22 tests).
