@@ -88,6 +88,6 @@ pnpm open:android
 
 ## 下一步（阶段 7 / 后续）
 
-- CI 矩阵：Web build + shell build + 配置测试
+- CI 矩阵：Web build + `pnpm validate:shell`（套壳构建 + 配置/产物契约测试）✅
 - PWA Service Worker（Web 离线）
 - Tauri 插件：系统通知、文件导出关卡

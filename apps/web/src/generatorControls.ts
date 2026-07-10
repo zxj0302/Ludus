@@ -1,179 +1,35 @@
 import type { Level, LevelConfig } from '@ludus/core';
+import { getGameEntry } from '@ludus/games';
+import type {
+  GeneratorControlsSpec,
+  GeneratorField,
+  GeneratorGuarantee,
+  GeneratorOption,
+  GeneratorParamValue,
+  GeneratorParams,
+} from '@ludus/games';
 
-export type GeneratorParamValue = string | number | boolean;
-export type GeneratorParams = Record<string, GeneratorParamValue>;
+export type {
+  GeneratorField,
+  GeneratorGuarantee,
+  GeneratorOption,
+  GeneratorParamValue,
+  GeneratorParams,
+};
 
-export interface GeneratorOption {
-  value: string | number;
-  labelKey: string;
-}
-
-export interface GeneratorField {
-  key: string;
-  kind: 'select' | 'number' | 'checkbox';
-  labelKey: string;
-  helpKey: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  options?: GeneratorOption[];
-}
-
-export interface GeneratorGuarantee {
-  labelKey: string;
-  descriptionKey: string;
-}
-
-export interface GeneratorControlSpec {
+export interface GeneratorControlSpec extends GeneratorControlsSpec {
   gameId: string;
-  titleKey: string;
-  descriptionKey: string;
-  fields: GeneratorField[];
-  defaultParams: GeneratorParams;
-  guarantees: GeneratorGuarantee[];
 }
-
-const LIGHTS_OUT_SPEC: GeneratorControlSpec = {
-  gameId: 'lights-out',
-  titleKey: 'generator.advanced.lightsOut.title',
-  descriptionKey: 'generator.advanced.lightsOut.description',
-  defaultParams: {
-    size: 5,
-    minMoves: 3,
-    maxMoves: 15,
-    requireUniqueSolution: false,
-    requireKnownOptimal: true,
-  },
-  fields: [
-    {
-      key: 'size',
-      kind: 'select',
-      labelKey: 'generator.param.boardSize',
-      helpKey: 'generator.help.lightsOutSize',
-      options: [3, 4, 5, 6].map(value => ({ value, labelKey: `generator.option.size${value}` })),
-    },
-    {
-      key: 'minMoves',
-      kind: 'number',
-      labelKey: 'generator.param.minMoves',
-      helpKey: 'generator.help.minMoves',
-      min: 1,
-      max: 30,
-      step: 1,
-    },
-    {
-      key: 'maxMoves',
-      kind: 'number',
-      labelKey: 'generator.param.maxMoves',
-      helpKey: 'generator.help.maxMoves',
-      min: 1,
-      max: 30,
-      step: 1,
-    },
-    {
-      key: 'requireUniqueSolution',
-      kind: 'checkbox',
-      labelKey: 'generator.param.uniqueSolution',
-      helpKey: 'generator.help.lightsOutUnique',
-    },
-    {
-      key: 'requireKnownOptimal',
-      kind: 'checkbox',
-      labelKey: 'generator.param.knownOptimal',
-      helpKey: 'generator.help.knownOptimal',
-    },
-  ],
-  guarantees: [
-    { labelKey: 'generator.guarantee.solvable', descriptionKey: 'generator.guarantee.lightsOutSolvable' },
-    { labelKey: 'generator.guarantee.knownOptimal', descriptionKey: 'generator.guarantee.lightsOutOptimal' },
-    { labelKey: 'generator.guarantee.uniqueConditional', descriptionKey: 'generator.guarantee.lightsOutUnique' },
-  ],
-};
-
-const SUDOKU_SPEC: GeneratorControlSpec = {
-  gameId: 'sudoku',
-  titleKey: 'generator.advanced.sudoku.title',
-  descriptionKey: 'generator.advanced.sudoku.description',
-  defaultParams: {
-    clues: 28,
-    requireUniqueSolution: true,
-  },
-  fields: [
-    {
-      key: 'clues',
-      kind: 'number',
-      labelKey: 'generator.param.clues',
-      helpKey: 'generator.help.sudokuClues',
-      min: 17,
-      max: 36,
-      step: 1,
-    },
-    {
-      key: 'requireUniqueSolution',
-      kind: 'checkbox',
-      labelKey: 'generator.param.uniqueSolution',
-      helpKey: 'generator.help.sudokuUnique',
-    },
-  ],
-  guarantees: [
-    { labelKey: 'generator.guarantee.unique', descriptionKey: 'generator.guarantee.sudokuUnique' },
-    { labelKey: 'generator.guarantee.difficultyByClues', descriptionKey: 'generator.guarantee.sudokuClues' },
-  ],
-};
-
-const NONOGRAM_SPEC: GeneratorControlSpec = {
-  gameId: 'nonogram',
-  titleKey: 'generator.advanced.nonogram.title',
-  descriptionKey: 'generator.advanced.nonogram.description',
-  defaultParams: {
-    size: 8,
-    density: 'balanced',
-    requireBacktracking: false,
-  },
-  fields: [
-    {
-      key: 'size',
-      kind: 'select',
-      labelKey: 'generator.param.gridSize',
-      helpKey: 'generator.help.nonogramSize',
-      options: [5, 6, 8, 10].map(value => ({ value, labelKey: `generator.option.size${value}` })),
-    },
-    {
-      key: 'density',
-      kind: 'select',
-      labelKey: 'generator.param.density',
-      helpKey: 'generator.help.nonogramDensity',
-      options: [
-        { value: 'sparse', labelKey: 'generator.option.densitySparse' },
-        { value: 'balanced', labelKey: 'generator.option.densityBalanced' },
-        { value: 'dense', labelKey: 'generator.option.densityDense' },
-      ],
-    },
-    {
-      key: 'requireBacktracking',
-      kind: 'checkbox',
-      labelKey: 'generator.param.requireBacktracking',
-      helpKey: 'generator.help.requireBacktracking',
-    },
-  ],
-  guarantees: [
-    { labelKey: 'generator.guarantee.unique', descriptionKey: 'generator.guarantee.nonogramUnique' },
-    { labelKey: 'generator.guarantee.difficultyControlled', descriptionKey: 'generator.guarantee.nonogramDifficulty' },
-  ],
-};
-
-export const GENERATOR_CONTROL_SPECS: Record<string, GeneratorControlSpec> = {
-  'lights-out': LIGHTS_OUT_SPEC,
-  sudoku: SUDOKU_SPEC,
-  nonogram: NONOGRAM_SPEC,
-};
 
 export function getGeneratorControlSpec(gameId: string | null | undefined): GeneratorControlSpec | null {
-  return gameId ? GENERATOR_CONTROL_SPECS[gameId] ?? null : null;
+  if (!gameId) return null;
+  const controls = getGameEntry(gameId)?.generatorControls;
+  if (!controls) return null;
+  return { gameId, ...controls };
 }
 
 export function getDefaultGeneratorParams(gameId: string): GeneratorParams {
-  return { ...(GENERATOR_CONTROL_SPECS[gameId]?.defaultParams ?? {}) };
+  return { ...(getGameEntry(gameId)?.generatorControls?.defaultParams ?? {}) };
 }
 
 export function getGeneratorParams(gameId: string, saved?: GeneratorParams): GeneratorParams {
@@ -187,54 +43,36 @@ export function buildGeneratorLevelConfig(
 ): LevelConfig {
   if (params === null) return { difficultyRange };
 
-  const merged = getGeneratorParams(gameId, params);
+  const controls = getGameEntry(gameId)?.generatorControls;
+  if (!controls) return { difficultyRange };
 
-  if (gameId === 'lights-out') {
-    const size = Number(merged.size);
-    return {
-      difficultyRange,
-      size,
-      requireUniqueSolution: Boolean(merged.requireUniqueSolution),
-      requireKnownOptimal: Boolean(merged.requireKnownOptimal),
-      gameParams: {
-        minMoves: Number(merged.minMoves),
-        maxMoves: Number(merged.maxMoves),
-      },
-    };
-  }
-
-  if (gameId === 'sudoku') {
-    return {
-      difficultyRange,
-      requireUniqueSolution: Boolean(merged.requireUniqueSolution),
-      gameParams: {
-        clues: Number(merged.clues),
-      },
-    };
-  }
-
-  if (gameId === 'nonogram') {
-    const size = Number(merged.size);
-    return {
-      difficultyRange,
-      size,
-      gameParams: {
-        density: String(merged.density),
-        requireBacktracking: Boolean(merged.requireBacktracking),
-      },
-    };
-  }
-
-  return { difficultyRange };
+  return controls.buildLevelConfig(
+    difficultyRange,
+    getGeneratorParams(gameId, params),
+  );
 }
 
 export function summarizeGeneratedLevel(level: Level | null): { labelKey: string; value: string | number }[] {
   if (!level) return [];
 
+  const methodLabelKey = GENERATED_BY_LABEL_KEYS[level.generatedBy] ?? level.generatedBy;
+
   return [
     { labelKey: 'generator.summary.difficulty', value: level.difficulty.score },
     { labelKey: 'generator.summary.unique', value: level.uniqueSolution ? 'generator.value.yes' : 'generator.value.no' },
     { labelKey: 'generator.summary.optimal', value: level.optimalSteps ?? 'generator.value.unknown' },
-    { labelKey: 'generator.summary.method', value: level.generatedBy },
+    { labelKey: 'generator.summary.method', value: methodLabelKey },
   ];
 }
+
+const GENERATED_BY_LABEL_KEYS: Record<string, string> = {
+  'reverse-solve-gf2': 'generator.method.reverseSolveGf2',
+  'reverse-solve-gf2-fallback': 'generator.method.reverseSolveGf2Fallback',
+  'dig-with-dlx': 'generator.method.digWithDlx',
+  'generateNonogramLevel': 'generator.method.generateNonogramLevel',
+  'generateWaterJugLevel': 'generator.method.generateWaterJugLevel',
+  'random-walk': 'generator.method.randomWalk',
+  'random-piles': 'generator.method.randomPiles',
+  'classic set': 'generator.method.classicSet',
+  'initial-state-fallback': 'generator.method.initialStateFallback',
+};

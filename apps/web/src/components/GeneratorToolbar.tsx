@@ -9,7 +9,9 @@ import { AdvancedGeneratorToolbarPanel } from './AdvancedGeneratorToolbarPanel';
 export function GeneratorToolbar({ onNewLevel }: ToolbarSlotProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const gameId = useGameStore(s => s.gameId);
-  const difficultyRange = useGameStore(s => s.difficultyRange);
+  const difficultyRange = useGameStore(s =>
+    (gameId ? (s.difficultyRangeByGame[gameId] ?? [1, 100]) : [1, 100]) as [number, number],
+  );
   const setDifficultyRange = useGameStore(s => s.setDifficultyRange);
   const supportsAdvancedGeneration = getGeneratorControlSpec(gameId) != null;
 

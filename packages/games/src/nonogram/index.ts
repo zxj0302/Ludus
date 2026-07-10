@@ -6,7 +6,8 @@ import { solveNonogram, countSolutions } from './solver';
 import { nonogramEducationManifest, nonogramVisualizationManifest } from './manifest';
 import { NonogramBoard } from './render';
 import { nonogramI18n } from './i18n';
-import { formatNonogramMove, NonogramStatusCard } from './education-ui';
+import { formatNonogramMove, NonogramStatusCard, NonogramSolutionPreview } from './education-ui';
+import { nonogramGeneratorControls } from './generator-controls';
 import type { NonogramState, NonogramMove } from './types';
 
 export { solveNonogram, nonogramI18n, countSolutions, computeClues };
@@ -59,7 +60,7 @@ export const nonogramPlugin: GamePlugin<NonogramState, NonogramMove> = {
       [false, false, true, false, false],
     ];
     const { rowClues, colClues } = computeClues(heart);
-    return createInitialState(5, 5, rowClues, colClues, heart);
+    return createInitialState(5, 5, rowClues, colClues);
   },
   generateLevel: (config: LevelConfig): Level => generateNonogramLevel(config),
   legalMoves,
@@ -108,13 +109,15 @@ export const nonogramEntry: GamePluginEntry<NonogramState, NonogramMove> = {
     && 'grid' in state
     && 'rowClues' in state
     && 'colClues' in state
-    && 'solution' in state
+    && 'lineSolveCells' in state
+    && 'maxBacktrackDepth' in state
     && 'width' in state
     && 'height' in state
     && Array.isArray((state as NonogramState).grid)
     && Array.isArray((state as NonogramState).rowClues)
     && Array.isArray((state as NonogramState).colClues)
-    && Array.isArray((state as NonogramState).solution)
+    && typeof (state as NonogramState).lineSolveCells === 'number'
+    && typeof (state as NonogramState).maxBacktrackDepth === 'number'
     && typeof (state as NonogramState).width === 'number'
     && typeof (state as NonogramState).height === 'number',
   moveToHighlight: (move) => {
@@ -123,6 +126,7 @@ export const nonogramEntry: GamePluginEntry<NonogramState, NonogramMove> = {
   },
   i18n: { namespace: 'nonogram', zhCN: nonogramI18n.zhCN, en: nonogramI18n.en },
   formatEducationMove: formatNonogramMove,
-  ui: { statusCard: NonogramStatusCard },
+  ui: { statusCard: NonogramStatusCard, SolutionPreview: NonogramSolutionPreview },
   education: { content: {} },
+  generatorControls: nonogramGeneratorControls,
 };

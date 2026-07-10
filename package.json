@@ -11,6 +11,7 @@
     "dev:desktop": "pnpm --filter ludus-desktop dev",
     "build:desktop": "pnpm --filter ludus-desktop build",
     "sync:mobile": "pnpm --filter ludus-mobile sync",
+    "validate:shell": "pnpm build:shell && vitest run apps/web/src/shellPackaging.test.ts apps/web/src/shellBuildArtifacts.test.ts apps/web/src/routerBase.test.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "pnpm -r typecheck"

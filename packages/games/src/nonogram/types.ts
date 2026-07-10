@@ -17,8 +17,6 @@ export interface NonogramState extends GameState {
   rowClues: number[][];
   /** Column clues: each column's runs of consecutive filled cells */
   colClues: number[][];
-  /** The unique solution pattern (filled = true) */
-  solution: boolean[][];
   /** How many cells were determined by line solving alone (for difficulty) */
   lineSolveCells: number;
   /** Maximum backtracking depth reached during solving (for difficulty) */

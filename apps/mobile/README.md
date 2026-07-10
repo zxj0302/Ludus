@@ -19,9 +19,28 @@ pnpm add:android   # 或 pnpm add:ios（macOS）
 pnpm sync
 ```
 
-## 日常同步 Web 资源
+## 模拟验证（无需 Android SDK / 真机）
 
 从仓库根目录：
+
+```bash
+pnpm validate:shell
+```
+
+将执行 `build:shell` 并校验：相对资源路径、`solver.worker` 产物、Capacitor/Tauri 配置契约。适合 CI 与无 SDK 环境。
+
+本地预览套壳效果（浏览器模拟 WebView）：
+
+```bash
+pnpm build:shell
+pnpm --filter ludus-web exec vite preview --mode shell
+```
+
+在 DevTools 中切换移动设备视口即可检查布局与路由。
+
+## 日常同步 Web 资源
+
+从仓库根目录（需已执行过一次 `pnpm add:android`）：
 
 ```bash
 pnpm sync:mobile

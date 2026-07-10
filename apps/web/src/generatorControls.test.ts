@@ -18,7 +18,6 @@ describe('generatorControls', () => {
     ]);
     expect(getGeneratorControlSpec('sudoku')?.fields.map(f => f.key)).toEqual([
       'clues',
-      'requireUniqueSolution',
     ]);
     expect(getGeneratorControlSpec('nonogram')?.fields.map(f => f.key)).toEqual([
       'size',
@@ -49,7 +48,7 @@ describe('generatorControls', () => {
   });
 
   it('uses safe defaults for Sudoku and Nonogram configs', () => {
-    expect(getDefaultGeneratorParams('sudoku')).toMatchObject({ clues: 28, requireUniqueSolution: true });
+    expect(getDefaultGeneratorParams('sudoku')).toEqual({ clues: 28 });
     expect(buildGeneratorLevelConfig('sudoku', [1, 33]).gameParams).toEqual({ clues: 28 });
 
     expect(getDefaultGeneratorParams('nonogram')).toMatchObject({ size: 8, density: 'balanced' });
@@ -76,7 +75,7 @@ describe('generatorControls', () => {
       { labelKey: 'generator.summary.difficulty', value: 42 },
       { labelKey: 'generator.summary.unique', value: 'generator.value.yes' },
       { labelKey: 'generator.summary.optimal', value: 7 },
-      { labelKey: 'generator.summary.method', value: 'reverse-solve-gf2' },
+      { labelKey: 'generator.summary.method', value: 'generator.method.reverseSolveGf2' },
     ]);
   });
 });

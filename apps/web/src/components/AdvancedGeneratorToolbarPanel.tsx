@@ -81,6 +81,7 @@ export function AdvancedGeneratorToolbarPanel() {
   const setGeneratorParam = useGameStore(s => s.setGeneratorParam);
   const resetGeneratorParams = useGameStore(s => s.resetGeneratorParams);
   const lastGeneratedLevel = useGameStore(s => s.lastGeneratedLevel);
+  const generatorError = useGameStore(s => s.generatorError);
 
   const spec = getGeneratorControlSpec(gameId);
   const params = useMemo(
@@ -145,6 +146,12 @@ export function AdvancedGeneratorToolbarPanel() {
           {t('generator.action.resetParams')}
         </button>
       </div>
+
+      {generatorError && (
+        <p className="rounded-card border border-game-amber-200 bg-game-amber-50 px-3 py-2 text-xs text-game-amber-800">
+          {generatorError}
+        </p>
+      )}
 
       <div className="rounded-card border border-violet-100 bg-white px-3 py-2">
         <h5 className="text-xs font-bold uppercase tracking-wide text-violet-700">

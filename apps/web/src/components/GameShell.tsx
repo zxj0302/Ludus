@@ -23,6 +23,7 @@ export function GameShell({ gameId }: Props) {
     gameState: s.gameState,
     applyMove: s.applyMove, undo: s.undo, redo: s.redo, reset: s.reset, newLevel: s.newLevel,
     requestSolve: s.requestSolve, requestHint: s.requestHint,
+    prependHistory: s.prependHistory,
     solution: s.solution, solverStatus: s.solverStatus, solveError: s.solveError,
     hintMove: s.hintMove, hintHighlight: s.hintHighlight, initialOptimalSteps: s.initialOptimalSteps, currentOptimalSteps: s.currentOptimalSteps,
     solvePlayback: s.solvePlayback, adversarialPlayback: s.adversarialPlayback, solveStepIndex: s.solveStepIndex,
@@ -35,7 +36,7 @@ export function GameShell({ gameId }: Props) {
 
   const {
     gameState, applyMove, undo, redo, reset, newLevel,
-    requestSolve, requestHint, solution, solverStatus, solveError,
+    requestSolve, requestHint, prependHistory, solution, solverStatus, solveError,
     hintMove, hintHighlight, initialOptimalSteps, currentOptimalSteps,
     solvePlayback, adversarialPlayback, solveStepIndex, nextPlaybackStep, prevPlaybackStep, stopPlayback,
     disclosureLevel, setDisclosureLevel, educationOpen, setEducationOpen,
@@ -92,14 +93,11 @@ export function GameShell({ gameId }: Props) {
       case 'prependHistory': {
         const payload = action.payload as GameState;
         if (!entry?.isOwnState(payload)) break;
-        useGameStore.setState(s => ({
-          history: [payload, ...s.history],
-          historyIndex: s.historyIndex + 1,
-        }));
+        prependHistory(payload);
         break;
       }
     }
-  }, [entry]);
+  }, [entry, prependHistory]);
 
   // 同步侧边栏高度到左侧列，实现底部对齐
   const leftColumnRef = useRef<HTMLDivElement>(null);

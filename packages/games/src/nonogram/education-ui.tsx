@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { FormatMoveContext, StatusCardProps } from '../types';
+import type { FormatMoveContext, SolutionPreviewProps, StatusCardProps } from '../types';
 import { StatCell, GameCard } from '../ui/GameCard';
 import type { NonogramState, NonogramMove } from './types';
 
@@ -36,5 +36,40 @@ export function NonogramStatusCard({ gameState, solution }: StatusCardProps<Nono
         <StatCell label={t('nonogram.nodesExplored')} value={nodesExplored} colorClass="text-logic-indigo-700" />
       </div>
     </GameCard>
+  );
+}
+
+export function NonogramSolutionPreview({ solution }: SolutionPreviewProps<NonogramState>) {
+  const { t } = useTranslation();
+  const vizData = solution.trace?.visualizationData as { solutionGrid?: boolean[][] | null } | undefined;
+  const solGrid = vizData?.solutionGrid ?? null;
+  const w = solGrid?.[0]?.length ?? 0;
+
+  if (!solGrid || w === 0) {
+    return <p className="text-xs text-warm-stone-500">{t('nonogram.noTrace')}</p>;
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="text-[10px] text-warm-stone-500">{t('nonogram.solutionPreview')}</div>
+      <div
+        className="grid border-2 border-warm-stone-500"
+        style={{
+          gridTemplateColumns: `repeat(${w}, 1fr)`,
+          width: Math.min(200, w * 20),
+        }}
+      >
+        {solGrid.flat().map((filled, i) => (
+          <div
+            key={i}
+            className="border-[0.5px] border-warm-stone-300"
+            style={{
+              aspectRatio: '1',
+              background: filled ? '#292524' : '#fafaf9',
+            }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

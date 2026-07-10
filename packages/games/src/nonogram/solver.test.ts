@@ -67,7 +67,7 @@ describe('Nonogram — solver', () => {
 
     it('solves a simple 3×3 puzzle', () => {
       const { rowClues, colClues } = computeClues(cross3);
-      const state = createInitialState(3, 3, rowClues, colClues, cross3);
+      const state = createInitialState(3, 3, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.solvable).toBe(true);
@@ -89,7 +89,7 @@ describe('Nonogram — solver', () => {
         [false, false, true, false, false],
       ];
       const { rowClues, colClues } = computeClues(heart);
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.solvable).toBe(true);
@@ -104,7 +104,7 @@ describe('Nonogram — solver', () => {
     it('handles 5×5 all-empty clues', () => {
       const empty5: boolean[][] = Array.from({ length: 5 }, () => new Array(5).fill(false));
       const { rowClues, colClues } = computeClues(empty5);
-      const state = createInitialState(5, 5, rowClues, colClues, empty5);
+      const state = createInitialState(5, 5, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.solvable).toBe(true);
@@ -118,7 +118,7 @@ describe('Nonogram — solver', () => {
     it('handles 5×5 all-filled', () => {
       const full5: boolean[][] = Array.from({ length: 5 }, () => new Array(5).fill(true));
       const { rowClues, colClues } = computeClues(full5);
-      const state = createInitialState(5, 5, rowClues, colClues, full5);
+      const state = createInitialState(5, 5, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.solvable).toBe(true);
@@ -138,7 +138,7 @@ describe('Nonogram — solver', () => {
         pattern.push(row);
       }
       const { rowClues, colClues } = computeClues(pattern);
-      const state = createInitialState(5, 5, rowClues, colClues, pattern);
+      const state = createInitialState(5, 5, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.solvable).toBe(true);
@@ -147,7 +147,7 @@ describe('Nonogram — solver', () => {
 
     it('stats include line solve cells', () => {
       const { rowClues, colClues } = computeClues(cross3);
-      const state = createInitialState(3, 3, rowClues, colClues, cross3);
+      const state = createInitialState(3, 3, rowClues, colClues);
       const result = solveNonogram(state);
 
       expect(result.stats.lineSolveCells).toBeGreaterThanOrEqual(0);
@@ -167,7 +167,7 @@ describe('Nonogram — solver', () => {
 
     it('heart puzzle has exactly 1 solution', () => {
       const { rowClues, colClues } = computeClues(heart5);
-      const state = createInitialState(5, 5, rowClues, colClues, heart5);
+      const state = createInitialState(5, 5, rowClues, colClues);
       expect(countSolutions(state, 2)).toBe(1);
     });
 
@@ -178,13 +178,13 @@ describe('Nonogram — solver', () => {
         [true, false, true],
       ];
       const { rowClues, colClues } = computeClues(cross3);
-      const state = createInitialState(3, 3, rowClues, colClues, cross3);
+      const state = createInitialState(3, 3, rowClues, colClues);
       expect(countSolutions(state, 2)).toBe(1);
     });
 
     it('limit=1: stops at first solution', () => {
       const { rowClues, colClues } = computeClues(heart5);
-      const state = createInitialState(5, 5, rowClues, colClues, heart5);
+      const state = createInitialState(5, 5, rowClues, colClues);
       // With limit 1, should return 1 (not 2) even though only 1 exists
       expect(countSolutions(state, 1)).toBe(1);
     });
@@ -192,7 +192,7 @@ describe('Nonogram — solver', () => {
     it('empty clues: exactly 1 solution (all empty)', () => {
       const empty3: boolean[][] = Array.from({ length: 3 }, () => new Array(3).fill(false));
       const { rowClues, colClues } = computeClues(empty3);
-      const state = createInitialState(3, 3, rowClues, colClues, empty3);
+      const state = createInitialState(3, 3, rowClues, colClues);
       expect(countSolutions(state, 2)).toBe(1);
     });
   });

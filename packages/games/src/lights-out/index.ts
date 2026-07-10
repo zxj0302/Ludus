@@ -111,6 +111,7 @@ import type { GamePluginEntry } from '../types';
 import { LightsOutBoard } from './render';
 import { lightsOutI18n } from './i18n';
 import { formatLightsOutMove, LightsOutStatusCard } from './education-ui';
+import { lightsOutGeneratorControls } from './generator-controls';
 export { lightsOutI18n };
 
 export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
@@ -123,4 +124,5 @@ export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
   formatEducationMove: formatLightsOutMove,
   ui: { statusCard: LightsOutStatusCard },
   education: { content: {} },
+  generatorControls: lightsOutGeneratorControls,
 };

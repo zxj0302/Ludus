@@ -2,39 +2,7 @@ import { buildLightsOutMatrix, solveGF2, optimalSolution, hammingWeight, applyMo
 import { getDifficulty } from './difficulty';
 import type { Level, LevelConfig } from '@ludus/core';
 import type { LightsOutState, LightsOutMove } from './types';
-
-export interface GenerateOptions {
-  n: number;
-  minMoves?: number;
-  maxMoves?: number;
-  requireUnique?: boolean;
-  requireOptimal?: boolean;
-  seed?: number;
-}
-
-function numParam(config: LevelConfig, key: string, fallback: number): number {
-  const value = config.gameParams?.[key];
-  return typeof value === 'number' ? value : fallback;
-}
-
-function boolParam(config: LevelConfig, key: string, fallback: boolean): boolean {
-  const value = config.gameParams?.[key];
-  return typeof value === 'boolean' ? value : fallback;
-}
-
-// ---- 伪随机数生成器 (mulberry32) ----
-
-function mulberry32(seed: number): () => number {
-  return () => {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// ---- 生成器 ----
+import { mulberry32, readBoolParam, readNumParam, resolveSeed } from '../generator-config';
 
 /**
  * 反向求解生成器：
@@ -50,11 +18,11 @@ export function generateLightsOutLevel(config: LevelConfig & {
   requireOptimal?: boolean;
 }): Level {
   const n = config.size ?? config.n ?? 5;
-  const minMoves = Math.max(1, numParam(config, 'minMoves', config.minMoves ?? 3));
-  const maxMoves = Math.max(minMoves, numParam(config, 'maxMoves', config.maxMoves ?? 15));
-  let requireUnique = boolParam(config, 'requireUniqueSolution', config.requireUniqueSolution ?? config.requireUnique ?? true);
-  const requireOptimal = boolParam(config, 'requireKnownOptimal', config.requireKnownOptimal ?? config.requireOptimal ?? true);
-  const seed = config.seed ?? Date.now();
+  const minMoves = Math.max(1, readNumParam(config, 'minMoves', config.minMoves ?? 3)!);
+  const maxMoves = Math.max(minMoves, readNumParam(config, 'maxMoves', config.maxMoves ?? 15)!);
+  let requireUnique = readBoolParam(config, 'requireUniqueSolution', config.requireUniqueSolution ?? config.requireUnique ?? true)!;
+  const requireOptimal = readBoolParam(config, 'requireKnownOptimal', config.requireKnownOptimal ?? config.requireOptimal ?? true)!;
+  const seed = resolveSeed(config);
 
   const rand = mulberry32(seed);
   const A = buildLightsOutMatrix(n);

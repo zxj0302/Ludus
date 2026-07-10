@@ -77,7 +77,7 @@ describe('Nonogram — rules', () => {
   describe('createInitialState', () => {
     it('creates state with empty grid', () => {
       const { rowClues, colClues } = computeClues(heart);
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
 
       expect(state.width).toBe(5);
       expect(state.height).toBe(5);
@@ -90,16 +90,15 @@ describe('Nonogram — rules', () => {
       }
     });
 
-    it('clues and solution are deep copies', () => {
+    it('clues are deep copies and the answer is not stored in playable state', () => {
       const heartCopy = heart.map(r => [...r]);
       const { rowClues, colClues } = computeClues(heartCopy);
-      const state = createInitialState(5, 5, rowClues, colClues, heartCopy);
+      const state = createInitialState(5, 5, rowClues, colClues);
 
       rowClues[0]![0] = 999;
       expect(state.rowClues[0]![0]).toBe(1);
 
-      heartCopy[0]![0] = true;
-      expect(state.solution[0]![0]).toBe(false);
+      expect('solution' in state).toBe(false);
     });
   });
 
@@ -108,7 +107,7 @@ describe('Nonogram — rules', () => {
     let state: NonogramState;
 
     beforeEach(() => {
-      state = createInitialState(5, 5, rowClues, colClues, heart);
+      state = createInitialState(5, 5, rowClues, colClues);
     });
 
     it('fill: EMPTY → FILLED', () => {
@@ -149,12 +148,12 @@ describe('Nonogram — rules', () => {
     const { rowClues, colClues } = computeClues(heart);
 
     it('empty grid → not solved', () => {
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
       expect(isSolved(state)).toBe(false);
     });
 
     it('exact solution → solved', () => {
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
           state.grid[r]![c] = heart[r]![c] ? FILLED : CROSS;
@@ -164,7 +163,7 @@ describe('Nonogram — rules', () => {
     });
 
     it('incorrectly filled grid → not solved', () => {
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
       // Fill ALL cells — clearly wrong
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
@@ -175,7 +174,7 @@ describe('Nonogram — rules', () => {
     });
 
     it('one missing filled cell → not solved', () => {
-      const state = createInitialState(5, 5, rowClues, colClues, heart);
+      const state = createInitialState(5, 5, rowClues, colClues);
       for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 5; c++) {
           if (heart[r]![c]) {

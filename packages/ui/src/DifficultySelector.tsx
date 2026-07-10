@@ -13,7 +13,7 @@ export interface DifficultySelectorProps {
   onPresetChange: (range: [number, number], preset: DifficultyPreset) => void;
   /** Optional explicit regenerate button (same preset, new seed). */
   onGenerate?: () => void;
-  /** Optional secondary generator action shown inside the same compact dropdown. */
+  /** Optional secondary generator action shown as its own button (not inside the select). */
   onAdvancedSelect?: () => void;
   advancedLabelKey?: string;
   showAdvancedUnavailable?: boolean;
@@ -38,7 +38,13 @@ const refreshBtnClass =
   'px-2.5 py-1.5 rounded-btn text-xs font-semibold transition-all duration-150 active:scale-[0.97] ' +
   'bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 shadow-sm';
 
-const ADVANCED_OPTION_VALUE = '__advanced_generation__';
+const advancedBtnClass =
+  'px-2.5 py-1.5 rounded-btn text-xs font-medium transition-all duration-150 active:scale-[0.97] ' +
+  'bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 border border-warm-stone-200';
+
+const advancedUnavailableClass =
+  'px-2.5 py-1.5 rounded-btn text-xs font-medium text-warm-stone-400 ' +
+  'bg-warm-stone-50 border border-warm-stone-100 cursor-not-allowed';
 
 export function DifficultySelector({
   value,
@@ -56,14 +62,10 @@ export function DifficultySelector({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      if (e.target.value === ADVANCED_OPTION_VALUE) {
-        onAdvancedSelect?.();
-        return;
-      }
       const preset = e.target.value as DifficultyPreset;
       onPresetChange(presetToRange(preset), preset);
     },
-    [onAdvancedSelect, onPresetChange],
+    [onPresetChange],
   );
 
   return (
@@ -81,19 +83,31 @@ export function DifficultySelector({
               {t(opt.i18nKey)}
             </option>
           ))}
-          {(onAdvancedSelect || showAdvancedUnavailable) && (
-            <>
-              <option disabled value="__separator__">────────</option>
-              {onAdvancedSelect ? (
-                <option value={ADVANCED_OPTION_VALUE}>{t(advancedLabelKey)}</option>
-              ) : (
-                <option disabled value="__advanced_unavailable__">{t(advancedUnavailableLabelKey)}</option>
-              )}
-            </>
-          )}
         </select>
         <span className={arrowClass} aria-hidden="true">▾</span>
       </label>
+
+      {onAdvancedSelect && (
+        <button
+          type="button"
+          onClick={onAdvancedSelect}
+          className={advancedBtnClass}
+          aria-label={t(advancedLabelKey)}
+        >
+          {t(advancedLabelKey)}
+        </button>
+      )}
+
+      {!onAdvancedSelect && showAdvancedUnavailable && (
+        <span
+          className={advancedUnavailableClass}
+          title={t(advancedUnavailableLabelKey)}
+          aria-disabled="true"
+        >
+          {t(advancedUnavailableLabelKey)}
+        </span>
+      )}
+
       {onGenerate && (
         <button
           type="button"

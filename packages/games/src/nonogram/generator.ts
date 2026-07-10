@@ -4,31 +4,10 @@ import { createInitialState, computeClues, totalClueCount } from './rules';
 import { countSolutions, solveNonogram } from './solver';
 import { computeNonogramDifficulty } from './difficulty';
 
-/**
- * Simple seeded PRNG (mulberry32).
- */
-function mulberry32(seed: number): () => number {
-  return () => {
-    seed |= 0;
-    seed = seed + 0x6D2B79F5 | 0;
-    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32, readBoolParam, readNumParam, resolveSeed } from '../generator-config';
 
 function randInt(rng: () => number, min: number, max: number): number {
   return min + Math.floor(rng() * (max - min + 1));
-}
-
-function numParam(config: LevelConfig, key: string): number | null {
-  const value = config.gameParams?.[key];
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function boolParam(config: LevelConfig, key: string): boolean | null {
-  const value = config.gameParams?.[key];
-  return typeof value === 'boolean' ? value : null;
 }
 
 function densityParam(config: LevelConfig): [number, number] | null {
@@ -111,14 +90,14 @@ function generatePattern(
  */
 export function generateNonogramLevel(config: LevelConfig): Level {
   const [rangeLo, rangeHi] = config.difficultyRange ?? [1, 100];
-  const seed = config.seed ?? Date.now();
+  const seed = resolveSeed(config);
   const rng = mulberry32(seed);
 
   let width: number;
   let height: number;
 
   const targetScore = rangeLo + (rangeHi - rangeLo) * rng();
-  const explicitSize = numParam(config, 'size') ?? config.size ?? null;
+  const explicitSize = readNumParam(config, 'size') ?? config.size ?? null;
 
   if (explicitSize) {
     const size = Math.max(5, Math.min(10, Math.round(explicitSize)));
@@ -151,7 +130,7 @@ export function generateNonogramLevel(config: LevelConfig): Level {
 
   const densityRange: [number, number] = densityParam(config)
     ?? (isHard ? [0.25, 0.40] : isMedium ? [0.30, 0.45] : [0.40, 0.60]);
-  const requireBacktracking = boolParam(config, 'requireBacktracking') ?? isHard;
+  const requireBacktracking = readBoolParam(config, 'requireBacktracking') ?? isHard;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Generate a random pattern
@@ -164,7 +143,7 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     if (emptyRowCount + fullRowCount > Math.floor(height / 3)) continue;
 
     // Create initial state
-    const state = createInitialState(width, height, rowClues, colClues, pattern);
+    const state = createInitialState(width, height, rowClues, colClues);
     const totalCells = width * height;
 
     // Verify unique solution
@@ -240,8 +219,10 @@ export function generateNonogramLevel(config: LevelConfig): Level {
     [false, false, true, false, false],
   ];
   const { rowClues: hRow, colClues: hCol } = computeClues(heartPattern);
-  const heartState = createInitialState(5, 5, hRow, hCol, heartPattern);
+  const heartState = createInitialState(5, 5, hRow, hCol);
   const heartSolve = solveNonogram(heartState);
+  heartState.lineSolveCells = heartSolve.stats.lineSolveCells;
+  heartState.maxBacktrackDepth = heartSolve.stats.maxDepth;
 
   return {
     schemaVersion: 1,

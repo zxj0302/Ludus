@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { BoardProps } from '../types';
 import type { NonogramState, NonogramMove } from './types';
 import { EMPTY, FILLED, CROSS } from './types';
+import { isSolved } from './rules';
 
 const COLORS = {
   bg: '#fafaf9',
@@ -56,7 +57,7 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
   const hoverRef = useRef(hoverCell);
   hoverRef.current = hoverCell;
 
-  const { width, height, grid, rowClues, colClues, solution } = state;
+  const { width, height, grid, rowClues, colClues } = state;
 
   // ═══════════════════════════════════════════════════════════════
   // Layout — recomputes on dimension/clue changes AND container resize
@@ -155,7 +156,7 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
     const hl = highlightRef.current;
     const dis = disabledRef.current;
     const { cellSize, rowClueWidth, colClueHeight, canvasWidth, canvasHeight, clueFontSize } = l;
-    const { grid: g, rowClues: rc, colClues: cc, solution: sol, width: w, height: h } = s;
+    const { grid: g, rowClues: rc, colClues: cc, width: w, height: h } = s;
 
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -267,8 +268,8 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
       ctx.stroke();
     }
 
-    // Solved check
-    const solved = g.every((row, r) => row.every((cell, c) => (cell === FILLED) === sol[r]![c]!));
+    // Solved check — validate against clues, not a hidden answer pattern
+    const solved = isSolved(s);
     if (solved) {
       ctx.fillStyle = COLORS.solvedBg;
       ctx.globalAlpha = 0.3;

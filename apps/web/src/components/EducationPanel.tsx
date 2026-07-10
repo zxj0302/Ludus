@@ -10,8 +10,9 @@ import type { DisclosureLevel } from '@ludus/ui';
 import { StatusCard } from '../statusCards';
 import { getPlayerStarts } from '../utils/solution';
 import { getSectionViewModel } from './educationSectionViewModel';
+import { splitEducationSections, type EducationStageKey } from './educationSectionParser';
 
-type Stage = 'play' | 'think' | 'reveal' | 'solve' | 'create';
+type Stage = EducationStageKey;
 
 const ChevronUpIcon = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -44,34 +45,6 @@ const SECTION_STYLES = {
   solve:  { icon: '⚙️',       borderColor: 'var(--sky-blue-600)',         bgColor: 'var(--sky-blue-50)',     headerColor: 'var(--sky-blue-700)' },
   create: { icon: '\u{1F3A8}', borderColor: 'var(--violet-600)',           bgColor: 'var(--violet-50)',       headerColor: 'var(--violet-700)' },
 };
-
-
-const knownStages = new Set(STAGES.map(s => s.key));
-
-function splitSections(md: string): { key: string; english: string; chinese: string; body: string }[] {
-  const sections: { key: string; english: string; chinese: string; body: string }[] = [];
-  const parts = md.split(/^## /m);
-
-  for (const part of parts) {
-    if (!part.trim()) continue;
-    const newlineIdx = part.indexOf('\n');
-    const heading = newlineIdx >= 0 ? part.slice(0, newlineIdx).trim() : part.trim();
-    const body = newlineIdx >= 0 ? part.slice(newlineIdx + 1).trim() : '';
-
-    const englishPart = heading.includes('·')
-      ? heading.split('·').pop()!.trim()
-      : heading.replace(/^\d+\.\s*/, '').trim();
-    const englishLower = englishPart.toLowerCase();
-    const chinesePart = heading.includes('·')
-      ? heading.split('·')[0]!.replace(/^\d+\.\s*/, '').trim()
-      : englishPart;
-
-    if ((knownStages as Set<string>).has(englishLower) && body) {
-      sections.push({ key: englishLower, english: englishPart, chinese: chinesePart, body });
-    }
-  }
-  return sections;
-}
 
 function CreateSectionCallout() {
   const { t } = useTranslation();
@@ -163,7 +136,7 @@ export function EducationPanel({
     return parts.length >= 3 ? parts.slice(2).join('---').trim() : md;
   }, [entry, language, depth]);
 
-  const sections = useMemo(() => splitSections(rawMd), [rawMd]);
+  const sections = useMemo(() => splitEducationSections(rawMd), [rawMd]);
 
   const scrollToSection = useCallback((english: string) => {
     const el = document.getElementById(sectionIdOf(english));
@@ -295,43 +268,21 @@ export function EducationPanel({
                 let title: string; let icon: string; let body: React.ReactNode;
 
                 if (hasMoves) {
-                  // Nonogram: show solution as a visual grid instead of a step list
-                  if (gameId === 'nonogram') {
-                    const vizData = solution.trace?.visualizationData as { solutionGrid?: boolean[][] | null } | undefined;
-                    const solGrid = vizData?.solutionGrid ?? null;
-                    const w = solGrid?.[0]?.length ?? 0;
-                    const h = solGrid?.length ?? 0;
-                    title = t('education.optimalSolution', { count: solution.moves.length });
-                    icon = '👆';
-                    body = solGrid && w > 0 ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="text-[10px] text-warm-stone-500">{t('nonogram.solutionPreview')}</div>
-                        <div
-                          className="grid border-2 border-warm-stone-500"
-                          style={{
-                            gridTemplateColumns: `repeat(${w}, 1fr)`,
-                            width: Math.min(200, w * 20),
-                          }}
-                        >
-                          {solGrid.flat().map((filled, i) => (
-                            <div
-                              key={i}
-                              className="border-[0.5px] border-warm-stone-300"
-                              style={{
-                                aspectRatio: '1',
-                                background: filled ? '#292524' : '#fafaf9',
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-warm-stone-500">{t('nonogram.noTrace')}</p>
+                  title = t('education.optimalSolution', { count: solution.moves.length });
+                  icon = '👆';
+                  const playersFirst = getPlayerStarts(solution);
+                  const SolutionPreview = entry?.ui?.SolutionPreview;
+                  if (SolutionPreview) {
+                    body = (
+                      <SolutionPreview
+                        solution={solution}
+                        gameState={gameState!}
+                        solvePlayback={solvePlayback}
+                        solveStepIndex={solveStepIndex}
+                        playersFirst={playersFirst}
+                      />
                     );
                   } else {
-                    title = t('education.optimalSolution', { count: solution.moves.length });
-                    icon = '👆';
-                    const playersFirst = getPlayerStarts(solution);
                     body = (
                       <div className="space-y-1 max-h-48 overflow-y-auto" ref={stepsContainerRef}>
                         {solution.moves.map((m, i) => {

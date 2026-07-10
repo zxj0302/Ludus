@@ -15,6 +15,7 @@ import type { GamePluginEntry } from '../types';
 import { SudokuBoard } from './render';
 import { sudokuI18n } from './i18n';
 import { formatSudokuMove, SudokuStatusCard } from './education-ui';
+import { sudokuGeneratorControls } from './generator-controls';
 export { sudokuI18n };
 
 export { SudokuBoard };
@@ -78,4 +79,5 @@ export const sudokuEntry: GamePluginEntry<SudokuState, SudokuMove> = {
   formatEducationMove: formatSudokuMove,
   ui: { statusCard: SudokuStatusCard },
   education: { content: {} },
+  generatorControls: sudokuGeneratorControls,
 };

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateNonogramLevel } from './generator';
-import { isSolved } from './rules';
-import { countSolutions } from './solver';
+import { computeClues, isSolved } from './rules';
+import { countSolutions, solveNonogram } from './solver';
 import type { LevelConfig } from '@ludus/core';
 import type { NonogramState } from './types';
 import { FILLED, CROSS } from './types';
@@ -32,13 +32,23 @@ describe('Nonogram — generator', () => {
     expect(count).toBe(1);
   });
 
-  it('solution pattern matches isSolved when fully filled', () => {
+  it('does not expose the answer pattern in playable state', () => {
     const level = generateNonogramLevel({ ...baseConfig, difficultyRange: [1, 33] });
     const state = level.initialState as NonogramState;
 
+    expect('solution' in state).toBe(false);
+  });
+
+  it('solution pattern matches isSolved when fully filled', () => {
+    const level = generateNonogramLevel({ ...baseConfig, difficultyRange: [1, 33] });
+    const state = level.initialState as NonogramState;
+    const result = solveNonogram(state);
+    expect(result.solvable).toBe(true);
+    expect(result.solution).toBeDefined();
+
     for (let r = 0; r < state.height; r++) {
       for (let c = 0; c < state.width; c++) {
-        state.grid[r]![c] = state.solution[r]![c] ? FILLED : CROSS;
+        state.grid[r]![c] = result.solution![r]![c] ? FILLED : CROSS;
       }
     }
     expect(isSolved(state)).toBe(true);
@@ -65,7 +75,8 @@ describe('Nonogram — generator', () => {
       },
     });
     const state = level.initialState as NonogramState;
-    const filledCells = state.solution.flat().filter(Boolean).length;
+    const result = solveNonogram(state);
+    const filledCells = result.solution?.flat().filter(Boolean).length ?? 0;
 
     expect(state.width).toBe(6);
     expect(state.height).toBe(6);
@@ -85,36 +96,12 @@ describe('Nonogram — generator', () => {
   it('row and column clues are consistent with solution', () => {
     const level = generateNonogramLevel({ ...baseConfig, difficultyRange: [1, 33] });
     const state = level.initialState as NonogramState;
+    const result = solveNonogram(state);
+    expect(result.solution).toBeDefined();
+    const { rowClues, colClues } = computeClues(result.solution!);
 
-    for (let r = 0; r < state.height; r++) {
-      const expected = state.rowClues[r]!;
-      const actual: number[] = [];
-      let run = 0;
-      for (let c = 0; c < state.width; c++) {
-        if (state.solution[r]![c]) {
-          run++;
-        } else {
-          if (run > 0) { actual.push(run); run = 0; }
-        }
-      }
-      if (run > 0) actual.push(run);
-      expect(actual).toEqual(expected);
-    }
-
-    for (let c = 0; c < state.width; c++) {
-      const expected = state.colClues[c]!;
-      const actual: number[] = [];
-      let run = 0;
-      for (let r = 0; r < state.height; r++) {
-        if (state.solution[r]![c]) {
-          run++;
-        } else {
-          if (run > 0) { actual.push(run); run = 0; }
-        }
-      }
-      if (run > 0) actual.push(run);
-      expect(actual).toEqual(expected);
-    }
+    expect(rowClues).toEqual(state.rowClues);
+    expect(colClues).toEqual(state.colClues);
   });
 
   it('generates different levels on repeated calls', () => {

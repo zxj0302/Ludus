@@ -61,7 +61,6 @@ export function createInitialState(
   height: number,
   rowClues: number[][],
   colClues: number[][],
-  solution: boolean[][],
 ): NonogramState {
   const grid: CellState[][] = [];
   for (let r = 0; r < height; r++) {
@@ -74,7 +73,6 @@ export function createInitialState(
     grid,
     rowClues: rowClues.map(r => [...r]),
     colClues: colClues.map(c => [...c]),
-    solution: solution.map(r => [...r]),
     lineSolveCells: 0,
     maxBacktrackDepth: 0,
   };

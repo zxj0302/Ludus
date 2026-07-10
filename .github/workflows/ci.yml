@@ -39,11 +39,8 @@ jobs:
       - name: Build web (SPA)
         run: pnpm --filter ludus-web build
 
-      - name: Build shell (Tauri / Capacitor)
-        run: pnpm build:shell
-
-      - name: Verify shell relative asset paths
-        run: grep -q 'src="./assets/' apps/web/dist/index.html
+      - name: Validate shell packaging (Tauri / Capacitor)
+        run: pnpm validate:shell
 
   # Pages deploy disabled: personal accounts cannot set private visibility.
   # Use pnpm dev / pnpm dev:desktop for local-only access.

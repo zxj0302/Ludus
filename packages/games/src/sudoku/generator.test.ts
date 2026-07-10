@@ -69,6 +69,15 @@ describe('generateSudokuLevel', () => {
     expect(gridA).not.toBe(gridB);
   });
 
+  it('respects seed for reproducible generation', () => {
+    const config = { difficultyRange: [30, 50] as [number, number], seed: 4242 };
+    const level1 = generateSudokuLevel(config);
+    const level2 = generateSudokuLevel(config);
+    expect(JSON.stringify(level1.initialState.grid)).toBe(JSON.stringify(level2.initialState.grid));
+    expect(level1.levelId).toBe('sudoku-4242');
+    expect(level2.levelId).toBe('sudoku-4242');
+  });
+
   it('generates easy puzzle with many clues', () => {
     const level = generateSudokuLevel({ difficultyRange: [0, 10] });
     const clues = (level.initialState.grid as number[]).filter(v => v !== 0).length;

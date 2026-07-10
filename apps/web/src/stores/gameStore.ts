@@ -1,303 +1,43 @@
 import { create } from 'zustand';
-import type { GamePlugin, GameState, Level, Move, Solution, WorkerRequest, WorkerResponse } from '@ludus/core';
+import type { GamePlugin, GameState, Level, Move, Solution } from '@ludus/core';
 import { getGame, getGameEntry } from '@ludus/games';
 import type { DisclosureLevel } from '@ludus/ui';
 import i18n from '../i18n';
 import { getPlayerStarts } from '../utils/solution';
 import { scheduleTimeout, clearAllPlaybackTimers } from '../utils/playbackController';
-import SolverWorker from '../workers/solver.worker?worker';
-import { buildProgressSnapshot, getCurrentElapsedMs, timerFieldsForSession } from '../utils/progressSnapshot';
-import { useProgressStore, parseRestorableSnapshot } from './progressStore';
-import { buildGeneratorLevelConfig, getGeneratorParams, type GeneratorParamValue, type GeneratorParams } from '../generatorControls';
+import { getCurrentElapsedMs, timerFieldsForSession } from '../utils/progressSnapshot';
+import { parseRestorableSnapshot, useProgressStore } from './progressStore';
+import { persistGameSession } from './gameStoreProgress';
+import { getGeneratorParams, type GeneratorParamValue, type GeneratorParams } from '../generatorControls';
+import {
+  fallbackLevel,
+  generatePlayableLevel,
+  getDifficultyRangeForGame,
+} from './gameStoreLevelGeneration';
+import {
+  adversarialSolveStep,
+  applyHintFromSolution,
+  clearPlaybackStateFields,
+  clearSolverRuntimeTimers,
+  isSolveInFlight,
+  maybeRescheduleBackgroundSolve,
+  runSolverOffThread,
+  scheduleAI,
+  scheduleBackgroundSolve,
+  setSolveInFlight,
+  usesWebWorker,
+} from './gameStoreSolverRuntime';
 
 // ═══════════════════════════════════════════════════════════════
-// 通用 AI 调度 — 通过 plugin.ai 实现，不依赖具体游戏
+// 进度持久化 — 见 gameStoreProgress.ts
 // ═══════════════════════════════════════════════════════════════
 
-let aiTimerId: ReturnType<typeof setTimeout> | null = null;
-let bgSolverTimerId: ReturnType<typeof setTimeout> | null = null;
-let bgWorkerReqId = 0;
-let solveInFlight = false;
-
-function usesWebWorker(plugin: GamePlugin): boolean {
-  const web = plugin.metadata.platformSupport.find(p => p.platform === 'web');
-  return web?.capabilities.webWorker === true;
-}
-
-function clearTimers() {
-  if (aiTimerId) { clearTimeout(aiTimerId); aiTimerId = null; }
-  if (bgSolverTimerId) { clearTimeout(bgSolverTimerId); bgSolverTimerId = null; }
-  if (bgSolveCancel) { bgSolveCancel(); bgSolveCancel = null; }
-  clearAllPlaybackTimers();
-  solveInFlight = false;
-}
-
-function clearPlaybackState(): Partial<GameStore> {
-  return {
-    solvePlayback: false,
-    adversarialPlayback: false,
-    solveStepIndex: 0,
-    prePlaybackHistoryIndex: 0,
-  };
-}
-
-function scheduleAI(get: () => GameStore) {
-  if (aiTimerId) clearTimeout(aiTimerId);
-  aiTimerId = setTimeout(() => {
-    aiTimerId = null;
-    const s = get();
-    if (!s.plugin?.ai || !s.gameState || s.solvePlayback) return;
-    if (!s.plugin.ai.isAITurn(s.gameState)) return;
-    const action = s.plugin.ai.getAIMove(s.gameState);
-    if (!action) return;
-    get().applyMove(action.move);
-  }, 600);
-}
-
 // ═══════════════════════════════════════════════════════════════
-// 对抗游戏逐步求解播放 — 每步动态计算，AI 用真实 getAIMove
+// 关卡生成 — 见 gameStoreLevelGeneration.ts
 // ═══════════════════════════════════════════════════════════════
 
-function adversarialSolveStep(
-  get: () => GameStore,
-  set: (partial: Partial<GameStore>) => void,
-) {
-  const { plugin, gameState, adversarialPlayback } = get();
-  if (!plugin?.ai || !gameState || !adversarialPlayback) return;
-
-  if (plugin.isSolved(gameState)) {
-    const endSol = plugin.solve(gameState);
-    set({ ...clearPlaybackState(), solution: endSol });
-    return;
-  }
-
-  if (plugin.ai.isAITurn(gameState)) {
-    scheduleTimeout(() => {
-      const s = get();
-      if (!s.plugin?.ai || !s.gameState || !s.adversarialPlayback) return;
-      const aiAction = s.plugin.ai.getAIMove(s.gameState);
-      if (!aiAction) {
-        set(clearPlaybackState());
-        return;
-      }
-      get().applyMove(aiAction.move);
-      scheduleTimeout(() => adversarialSolveStep(get, set), 600);
-    }, 600);
-    return;
-  }
-
-  const solution = plugin.solve(gameState);
-  set({ solution });
-
-  if (solution.solvable && solution.moves.length > 0) {
-    scheduleTimeout(() => {
-      const s = get();
-      if (!s.adversarialPlayback) return;
-      get().applyMove(solution.moves[0]!);
-      scheduleTimeout(() => adversarialSolveStep(get, set), 600);
-    }, 400);
-  } else {
-    set(clearPlaybackState());
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 离线程求解 — Web Worker 或 setTimeout fallback
-// ═══════════════════════════════════════════════════════════════
-
-function runSolverOffThread(
-  plugin: GamePlugin,
-  state: GameState,
-  onResult: (solution: Solution) => void,
-  onError?: (message: string) => void,
-): { cancel: () => void } {
-  if (usesWebWorker(plugin)) {
-    const worker = new SolverWorker();
-    const reqId = `solve-${++bgWorkerReqId}`;
-    let done = false;
-
-    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      if (e.data.id !== reqId || done) return;
-      done = true;
-      worker.terminate();
-      if (e.data.error) { onError?.(e.data.error); return; }
-      const result = e.data.result as Solution | undefined;
-      if (result) onResult(result);
-      else onError?.(i18n.t('game.status.emptySolverResult'));
-    };
-
-    worker.onerror = (err) => {
-      if (done) return;
-      done = true;
-      worker.terminate();
-      onError?.(i18n.t('game.status.workerError', { message: err.message || 'failed' }));
-    };
-
-    worker.postMessage({ id: reqId, type: 'solve', payload: { gameId: plugin.metadata.id, state: state as Record<string, unknown> } } satisfies WorkerRequest);
-    return { cancel: () => { if (!done) { done = true; worker.terminate(); } } };
-  }
-
-  const timerId = setTimeout(() => {
-    onResult(plugin.solve(state));
-  }, 0);
-  return { cancel: () => clearTimeout(timerId) };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 后台求解 — 异步调度，不阻塞 UI
-// ═══════════════════════════════════════════════════════════════
-
-let bgSolveCancel: (() => void) | null = null;
-
-function scheduleBackgroundSolve(
-  get: () => GameStore,
-  set: (partial: Partial<GameStore>) => void,
-  savedState: GameState,
-  savedGameId: string,
-) {
-  if (bgSolverTimerId) { clearTimeout(bgSolverTimerId); bgSolverTimerId = null; }
-  if (bgSolveCancel) { bgSolveCancel(); bgSolveCancel = null; }
-
-  const { plugin: p } = get();
-  if (!p) return;
-
-  bgSolverTimerId = setTimeout(() => {
-    bgSolverTimerId = null;
-    const { plugin: currentP, gameState: currentS, gameId: currentId } = get();
-    if (!currentP || currentS !== savedState || currentId !== savedGameId) return;
-
-    bgSolveCancel = runSolverOffThread(
-      currentP,
-      currentS,
-      (bgSol) => {
-        bgSolveCancel = null;
-        const { gameState: latestS, gameId: latestId } = get();
-        if (latestS !== savedState || latestId !== savedGameId) return;
-        if (bgSol.solvable && bgSol.moves.length > 0) {
-          set({
-            solution: bgSol,
-            initialOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
-            currentOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
-          });
-        } else {
-          set({ currentOptimalSteps: null });
-        }
-      },
-      () => { bgSolveCancel = null; },
-    ).cancel;
-  }, 500);
-}
-
-function maybeRescheduleBackgroundSolve(get: () => GameStore, set: (partial: Partial<GameStore>) => void) {
-  const { plugin, gameState, gameId, solvePlayback } = get();
-  if (!plugin || !gameState || !gameId || solvePlayback) return;
-  if (plugin.metadata.isFastSolver || plugin.ai) return;
-  scheduleBackgroundSolve(get, set, gameState, gameId);
-}
-
-function persistGameProgress(
-  gameId: string | null,
-  plugin: GamePlugin | null,
-  gameState: GameState | null,
-  history: GameState[],
-  historyIndex: number,
-  optimalSteps: number | null,
-  elapsedMs: number,
-  opts?: { wonJustNow?: boolean; newSession?: boolean },
-) {
-  if (!gameId || !plugin || !gameState) return;
-  useProgressStore.getState().saveSession({
-    gameId,
-    snapshot: buildProgressSnapshot(gameId, gameState, history, historyIndex),
-    isSolved: plugin.isSolved(gameState),
-    optimalSteps,
-    elapsedMs,
-    wonJustNow: opts?.wonJustNow,
-    newSession: opts?.newSession,
-  });
-}
-
-function applyHintFromSolution(
-  get: () => GameStore,
-  set: (partial: Partial<GameStore>) => void,
-  savedState: GameState,
-  savedGameId: string,
-  solution: Solution,
-) {
-  const { plugin, gameState: s, gameId: gid } = get();
-  if (!plugin || !s || s !== savedState || gid !== savedGameId) {
-    set({ solverStatus: 'idle' });
-    return;
-  }
-
-  const isAdversarial = !!plugin.ai;
-
-  if (isAdversarial && (s as Record<string, unknown>).phase === 'choosing') {
-    const playerStarts = getPlayerStarts(solution);
-    set({
-      hintMove: null,
-      hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
-      solution,
-      solverStatus: 'done',
-      solveError: null,
-    });
-    return;
-  }
-
-  if (solution.solvable && solution.moves.length > 0) {
-    set({
-      hintMove: solution.moves[0]!,
-      hintHighlight: null,
-      currentOptimalSteps: solution.stats.solutionLength > 0 ? solution.stats.solutionLength : null,
-      solution,
-      solverStatus: 'done',
-      solveError: null,
-    });
-  } else {
-    set({
-      hintMove: null,
-      hintHighlight: null,
-      currentOptimalSteps: null,
-      solution,
-      solverStatus: 'done',
-      solveError: isAdversarial ? i18n.t('game.status.noWinningMove') : null,
-    });
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 关卡生成 — 尝试 generateLevel，失败则 fallback 到 initialState
-// ═══════════════════════════════════════════════════════════════
-
-function fallbackLevel(plugin: GamePlugin): Level {
-  const initialState = plugin.initialState();
-  return {
-    schemaVersion: 1,
-    gameId: plugin.metadata.id,
-    levelId: `${plugin.metadata.id}-fallback-${Date.now()}`,
-    initialState,
-    difficulty: plugin.getDifficulty(initialState),
-    optimalSteps: null,
-    uniqueSolution: false,
-    generatedBy: 'initial-state-fallback',
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function generatePlayableLevel(
-  plugin: GamePlugin,
-  difficultyRange?: [number, number],
-  params?: GeneratorParams | null,
-): Level {
-  try {
-    return plugin.generateLevel(buildGeneratorLevelConfig(
-      plugin.metadata.id,
-      difficultyRange ?? [1, 100],
-      params,
-    ));
-  } catch {
-    return fallbackLevel(plugin);
-  }
+function isValidGeneratorParamValue(value: GeneratorParamValue): boolean {
+  return typeof value !== 'number' || Number.isFinite(value);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -335,15 +75,17 @@ interface GameStore {
 
   language: string;
   soundEnabled: boolean;
-  difficultyRange: [number, number];
+  difficultyRangeByGame: Record<string, [number, number]>;
   setDifficultyRange: (range: [number, number]) => void;
   generatorParamsByGame: Record<string, GeneratorParams>;
   lastGeneratedLevel: Level | null;
+  generatorError: string | null;
   setGeneratorParam: (gameId: string, key: string, value: GeneratorParamValue) => void;
   resetGeneratorParams: (gameId: string) => void;
 
   loadGame: (gameId: string, options?: { resume?: boolean }) => void;
   loadCustomState: (state: GameState) => void;
+  prependHistory: (state: GameState) => void;
   applyMove: (move: Move) => void;
   undo: () => void;
   redo: () => void;
@@ -389,12 +131,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   educationOpen: false,
   language: 'zh-CN',
   soundEnabled: true,
-  difficultyRange: [1, 100],
+  difficultyRangeByGame: {},
   generatorParamsByGame: {},
   lastGeneratedLevel: null,
+  generatorError: null,
 
   loadGame: (gameId, options) => {
-    clearTimers();
+    clearSolverRuntimeTimers();
     const plugin = getGame(gameId);
     const entry = getGameEntry(gameId);
     if (!plugin) return;
@@ -417,11 +160,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }
 
     if (!state || !history || historyIndex === undefined) {
-      generatedLevel = generatePlayableLevel(
+      const generated = generatePlayableLevel(
         plugin,
-        get().difficultyRange,
+        getDifficultyRangeForGame(get().difficultyRangeByGame, gameId),
         null,
       );
+      generatedLevel = generated.ok ? generated.level : fallbackLevel(plugin);
       state = generatedLevel.initialState as GameState;
       history = [state];
       historyIndex = 0;
@@ -467,14 +211,24 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       hintHighlight: null,
       initialOptimalSteps: hasAI ? null : opt,
       currentOptimalSteps: hasAI ? null : opt,
-      ...clearPlaybackState(),
+      ...clearPlaybackStateFields(),
       startTime: timer.startTime,
       elapsed: timer.elapsed,
       educationOpen: false,
       lastGeneratedLevel: restored ? null : generatedLevel,
+      generatorError: null,
     });
 
-    persistGameProgress(gameId, plugin, state, history, historyIndex, opt, timer.elapsed, { newSession: !restored });
+    persistGameSession({
+      gameId,
+      plugin,
+      gameState: state,
+      history,
+      historyIndex,
+      optimalSteps: opt,
+      elapsedMs: timer.elapsed,
+      newSession: !restored,
+    });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state, gameId);
     if (hasAI) scheduleAI(get);
@@ -517,11 +271,52 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     if (!solvePlayback) {
       const elapsedMs = getCurrentElapsedMs(get().startTime, get().elapsed);
-      persistGameProgress(gameId, plugin, newState, newHistory, newIndex, optSteps, elapsedMs, { wonJustNow });
+      persistGameSession({
+        gameId,
+        plugin,
+        gameState: newState,
+        history: newHistory,
+        historyIndex: newIndex,
+        optimalSteps: optSteps,
+        elapsedMs,
+        wonJustNow,
+      });
     }
 
     if (!solvePlayback && plugin.ai && !nowSolved) scheduleAI(get);
     if (!solvePlayback && !plugin.ai) maybeRescheduleBackgroundSolve(get, set);
+  },
+
+  prependHistory: (state) => {
+    const { plugin, gameId, history, historyIndex, solvePlayback, startTime, elapsed } = get();
+    const entry = gameId ? getGameEntry(gameId) : null;
+    if (!plugin || !gameId || !entry?.isOwnState(state) || solvePlayback) return;
+
+    const newHistory = [state, ...history];
+    const newIndex = historyIndex + 1;
+    const optimalSteps = get().currentOptimalSteps ?? get().initialOptimalSteps;
+
+    set({
+      history: newHistory,
+      historyIndex: newIndex,
+      hintMove: null,
+      hintHighlight: null,
+      solveError: null,
+      lastGeneratedLevel: null,
+    });
+
+    persistGameSession({
+      gameId,
+      plugin,
+      gameState: get().gameState,
+      history: newHistory,
+      historyIndex: newIndex,
+      optimalSteps,
+      elapsedMs: getCurrentElapsedMs(startTime, elapsed),
+    });
+
+    if (plugin.ai) scheduleAI(get);
+    else maybeRescheduleBackgroundSolve(get, set);
   },
 
   undo: () => {
@@ -543,13 +338,18 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintMove: null,
         hintHighlight: null,
         solveError: null,
+        lastGeneratedLevel: null,
       });
       const s = get();
-      persistGameProgress(
-        s.gameId, s.plugin, newState, s.history, newIdx,
-        s.currentOptimalSteps ?? s.initialOptimalSteps,
-        getCurrentElapsedMs(s.startTime, s.elapsed),
-      );
+      persistGameSession({
+        gameId: s.gameId,
+        plugin: s.plugin,
+        gameState: newState,
+        history: s.history,
+        historyIndex: newIdx,
+        optimalSteps: s.currentOptimalSteps ?? s.initialOptimalSteps,
+        elapsedMs: getCurrentElapsedMs(s.startTime, s.elapsed),
+      });
       if (plugin?.ai) scheduleAI(get);
       if (!solvePlayback) maybeRescheduleBackgroundSolve(get, set);
     }
@@ -574,20 +374,25 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         hintMove: null,
         hintHighlight: null,
         solveError: null,
+        lastGeneratedLevel: null,
       });
       const s = get();
-      persistGameProgress(
-        s.gameId, s.plugin, newState, s.history, newIdx,
-        s.currentOptimalSteps ?? s.initialOptimalSteps,
-        getCurrentElapsedMs(s.startTime, s.elapsed),
-      );
+      persistGameSession({
+        gameId: s.gameId,
+        plugin: s.plugin,
+        gameState: newState,
+        history: s.history,
+        historyIndex: newIdx,
+        optimalSteps: s.currentOptimalSteps ?? s.initialOptimalSteps,
+        elapsedMs: getCurrentElapsedMs(s.startTime, s.elapsed),
+      });
       if (plugin?.ai) scheduleAI(get);
       if (!solvePlayback) maybeRescheduleBackgroundSolve(get, set);
     }
   },
 
   reset: () => {
-    clearTimers();
+    clearSolverRuntimeTimers();
     const { history, plugin, gameId } = get();
     if (history.length === 0) return;
     const initial = history[0]!;
@@ -606,27 +411,43 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       currentOptimalSteps: hasAI ? null : opt,
       initialOptimalSteps: hasAI ? null : opt,
       solverStatus: 'idle',
-      ...clearPlaybackState(),
+      ...clearPlaybackStateFields(),
       startTime: Date.now(),
       elapsed: 0,
+      lastGeneratedLevel: null,
     });
-    persistGameProgress(gameId ?? null, plugin ?? null, initial, [initial], 0, opt, 0);
+    persistGameSession({
+      gameId: gameId ?? null,
+      plugin: plugin ?? null,
+      gameState: initial,
+      history: [initial],
+      historyIndex: 0,
+      optimalSteps: opt,
+      elapsedMs: 0,
+    });
     if (!isFastGame && plugin && gameId) scheduleBackgroundSolve(get, set, initial, gameId);
     if (hasAI) scheduleAI(get);
   },
 
   newLevel: (options) => {
-    clearTimers();
-    const { plugin, difficultyRange, gameId } = get();
-    if (!plugin) return;
+    clearSolverRuntimeTimers();
+    const { plugin, gameId } = get();
+    if (!plugin || !gameId) return;
+    const difficultyRange = getDifficultyRangeForGame(get().difficultyRangeByGame, gameId);
     const params = options?.useGeneratorParams
       ? getGeneratorParams(plugin.metadata.id, get().generatorParamsByGame[plugin.metadata.id])
       : null;
-    const level = generatePlayableLevel(
+    const generated = generatePlayableLevel(
       plugin,
       difficultyRange,
       params,
+      { strict: options?.useGeneratorParams },
     );
+    if (!generated.ok) {
+      set({ generatorError: generated.error });
+      return;
+    }
+    const level = generated.level;
     const state = level.initialState as GameState;
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
@@ -643,20 +464,30 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       hintHighlight: null,
       initialOptimalSteps: hasAI ? null : opt,
       currentOptimalSteps: hasAI ? null : opt,
-      ...clearPlaybackState(),
+      ...clearPlaybackStateFields(),
       startTime: Date.now(),
       elapsed: 0,
       lastGeneratedLevel: level,
+      generatorError: null,
     });
 
-    persistGameProgress(gameId ?? null, plugin, state, [state], 0, opt, 0, { newSession: true });
+    persistGameSession({
+      gameId: gameId ?? null,
+      plugin,
+      gameState: state,
+      history: [state],
+      historyIndex: 0,
+      optimalSteps: opt,
+      elapsedMs: 0,
+      newSession: true,
+    });
 
     if (!isFastGame && gameId) scheduleBackgroundSolve(get, set, state, gameId);
     if (hasAI) scheduleAI(get);
   },
 
   loadCustomState: (state: GameState) => {
-    clearTimers();
+    clearSolverRuntimeTimers();
     const { plugin, gameId } = get();
     const isFastGame = plugin?.metadata.isFastSolver;
     const hasAI = !!plugin?.ai;
@@ -673,14 +504,22 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       hintHighlight: null,
       initialOptimalSteps: hasAI ? null : opt,
       currentOptimalSteps: hasAI ? null : opt,
-      ...clearPlaybackState(),
+      ...clearPlaybackStateFields(),
       startTime: Date.now(),
       elapsed: 0,
       lastGeneratedLevel: null,
     });
 
     const elapsedMs = getCurrentElapsedMs(get().startTime, get().elapsed);
-    persistGameProgress(gameId ?? null, plugin ?? null, state, [state], 0, opt, elapsedMs);
+    persistGameSession({
+      gameId: gameId ?? null,
+      plugin: plugin ?? null,
+      gameState: state,
+      history: [state],
+      historyIndex: 0,
+      optimalSteps: opt,
+      elapsedMs,
+    });
 
     if (!isFastGame && gameId) scheduleBackgroundSolve(get, set, state, gameId);
     if (hasAI) scheduleAI(get);
@@ -688,15 +527,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   requestSolve: () => {
     const { plugin, gameState, solverStatus } = get();
-    if (!plugin || !gameState || solverStatus === 'running' || solveInFlight) return;
+    if (!plugin || !gameState || solverStatus === 'running' || isSolveInFlight()) return;
 
-    solveInFlight = true;
+    setSolveInFlight(true);
     const savedState = gameState;
     const savedGameId = plugin.metadata.id;
     set({ solverStatus: 'running', solveError: null });
 
     const finishSolve = (partial: Partial<GameStore>) => {
-      solveInFlight = false;
+      setSolveInFlight(false);
       set(partial);
     };
 
@@ -756,7 +595,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
               hintMove: null,
               hintHighlight: null,
             });
-            solveInFlight = false;
+            setSolveInFlight(false);
             scheduleTimeout(() => adversarialSolveStep(get, set), 600);
           }, 800);
           return;
@@ -865,9 +704,9 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       historyIndex: idx,
       gameState: history[idx],
       history: history.slice(0, idx + 1),
-      ...clearPlaybackState(),
+      ...clearPlaybackStateFields(),
     });
-    solveInFlight = false;
+    setSolveInFlight(false);
   },
 
   setDisclosureLevel: (level) => {
@@ -892,17 +731,31 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
-  setDifficultyRange: (range) => set({ difficultyRange: range }),
-  setGeneratorParam: (gameId, key, value) => set(s => ({
-    generatorParamsByGame: {
-      ...s.generatorParamsByGame,
-      [gameId]: {
-        ...getGeneratorParams(gameId, s.generatorParamsByGame[gameId]),
-        [key]: value,
+  setDifficultyRange: (range) => {
+    const gameId = get().gameId;
+    if (!gameId) return;
+    set(s => ({
+      difficultyRangeByGame: {
+        ...s.difficultyRangeByGame,
+        [gameId]: range,
       },
-    },
-  })),
+    }));
+  },
+  setGeneratorParam: (gameId, key, value) => {
+    if (!isValidGeneratorParamValue(value)) return;
+    set(s => ({
+      generatorError: null,
+      generatorParamsByGame: {
+        ...s.generatorParamsByGame,
+        [gameId]: {
+          ...getGeneratorParams(gameId, s.generatorParamsByGame[gameId]),
+          [key]: value,
+        },
+      },
+    }));
+  },
   resetGeneratorParams: (gameId) => set(s => ({
+    generatorError: null,
     generatorParamsByGame: {
       ...s.generatorParamsByGame,
       [gameId]: getGeneratorParams(gameId),
@@ -923,14 +776,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (s.startTime) {
       set({ elapsed: elapsedMs, startTime: null });
     }
-    persistGameProgress(
-      s.gameId,
-      s.plugin,
-      s.gameState,
-      s.history,
-      s.historyIndex,
-      s.currentOptimalSteps ?? s.initialOptimalSteps,
+    persistGameSession({
+      gameId: s.gameId,
+      plugin: s.plugin,
+      gameState: s.gameState,
+      history: s.history,
+      historyIndex: s.historyIndex,
+      optimalSteps: s.currentOptimalSteps ?? s.initialOptimalSteps,
       elapsedMs,
-    );
+    });
   },
 }));

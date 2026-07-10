@@ -5,8 +5,8 @@
 // 使 GameShell/EducationPanel 无需认识具体游戏即可工作。
 // ============================================================
 
-import type { ComponentType } from 'react';
-import type { GamePlugin, GameState, Move, SolverTrace, Solution } from '@ludus/core';
+import type { ComponentType, RefObject } from 'react';
+import type { GamePlugin, GameState, Level, LevelConfig, Move, SolverTrace, Solution } from '@ludus/core';
 
 // ---- Board 组件 Props ----
 
@@ -39,6 +39,16 @@ export interface HighlightCell {
   value?: number; // Sudoku 等需要显示数字
 }
 
+export interface SolutionPreviewProps<S extends GameState = GameState> {
+  solution: Solution;
+  gameState: S;
+  solvePlayback: boolean;
+  solveStepIndex: number;
+  playersFirst: boolean;
+  stepsContainerRef?: RefObject<HTMLDivElement | null>;
+  currentStepRef?: RefObject<HTMLDivElement | null>;
+}
+
 // ---- UI 扩展 Props ----
 
 export interface ToolbarSlotProps {
@@ -58,6 +68,44 @@ export interface VisualizationProps {
   gameState: GameState;
   solveStepIndex: number;
   solvePlayback: boolean;
+}
+
+// ---- 高级生成器控件（可选自描述能力） ----
+
+export type GeneratorParamValue = string | number | boolean;
+export type GeneratorParams = Record<string, GeneratorParamValue>;
+
+export interface GeneratorOption {
+  value: string | number;
+  labelKey: string;
+}
+
+export interface GeneratorField {
+  key: string;
+  kind: 'select' | 'number' | 'checkbox';
+  labelKey: string;
+  helpKey: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: GeneratorOption[];
+}
+
+export interface GeneratorGuarantee {
+  labelKey: string;
+  descriptionKey: string;
+}
+
+export interface GeneratorControlsSpec {
+  titleKey: string;
+  descriptionKey: string;
+  fields: GeneratorField[];
+  defaultParams: GeneratorParams;
+  guarantees: GeneratorGuarantee[];
+  buildLevelConfig: (
+    difficultyRange: [number, number],
+    params: GeneratorParams,
+  ) => LevelConfig;
 }
 
 // ---- GamePluginEntry — 完整插件条目 ----
@@ -94,6 +142,8 @@ export interface GamePluginEntry<
     toolbarSlot?: ComponentType<ToolbarSlotProps>;
     /** 教育侧边栏状态卡片 */
     statusCard?: ComponentType<StatusCardProps<S>>;
+    /** 教育面板最优解预览（替代默认走子列表） */
+    SolutionPreview?: ComponentType<SolutionPreviewProps<S>>;
   };
 
   /** 可选关卡选择器（Sokoban 等需要） */
@@ -112,4 +162,7 @@ export interface GamePluginEntry<
     /** 可视化组件 */
     Component: ComponentType<VisualizationProps>;
   };
+
+  /** 可选高级生成器控件 metadata + LevelConfig 映射 */
+  generatorControls?: GeneratorControlsSpec;
 }

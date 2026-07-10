@@ -5,13 +5,21 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 6c / 7 收尾** — v0.1.1 Windows 修复版已发布；高级生成器已迁入 toolbar 折叠二级面板，「出题」卡片回归关卡设计教学；移动端 Web→Capacitor Android 同步验证通过，真机/模拟器运行被本机 Android SDK root 阻塞。
+- **当前阶段**：**阶段 6c / 7 收尾** — v0.1.1 Windows 修复版已发布；高级生成器已迁入 toolbar 折叠二级面板，「出题」卡片回归关卡设计教学；移动端采用 **模拟验证**（`pnpm validate:shell`），真机/模拟器运行暂缓至配置 Android SDK 后。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，398 个测试（全过），CI 就绪，Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，425 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：44 个测试文件，398 测试全过。
+- **测试覆盖**：51 个测试文件，425 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
+- **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
+- **审计修复第二批**：Nonogram playable state 不再携带 `solution`；`isOwnState`/Canvas 渲染改为基于线索判定通关；高级生成失败时保留当前关卡并显示 `generatorError`，普通 toolbar 生成仍允许 fallback。
+- **架构债收敛（高级生成 metadata）**：`GeneratorControlsSpec` 迁入 `GamePluginEntry.generatorControls`（Lights Out / Sudoku / Nonogram 自描述）；`apps/web/src/generatorControls.ts` 退化为 registry 适配层。
+- **审计修复第三批**：`difficultyRange` 改为按游戏分区（`difficultyRangeByGame`）；生成摘要 `generatedBy` i18n 化；Nonogram 最优解预览迁入 `GamePluginEntry.ui.SolutionPreview`，`EducationPanel` 去除 `gameId === 'nonogram'` 硬编码。
+- **移动端模拟验证**：新增 `pnpm validate:shell`（`build:shell` + 产物/配置契约测试）；`shellBuildArtifacts.test.ts` 校验相对资源路径与 `solver.worker`；真机验证暂缓。
+- **审计修复第四批（低优先级）**：`DifficultySelector` 高级生成改为独立按钮；`splitEducationSections` 抽出并加回归测试；`gameStoreLevelGeneration.ts` 承接关卡生成；`generator-config.ts` 统一 PRNG/参数读取。
+- **审计修复第五批**：`gameStoreSolverRuntime.ts` 承接 AI/后台求解/对抗播放/提示逻辑；Sudoku 生成器全链路接入 `config.seed` 可复现。
+- **审计收尾**：`gameStoreProgress.ts` 外置进度持久化；CI 用 `pnpm validate:shell` 替代手工 grep；`shellBuildArtifacts` 在无 shell dist 时自动跳过。
 
 ## ✅ DONE
 
@@ -142,21 +150,21 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-桌面安装包空白页修复版 `v0.1.1` 已发布；教育面板「出题」高级生成器控制台已完成。下一步：
+审计收尾已完成（进度外置 + CI validate:shell）。下一步：
 
-1. **完成移动端真机验证**：安装/配置 Android Studio SDK，确保 `ANDROID_HOME` 或 `ANDROID_SDK_ROOT` 指向有效 SDK（常见路径 `C:\Users\27491\AppData\Local\Android\Sdk`），并把 `platform-tools`/`emulator` 加入 PATH；然后运行 `pnpm --filter ludus-mobile exec cap run android --list` / 真机运行
-2. **阶段 6c 下一个任务**：把 `apps/web/src/generatorControls.ts` 中的高级生成参数 metadata 迁移为 `GamePluginEntry` 可选自描述能力，保留当前 toolbar 折叠入口、Create 教学提示和生成契约测试
+1. **新功能 / 新游戏增量**，或按需发布下一版本。
+2. **（暂缓）移动端真机验证**：配置 Android SDK 后 `pnpm sync:mobile` + `cap run android`；日常 `pnpm validate:shell`。
 
 ## 🐛 KNOWN ISSUES
 
 - 4×4 和 5×5 Lights Out 矩阵不可逆（nullity 4/2），唯一解不可能——高级生成器 UI 已说明并在生成逻辑中降级为可解关卡
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
-- 本机移动端真机运行环境未完成：`pnpm sync:mobile` 成功，Capacitor Android 工程/资源同步完成；`cap run android --list` 失败于 `ERR_SDK_NOT_FOUND: No valid Android SDK root found`，当前机器未配置可发现的 Android SDK root，且 PATH 中无 `adb`/`emulator`
+- 本机移动端真机运行环境未完成（**暂缓**）：`pnpm validate:shell` 模拟验证通过；`cap run android` 仍依赖 Android SDK，待后续配置
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 6 / 7 横切与发布已基本完成；高级出题控件已手动确认无问题。移动端验证已推进到 Android 同步成功，但真机/模拟器运行依赖本机 Android SDK 配置。用户指定“让高级生成参数成为插件自描述能力”为下一个任务。
+- 阶段 6 / 7 横切与发布已基本完成；高级出题控件已手动确认无问题。移动端真机验证暂缓，当前以 `pnpm validate:shell` 模拟验证套壳链路。
 
 ## 📝 SESSION LOG
 
@@ -567,3 +575,11 @@
 - [2026-07-09] **阶段 6c 高级生成入口调整**：根据产品语义调整信息架构：`EducationPanel` 的「出题」卡片不再承载参数控制台，只显示“出题不是随便调参数”的教学提示；高级生成控件迁入 `GeneratorToolbar` 的折叠二级面板，并抽出 `AdvancedGeneratorToolbarPanel.tsx`。默认 toolbar「新关卡」仍走普通难度生成，折叠面板中的“按参数生成”显式调用 `newLevel({ useGeneratorParams: true })`。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
 - [2026-07-09] **UI 调整 — 高级生成入口并入难度菜单**：为避免 toolbar 因新增“高级生成”按钮而拥挤换行，将高级生成入口放入 `DifficultySelector` 的下拉菜单中（难度项下方分隔后显示“高级生成/收起高级生成”）；选择普通难度仍立即普通生成，选择高级生成只展开/收起 `AdvancedGeneratorToolbarPanel`，参数面板仍在 toolbar 下方显示。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
 - [2026-07-09] **UI 调整 — 难度按钮宽度与高级生成可见性**：`DifficultySelector` 固定为紧凑宽度，避免“高级生成”长选项撑宽 toolbar；对尚未配置高级生成 spec 的游戏，难度菜单显示禁用项“高级生成（待支持）”，让能力状态可见但不提供不可用操作。398 测试全过，`pnpm typecheck` 与 `pnpm build:shell` 成功。
+- [2026-07-10] **审计第一批修复**：移除 Sudoku 高级生成中无效的“唯一解”开关；`setGeneratorParam` 拒绝 `NaN`；`reset`/`undo`/`redo` 清理 stale `lastGeneratedLevel`；新增 `gameStore.prependHistory()` 并让 `GameShell` 通过 store action 持久化插件前置历史。新增 3 个 store 回归测试，401 测试全过，`pnpm typecheck` 与 `pnpm --filter ludus-web build` 成功。
+- [2026-07-10] **审计第二批修复**：Nonogram playable state 彻底移除 `solution` 字段；`isOwnState` 改为校验 `lineSolveCells`/`maxBacktrackDepth`；Canvas 渲染用 `isSolved()` 判定通关；高级生成失败时 `newLevel({ useGeneratorParams: true })` 保留当前关卡并写入 `generatorError`，普通 toolbar 生成仍 fallback。新增 2 个 store 回归测试，404 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **架构债收敛 — 高级生成 metadata 插件化**：`GeneratorControlsSpec` 类型加入 `packages/games/src/types.ts`；Lights Out / Sudoku / Nonogram 各自 `generator-controls.ts` 并挂到 `GamePluginEntry.generatorControls`；`apps/web/src/generatorControls.ts` 改为通过 `getGameEntry()` 读取 spec 与 `buildLevelConfig`。新增 `packages/games/src/generator-controls.test.ts` 契约测试，408 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **审计第三批修复**：`difficultyRange` 全局字段改为 `difficultyRangeByGame` 按游戏记忆难度；`summarizeGeneratedLevel` 的 `generatedBy` 映射为 i18n key；`NonogramSolutionPreview` 挂到 `GamePluginEntry.ui.SolutionPreview`，`EducationPanel` 通过 entry 渲染最优解预览。409 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **移动端模拟验证**：用户暂缓真机验证；新增 `pnpm validate:shell`（`build:shell` + `shellBuildArtifacts.test.ts` 校验相对资源路径、`solver.worker`、Capacitor https scheme）；更新 `apps/mobile/README.md` 说明浏览器 preview 模拟 WebView。413 测试全过，`pnpm validate:shell` 成功。
+- [2026-07-10] **审计第四批修复**：`DifficultySelector` 高级生成移出原生 select；`educationSectionParser.ts` 抽出五段式解析并加测试；`gameStoreLevelGeneration.ts` 承接 `generatePlayableLevel`/`fallbackLevel`；`generator-config.ts` 统一 mulberry32/参数读取。423 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **审计第五批修复**：`gameStoreSolverRuntime.ts` 抽取 AI 调度、后台求解、对抗播放、离线程求解与提示应用；Sudoku `generateSudokuLevel` 全随机路径改用 seeded RNG，`config.seed` 可复现同一盘面。425 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **审计收尾**：`gameStoreProgress.ts` 外置 `persistGameSession`；CI `.github/workflows/ci.yml` 改用 `pnpm validate:shell`；`shellBuildArtifacts` 在无 shell dist 时 skip。425 测试全过，`pnpm validate:shell` 成功。
