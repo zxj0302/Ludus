@@ -593,3 +593,4 @@
 - [2026-07-10] **围堵小偷设计启动**：用户选定方案 A（玩家放警察、AI 小偷逃边缘、警察不移动、方格+不规则轮廓）；中文名「围堵小偷」id=`thief-siege`；Angel and Devil 列为后续。写入 `docs/superpowers/specs/2026-07-10-thief-siege-design.md` 待评审。
 - [2026-07-10] **围堵小偷 spec 确认 + 实现计划**：用户确认设计；写入 `docs/superpowers/plans/2026-07-10-thief-siege.md`（Task 1–5）。下一步按计划实现。
 - [2026-07-10] **围堵小偷 Task 5 完成**：补齐 L2/L3 × zh-CN/en 教学、`EscapePathViz`、`entrySetup` wiring、`docs/games/thief-siege.md`；55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **围堵小偷 Subagent-Driven 收尾**：Tasks 1–5 全完成于 `feat/thief-siege`（9 commits）；终审修复 maxCops 耗尽软锁（跳过警察回合继续小偷走）；规则/求解/生成/冒烟 57 测 + typecheck 绿。
