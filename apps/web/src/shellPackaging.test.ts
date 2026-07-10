@@ -7,7 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 describe('cross-platform shell packaging', () => {
   it('release package versions are synced to v0.1.1', () => {
-    const expectedVersion = '0.1.1';
+    const expectedVersion = '0.2.0';
     const packagePaths = [
       'apps/web/package.json',
       'apps/desktop/package.json',

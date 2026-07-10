@@ -20,9 +20,10 @@
 ```bash
 pnpm install
 pnpm dev          # Web 开发 http://127.0.0.1:5173
-pnpm test:run     # 384 测试
+pnpm test:run     # 425 测试
 pnpm typecheck
 pnpm build        # Web 生产构建
+pnpm validate:shell  # 套壳构建 + 契约测试（CI 同命令）
 ```
 
 ## 新增游戏（概要）
@@ -40,7 +41,7 @@ pnpm build        # Web 生产构建
 ```bash
 pnpm typecheck
 pnpm test:run
-pnpm build:shell   # 若改动影响套壳构建
+pnpm validate:shell   # 若改动影响套壳构建（CI 会单独执行）
 ```
 
 CI 在 push / PR 时自动运行（`.github/workflows/ci.yml`）。

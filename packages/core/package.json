@@ -1,6 +1,6 @@
 {
   "name": "@ludus/core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Ludus 核心逻辑层 — 框架无关的纯 TypeScript：类型定义、Zod Schema、版本化 Migrator、Worker 消息协议",
   "type": "module",

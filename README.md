@@ -8,7 +8,7 @@ Ludus 让玩家在玩经典小游戏时，非侵入地被引导思考「如何�
 
 ## 当前状态
 
-**Phase 7 — 测试/发布进行中**。8 款游戏完整实现，384 个测试全过，CI 已配置，桌面壳可开发与打包。
+**v0.2.0 — 审计硬化版**。8 款游戏完整实现，425 个测试全过，CI 含 `validate:shell`，桌面壳可开发与打包。
 
 | 游戏 | 核心算法 | 复杂度 |
 |------|----------|--------|
@@ -43,7 +43,8 @@ pnpm install
 
 pnpm dev              # Web → http://127.0.0.1:5173
 pnpm dev:desktop      # Tauri 桌面开发壳
-pnpm test:run         # 384 测试
+pnpm test:run         # 425 测试
+pnpm validate:shell   # 套壳构建 + 契约验证
 pnpm typecheck
 pnpm build            # Web SPA
 pnpm build:shell      # Tauri/Capacitor 相对路径构建
@@ -87,7 +88,7 @@ Ludus/
 - [x] Phase 4：Lights Out 垂直切片
 - [x] Phase 5：8 款增量游戏
 - [x] Phase 6：Hub、进度、生成器 UI、Tauri/Capacitor 套壳
-- [x] Phase 7：CI ✅、首个 release ✅、v0.1.1 桌面空白页修复版 ✅
+- [x] Phase 7：CI ✅、首个 release ✅、v0.1.1 桌面修复 ✅、**v0.2.0 审计硬化版** ✅
 
 完整 backlog：162 款游戏（`docs/phases/00-backlog.md`）。
 

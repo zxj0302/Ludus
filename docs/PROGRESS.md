@@ -5,7 +5,7 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 6c / 7 收尾** — v0.1.1 Windows 修复版已发布；高级生成器已迁入 toolbar 折叠二级面板，「出题」卡片回归关卡设计教学；移动端采用 **模拟验证**（`pnpm validate:shell`），真机/模拟器运行暂缓至配置 Android SDK 后。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布**；8 款游戏 MVP 超额完成；横切与审计主线已收口。
 - **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，425 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
@@ -150,10 +150,11 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-审计收尾已完成（进度外置 + CI validate:shell）。下一步：
+`v0.2.0` 已打 tag 并触发 Release workflow。下一步（产品向）：
 
-1. **新功能 / 新游戏增量**，或按需发布下一版本。
-2. **（暂缓）移动端真机验证**：配置 Android SDK 后 `pnpm sync:mobile` + `cap run android`；日常 `pnpm validate:shell`。
+1. **增量新游戏**：backlog 候选 **Connect 4**（博弈树/Alpha-Beta）或 **Peg Solitaire**（搜索）；一次一款，完整 DoD。
+2. **横切可选**：PWA 离线、Hub 成就展示、Sokoban 程序化生成器。
+3. **（暂缓）移动端真机**：Android SDK 配置后 `pnpm sync:mobile`。
 
 ## 🐛 KNOWN ISSUES
 
@@ -583,3 +584,4 @@
 - [2026-07-10] **审计第四批修复**：`DifficultySelector` 高级生成移出原生 select；`educationSectionParser.ts` 抽出五段式解析并加测试；`gameStoreLevelGeneration.ts` 承接 `generatePlayableLevel`/`fallbackLevel`；`generator-config.ts` 统一 mulberry32/参数读取。423 测试全过，`pnpm typecheck` 成功。
 - [2026-07-10] **审计第五批修复**：`gameStoreSolverRuntime.ts` 抽取 AI 调度、后台求解、对抗播放、离线程求解与提示应用；Sudoku `generateSudokuLevel` 全随机路径改用 seeded RNG，`config.seed` 可复现同一盘面。425 测试全过，`pnpm typecheck` 成功。
 - [2026-07-10] **审计收尾**：`gameStoreProgress.ts` 外置 `persistGameSession`；CI `.github/workflows/ci.yml` 改用 `pnpm validate:shell`；`shellBuildArtifacts` 在无 shell dist 时 skip。425 测试全过，`pnpm validate:shell` 成功。
+- [2026-07-10] **v0.2.0 发布**：CI `22fbba5` 绿灯；版本号同步至 `0.2.0`；更新 CHANGELOG/README/CONTRIBUTING/`07-release.md`；打 tag `v0.2.0` 触发 Release workflow 产出 Windows 安装包。

@@ -1,6 +1,6 @@
 {
   "name": "@ludus/education",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Ludus 教育层 — 五段式教学内容渲染、Markdown/LaTeX 加载",
   "type": "module",
