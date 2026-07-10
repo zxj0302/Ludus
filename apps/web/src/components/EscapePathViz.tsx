@@ -95,7 +95,7 @@ export function EscapePathViz({ trace, solution, gameState }: Props) {
                   kind: t(`thiefSiege.cell.${cell}`),
                 })}
               >
-                {isThief ? t('thiefSiege.viz.thiefMark') : isCop ? t('thiefSiege.viz.copMark') : isPath ? '·' : ''}
+                {isThief ? t('thiefSiege.viz.thiefMark') : isCop ? t('thiefSiege.viz.copMark') : isPath ? t('thiefSiege.viz.pathMark') : ''}
               </div>
             );
           })}
