@@ -104,57 +104,59 @@ function copPlaceMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
   return moves;
 }
 
-export function legalMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
-  if (state.status !== 'playing') return [];
-
-  if (state.phase === 'cop') {
-    return copPlaceMoves(state);
-  }
-
-  return thiefStepMoves(state);
-}
-
-function withThiefTrappedCheck(state: ThiefSiegeState): ThiefSiegeState {
+export function normalizeTerminalState(state: ThiefSiegeState): ThiefSiegeState {
   if (state.status !== 'playing' || state.phase !== 'thief') return state;
   if (thiefStepMoves(state).length > 0) return state;
   return { ...state, status: 'cop-win' };
 }
 
+export function legalMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
+  const normalized = normalizeTerminalState(state);
+  if (normalized.status !== 'playing') return [];
+
+  if (normalized.phase === 'cop') {
+    return copPlaceMoves(normalized);
+  }
+
+  return thiefStepMoves(normalized);
+}
+
 export function applyMove(state: ThiefSiegeState, move: ThiefSiegeMove): ThiefSiegeState {
-  if (state.status !== 'playing') return state;
+  const normalized = normalizeTerminalState(state);
+  if (normalized.status !== 'playing') return normalized;
 
   if (move.type === 'place') {
-    if (state.phase !== 'cop') return state;
-    if (!isValidPlaceTarget(state, move.row, move.col)) return state;
-    if (state.cops.length >= state.maxCops) return state;
+    if (normalized.phase !== 'cop') return normalized;
+    if (!isValidPlaceTarget(normalized, move.row, move.col)) return normalized;
+    if (normalized.cops.length >= normalized.maxCops) return normalized;
 
     const next: ThiefSiegeState = {
-      ...state,
-      cops: [...state.cops, { row: move.row, col: move.col }],
+      ...normalized,
+      cops: [...normalized.cops, { row: move.row, col: move.col }],
       phase: 'thief',
       currentPlayer: 1,
     };
-    return withThiefTrappedCheck(next);
+    return normalizeTerminalState(next);
   }
 
-  if (state.phase !== 'thief') return state;
+  if (normalized.phase !== 'thief') return normalized;
 
-  const { thief } = state;
-  const isNeighbor = neighbors4(state.width, state.height, thief.row, thief.col)
+  const { thief } = normalized;
+  const isNeighbor = neighbors4(normalized.width, normalized.height, thief.row, thief.col)
     .some(pos => pos.row === move.row && pos.col === move.col);
-  if (!isNeighbor || !isWalkableCell(state, move.row, move.col)) return state;
+  if (!isNeighbor || !isWalkableCell(normalized, move.row, move.col)) return normalized;
 
-  const cell = getCell(state, move.row, move.col)!;
+  const cell = getCell(normalized, move.row, move.col)!;
   if (cell === 'exit') {
     return {
-      ...state,
+      ...normalized,
       thief: { row: move.row, col: move.col },
       status: 'thief-win',
     };
   }
 
   return {
-    ...state,
+    ...normalized,
     thief: { row: move.row, col: move.col },
     phase: 'cop',
     currentPlayer: 0,

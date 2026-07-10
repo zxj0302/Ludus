@@ -5,6 +5,7 @@ import {
   applyMove,
   isSolved,
   isOwnState,
+  normalizeTerminalState,
   cellIndex,
   inBounds,
   neighbors4,
@@ -218,6 +219,49 @@ describe('applyMove — step', () => {
     expect(next.thief).toEqual({ row: 0, col: 1 });
     expect(next.status).toBe('thief-win');
     expect(isSolved(next)).toBe(false);
+  });
+});
+
+function trappedThiefState(): ThiefSiegeState {
+  return {
+    width: 3,
+    height: 3,
+    cells: [
+      'exit', 'exit', 'exit',
+      'exit', 'floor', 'exit',
+      'exit', 'exit', 'exit',
+    ],
+    thief: { row: 1, col: 1 },
+    cops: [
+      { row: 0, col: 1 },
+      { row: 2, col: 1 },
+      { row: 1, col: 0 },
+      { row: 1, col: 2 },
+    ],
+    phase: 'thief',
+    currentPlayer: 1,
+    maxCops: 10,
+    status: 'playing',
+  };
+}
+
+describe('normalizeTerminalState', () => {
+  it('sets cop-win for hand-crafted trapped thief phase', () => {
+    const s = trappedThiefState();
+    const next = normalizeTerminalState(s);
+    expect(next.status).toBe('cop-win');
+    expect(isSolved(next)).toBe(true);
+    expect(legalMoves(next)).toEqual([]);
+  });
+
+  it('leaves playing thief phase with moves unchanged', () => {
+    const s: ThiefSiegeState = {
+      ...trappedThiefState(),
+      cops: [{ row: 0, col: 1 }],
+    };
+    const next = normalizeTerminalState(s);
+    expect(next.status).toBe('playing');
+    expect(next).toBe(s);
   });
 });
 
