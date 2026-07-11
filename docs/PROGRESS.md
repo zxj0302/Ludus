@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；9 款游戏 MVP 超额完成；围堵小偷垂直切片已完成。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；9 款游戏 MVP 超额完成；围堵小偷 v1.1（大地图 + 对抗 AI + 混合可胜保证）已完成。
 - **MVP 范围**：9 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅ + 围堵小偷 ✅），超 MVP 目标（原定 3 款）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，466 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，481 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：55 个测试文件，466 测试全过。
+- **测试覆盖**：57 个测试文件，481 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
 - **审计修复第二批**：Nonogram playable state 不再携带 `solution`；`isOwnState`/Canvas 渲染改为基于线索判定通关；高级生成失败时保留当前关卡并显示 `generatorError`，普通 toolbar 生成仍允许 fallback。
@@ -137,6 +137,11 @@
   - 教学: 四份 markdown（L2/L3 × zh-CN/en），五段式结构，明确 BFS/瓶颈直觉且不声称完整 minimax
   - 文档: `docs/games/thief-siege.md` 记录规则、模块地图、solver/generator/AI wiring 与扩展边界
   - 验证: 55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功
+- **围堵小偷 v1.1** ✅:
+  - 地图尺寸按难度升级为 11 / 15 / 19；简单关通过 `copHasWinningStrategy` 严格验证，中/难关采用瓶颈构造 + 浅层对抗抽检。
+  - 小偷 AI 接入 `adversary.ts` 有限预算 minimax/alpha-beta，Web 通过 `ai-move` Worker 路径运行，超时/不可用时降级到 BFS 贪心。
+  - 教学与文档更新：四份 `packages/education/src/content/thief-siege/*.md`、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024。
+  - 验证：57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功。
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -152,14 +157,14 @@
 
 ## 🚧 IN PROGRESS
 
-- 无。围堵小偷 Task 1–5 已完成并验证。
+- 无。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-选择下一步：
+下一步二选一：
 
-1. 若继续新游戏：为 **Angel and Devil** 写独立设计 spec（不要并入 `thief-siege`），先明确棋盘拓扑、胜负条件、有限/无限图边界与教学抽象。
-2. 若先 polish：对 `thief-siege` 做轻量手感审查（胜负反馈、路径高亮、AI delay 既有平台问题），不扩大算法范围。
+1. 设计并规划独立新模块 **Angel and Devil**（无限图/围堵理论，不并入 `thief-siege`）。
+2. 继续 polish 围堵小偷 v1.1：补主变例树/AND-OR 可视化、扩大 seed 回归集、调参中/难关生成质量。
 
 ## 🐛 KNOWN ISSUES
 
@@ -474,14 +479,14 @@
     - Fallback：100 次未匹配则返回最接近请求区间的候选；极端情况退回经典 (3,5)→4
     - uniqueSolution 修正：true → false（BFS 返回一条最短路径，不保证唯一）
   - 281 测试全过，typecheck 零错误，vite build 8.11s
-	- [2026-07-08] **倒水谜题全面审计与修复**：
-	  - 🔴 **L3 文档 §5.4 难度公式错误**（zh-CN + en）：文档描述单组件公式，实际代码使用双组件公式（深度 0–80 + 状态空间 0–20）。已修正为实际公式 + 分解说明。
-	  - 🔴 **L3 §5.5 伪代码过时**：缺少拒绝采样、optimalSteps<3 过滤、pickTargetsByDifficulty、fallback 链。已重写。
-	  - 🔴 **generator.ts 死代码**：targetPreference 变量三个分支执行完全相同代码。已移除变量、合并为单行。同时移除逻辑永假检查 capGcd > max(capacities)。
-	  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
-	  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
-	  - 281 测试全过，typecheck 零错误，vite build 8.32s
-	- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。
+- [2026-07-08] **倒水谜题全面审计与修复**：
+  - 🔴 **L3 文档 §5.4 难度公式错误**（zh-CN + en）：文档描述单组件公式，实际代码使用双组件公式（深度 0–80 + 状态空间 0–20）。已修正为实际公式 + 分解说明。
+  - 🔴 **L3 §5.5 伪代码过时**：缺少拒绝采样、optimalSteps<3 过滤、pickTargetsByDifficulty、fallback 链。已重写。
+  - 🔴 **generator.ts 死代码**：targetPreference 变量三个分支执行完全相同代码。已移除变量、合并为单行。同时移除逻辑永假检查 capGcd > max(capacities)。
+  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
+  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
+  - 281 测试全过，typecheck 零错误，vite build 8.32s
+- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。
 - [2026-07-08] **Nonogram 回溯搜索树可视化 + 生成器强化**：
   - **回溯搜索树可视化**（NonogramTraceViz.tsx）：SVG 树展示回溯分支过程。Leaf-counting 布局算法（叶节点依次排布，内部节点居中于子节点）。颜色编码：灰=线求解根节点、蓝=分支节点、绿=得解、红=矛盾。节点显示：格坐标(R行C列) + 猜测(■/✕) + 新确定格子数。Tab 切换线求解步骤 / 回溯搜索树。
   - **求解器增强**（solver.ts）：新增 `isFullyLineSolvable()` 导出函数，供生成器判断谜题是否纯线求解。
@@ -594,3 +599,6 @@
 - [2026-07-10] **围堵小偷 spec 确认 + 实现计划**：用户确认设计；写入 `docs/superpowers/plans/2026-07-10-thief-siege.md`（Task 1–5）。下一步按计划实现。
 - [2026-07-10] **围堵小偷 Task 5 完成**：补齐 L2/L3 × zh-CN/en 教学、`EscapePathViz`、`entrySetup` wiring、`docs/games/thief-siege.md`；55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功。
 - [2026-07-10] **围堵小偷 Subagent-Driven 收尾**：Tasks 1–5 全完成于 `feat/thief-siege`（9 commits）；终审修复 maxCops 耗尽软锁（跳过警察回合继续小偷走）；规则/求解/生成/冒烟 57 测 + typecheck 绿。
+- [2026-07-11] **围堵小偷 v1.1 设计对齐**：用户要求更大地图 + minimax 对抗 AI + 适当操作必胜；确认方案 A（易 11/中 15/难 19；混合可解保证；尽量完美 AI + Worker）。写入 `docs/superpowers/specs/2026-07-11-thief-siege-v1.1-design.md` 待审阅。
+- [2026-07-11] **围堵小偷 v1.1 计划**：spec 确认；写入 `docs/superpowers/plans/2026-07-11-thief-siege-v1.1.md`（尺寸→对抗引擎→生成保证→Worker/AI→文档）。待选 Subagent-Driven / Inline。
+- [2026-07-11] **围堵小偷 v1.1 Task 5 完成**：更新 L2/L3 × zh-CN/en 教学、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024 与本进度文件；57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功；v1.1 进入 DONE，NEXT 指向 Angel and Devil 或围堵小偷 polish。

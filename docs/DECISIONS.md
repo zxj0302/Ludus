@@ -214,6 +214,22 @@
 
 ---
 
+## 五、游戏模块决策
+
+### ADR-024 围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI
+
+- **状态**：✅ ACCEPTED
+- **决策**：
+  1. 围堵小偷地图按难度扩展为 **11 / 15 / 19** 三档，替代 v1 的 7 / 9 / 11。
+  2. 关卡生成采用混合可胜保证：简单 11×11 必须通过 `copHasWinningStrategy` 搜索验证；中等/困难采用瓶颈构造 + 浅层对抗抽检，明确不声称全局数学证明。
+  3. 小偷 AI 从纯 BFS 贪心升级为对抗搜索优先：Worker 中运行有限预算 minimax/alpha-beta；超时标记 `bounded`；不可用或无合法对抗步时降级到 BFS 贪心。
+- **理由**：v1 地图偏小且小偷只跟随当前最短路，玩家容易通过局部堵路获胜。v1.1 用更大地图和未来回合视角增强围堵手感，同时保留 BFS 逃脱路径作为可解释教学核心。
+- **影响**：`packages/games/src/thief-siege/adversary.ts` 成为对抗搜索核心；`generator.ts` 调用同一引擎做 easy 证明和 mid/hard 抽检；Web 通过 `ai-move` Worker 避免大图搜索阻塞 UI；教育文档必须诚实区分“已证明”和“构造+抽检”。
+- **风险**：中/难关没有全树证明，极端 seed 仍可能被更强搜索打穿；后续可用 seed 回归修生成器，或新增 AND-OR / 主变例树可视化。
+- **确认日期**：2026-07-11。
+
+---
+
 ## 📝 决策日志
 
 - ADR-001/002/003/004/009/010/011/012 录入（项目立项阶段）。
@@ -226,3 +242,4 @@
   - **新增接口**：`GamePluginEntry`（`packages/games/src/types.ts`）— 包装 `GamePlugin` + BoardComponent + isOwnState + i18n + ui 扩展 + education + visualization
   - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
   - **迁移计划**：10 步，全部完成。详见各阶段 commit 记录。最终包结构：core/games/education/ui 4 包 + apps/web。i18n/viz 包已移除。
+- [2026-07-11] ADR-024 (围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI) → ACCEPTED。
