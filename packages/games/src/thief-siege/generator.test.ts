@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { copHasWinningStrategy, searchAdversary } from './adversary';
 import { cellIndex } from './rules';
 import { generateThiefSiegeLevel } from './generator';
 import { shortestEscapePath } from './solver';
 import type { ThiefSiegeState } from './types';
+
+afterEach(() => {
+  vi.doUnmock('./adversary');
+  vi.resetModules();
+});
 
 function stateFromSeed(seed: number, difficultyRange: [number, number] = [1, 100]): ThiefSiegeState {
   return generateThiefSiegeLevel({ difficultyRange, seed }).initialState as ThiefSiegeState;
@@ -120,5 +125,18 @@ describe('generateThiefSiegeLevel', () => {
       expect(state.phase).toBe('cop');
       expect(shallow.copWinning).not.toBe(false);
     }
+  });
+
+  it('throws instead of returning an ungated fallback when easy templates fail the win gate', async () => {
+    vi.doMock('./adversary', async importOriginal => ({
+      ...(await importOriginal<typeof import('./adversary')>()),
+      copHasWinningStrategy: () => false,
+    }));
+
+    const { generateThiefSiegeLevel: generateWithBlockedGate } = await import('./generator');
+
+    expect(() => generateWithBlockedGate({ difficultyRange: [10, 20], seed: 123 })).toThrow(
+      /fallback.*win gate/i,
+    );
   });
 });

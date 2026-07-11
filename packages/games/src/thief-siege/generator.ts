@@ -193,12 +193,17 @@ function createCandidate(rand: () => number, size: number, maxCops: number, targ
 
 function createFallbackState(maxCops: number, targetScore: number): ThiefSiegeState {
   const fallbackSize = 11;
-  const fallbackRand = mulberry32(0x51e9e);
-  const candidate = createConstructiveCandidate(fallbackRand, fallbackSize, maxCops, targetScore);
+  const fallbackMaxCops = Math.max(maxCops, 3);
+  const candidate = createConstructiveCandidate(mulberry32(0x51e9e), fallbackSize, fallbackMaxCops, targetScore);
   if (candidate != null) return candidate;
 
-  const { cells, thief } = buildBottleneckWinCells(fallbackRand, fallbackSize);
-  return createState(fallbackSize, cells, thief, Math.max(maxCops, 3));
+  for (const seed of [0x71eaf, 0xa11e7, 0xc0f17, 0xf411b]) {
+    const { cells, thief } = buildBottleneckWinCells(mulberry32(seed), fallbackSize);
+    const alternate = createState(fallbackSize, cells, thief, fallbackMaxCops);
+    if (passesWinGate(alternate, targetScore)) return alternate;
+  }
+
+  throw new Error(`Unable to create thief-siege fallback that passes the win gate for score ${targetScore}.`);
 }
 
 export function generateThiefSiegeLevel(config: LevelConfig): Level {
