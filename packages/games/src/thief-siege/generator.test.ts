@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { copHasWinningStrategy, searchAdversary } from './adversary';
 import { cellIndex } from './rules';
 import { generateThiefSiegeLevel } from './generator';
 import { shortestEscapePath } from './solver';
@@ -95,6 +96,29 @@ describe('generateThiefSiegeLevel', () => {
       expect(state.width).toBe(expected);
       expect(state.height).toBe(expected);
       expect(state.width).toBe(state.height);
+    }
+  });
+
+  it('easy levels pass copHasWinningStrategy under generous budget', () => {
+    for (let seed = 1; seed <= 5; seed++) {
+      const level = generateThiefSiegeLevel({ difficultyRange: [10, 20], seed });
+      const state = level.initialState as ThiefSiegeState;
+
+      expect(state.width).toBe(11);
+      expect(shortestEscapePath(state)).not.toBeNull();
+      expect(copHasWinningStrategy(state, { timeMs: 2000, maxDepth: Infinity })).toBe(true);
+    }
+  });
+
+  it('mid/hard openings keep escape path and start in cop phase', () => {
+    for (const range of [[40, 50], [80, 90]] as const) {
+      const level = generateThiefSiegeLevel({ difficultyRange: [...range], seed: 3 });
+      const state = level.initialState as ThiefSiegeState;
+      const shallow = searchAdversary(state, { timeMs: 200, maxDepth: 4, maxPlaceBranch: 8 });
+
+      expect(shortestEscapePath(state)).not.toBeNull();
+      expect(state.phase).toBe('cop');
+      expect(shallow.copWinning).not.toBe(false);
     }
   });
 });

@@ -1,8 +1,9 @@
 import type { Level, LevelConfig } from '@ludus/core';
 import { mulberry32, resolveSeed } from '../generator-config';
+import { copHasWinningStrategy, searchAdversary } from './adversary';
 import { cellIndex, neighbors4 } from './rules';
 import { getDifficulty } from './difficulty';
-import { shortestEscapePath } from './solver';
+import { isWalkable, shortestEscapePath } from './solver';
 import type { CellKind, ThiefSiegeState } from './types';
 
 type Pos = { row: number; col: number };
@@ -74,6 +75,30 @@ function buildIrregularCells(rand: () => number, size: number, targetScore: numb
   return cells;
 }
 
+function buildBottleneckWinCells(rand: () => number, size: number): { cells: CellKind[]; thief: Pos } {
+  const cells: CellKind[] = new Array(size * size).fill('obstacle');
+  const center = (size - 1) / 2;
+  const direction = randInt(rand, 0, 3);
+  const thief = { row: center, col: center };
+  cells[cellIndex(size, thief.row, thief.col)] = 'floor';
+
+  const carve = (row: number, col: number, kind: CellKind): void => {
+    cells[cellIndex(size, row, col)] = kind;
+  };
+
+  if (direction === 0) {
+    for (let row = center - 1; row >= 0; row--) carve(row, center, row === 0 ? 'exit' : 'floor');
+  } else if (direction === 1) {
+    for (let row = center + 1; row < size; row++) carve(row, center, row === size - 1 ? 'exit' : 'floor');
+  } else if (direction === 2) {
+    for (let col = center - 1; col >= 0; col--) carve(center, col, col === 0 ? 'exit' : 'floor');
+  } else {
+    for (let col = center + 1; col < size; col++) carve(center, col, col === size - 1 ? 'exit' : 'floor');
+  }
+
+  return { cells, thief };
+}
+
 function findThiefStart(rand: () => number, size: number, cells: CellKind[]): Pos | null {
   const center = (size - 1) / 2;
   const candidates: Pos[] = [];
@@ -94,12 +119,8 @@ function findThiefStart(rand: () => number, size: number, cells: CellKind[]): Po
   return centralCandidates[Math.floor(rand() * centralCandidates.length)] ?? null;
 }
 
-function createCandidate(rand: () => number, size: number, maxCops: number, targetScore: number): ThiefSiegeState | null {
-  const cells = buildIrregularCells(rand, size, targetScore);
-  const thief = findThiefStart(rand, size, cells);
-  if (thief == null) return null;
-
-  const state: ThiefSiegeState = {
+function createState(size: number, cells: CellKind[], thief: Pos, maxCops: number): ThiefSiegeState {
+  return {
     width: size,
     height: size,
     cells,
@@ -110,8 +131,74 @@ function createCandidate(rand: () => number, size: number, maxCops: number, targ
     maxCops,
     status: 'playing',
   };
+}
 
-  return shortestEscapePath(state) == null ? null : state;
+function isPlaceablePathCell(state: ThiefSiegeState, pos: Pos): boolean {
+  if (pos.row === state.thief.row && pos.col === state.thief.col) return false;
+  if (!isWalkable(state, pos.row, pos.col)) return false;
+  return !state.cops.some(cop => cop.row === pos.row && cop.col === pos.col);
+}
+
+function passesWinGate(state: ThiefSiegeState, targetScore: number): boolean {
+  const path = shortestEscapePath(state);
+  if (path == null) return false;
+
+  if (targetScore <= 33) {
+    return copHasWinningStrategy(state, {
+      timeMs: 1500,
+      maxDepth: Infinity,
+      maxPlaceBranch: 12,
+    });
+  }
+
+  const placeableOnPath = path.slice(1).filter(pos => isPlaceablePathCell(state, pos)).length;
+  if (state.maxCops < Math.min(placeableOnPath, 3)) return false;
+
+  return searchAdversary(state, {
+    timeMs: 200,
+    maxDepth: 4,
+    maxPlaceBranch: 8,
+  }).copWinning !== false;
+}
+
+function createConstructiveCandidate(
+  rand: () => number,
+  size: number,
+  maxCops: number,
+  targetScore: number,
+): ThiefSiegeState | null {
+  const { cells, thief } = buildBottleneckWinCells(rand, size);
+  const state = createState(size, cells, thief, maxCops);
+  return passesWinGate(state, targetScore) ? state : null;
+}
+
+function createIrregularCandidate(
+  rand: () => number,
+  size: number,
+  maxCops: number,
+  targetScore: number,
+): ThiefSiegeState | null {
+  const cells = buildIrregularCells(rand, size, targetScore);
+  const thief = findThiefStart(rand, size, cells);
+  if (thief == null) return null;
+
+  const state = createState(size, cells, thief, maxCops);
+  return passesWinGate(state, targetScore) ? state : null;
+}
+
+function createCandidate(rand: () => number, size: number, maxCops: number, targetScore: number): ThiefSiegeState | null {
+  return createConstructiveCandidate(rand, size, maxCops, targetScore)
+    ?? createIrregularCandidate(rand, size, maxCops, targetScore);
+}
+
+function createFallbackState(maxCops: number, targetScore: number): ThiefSiegeState {
+  const fallbackSize = 11;
+  const fallbackRand = mulberry32(0x51e9e);
+  const candidate = createConstructiveCandidate(fallbackRand, fallbackSize, maxCops, targetScore);
+  if (candidate != null) return candidate;
+
+  const { cells, thief } = buildBottleneckWinCells(fallbackRand, fallbackSize);
+  return createState(fallbackSize, cells, thief, Math.max(maxCops, 3));
 }
 
 export function generateThiefSiegeLevel(config: LevelConfig): Level {
@@ -140,24 +227,7 @@ export function generateThiefSiegeLevel(config: LevelConfig): Level {
     };
   }
 
-  const fallbackSize = 11;
-  const fallbackState: ThiefSiegeState = {
-    width: fallbackSize,
-    height: fallbackSize,
-    cells: Array.from({ length: fallbackSize * fallbackSize }, (_, idx) => {
-      const row = Math.floor(idx / fallbackSize);
-      const col = idx % fallbackSize;
-      return row === 0 || row === fallbackSize - 1 || col === 0 || col === fallbackSize - 1
-        ? 'exit'
-        : 'floor';
-    }),
-    thief: { row: 5, col: 5 },
-    cops: [],
-    phase: 'cop',
-    currentPlayer: 0,
-    maxCops,
-    status: 'playing',
-  };
+  const fallbackState = createFallbackState(maxCops, targetScore);
 
   return {
     schemaVersion: 1,
