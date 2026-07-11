@@ -3,7 +3,7 @@ import type { GamePluginEntry } from '../types';
 import { generateThiefSiegeLevel } from './generator';
 import { createInitialState, legalMoves, applyMove, isSolved, isOwnState } from './rules';
 import { getDifficulty } from './difficulty';
-import { chooseThiefStep, chooseThiefSiegeAiMove, solveThiefSiege } from './solver';
+import { chooseBfsThiefStep, chooseThiefStep, chooseThiefSiegeAiMove, solveThiefSiege } from './solver';
 import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 import { thiefSiegeEducationManifest, thiefSiegeVisualizationManifest } from './manifest';
 import { ThiefSiegeBoard } from './render';
@@ -12,7 +12,7 @@ import { formatThiefSiegeMove, ThiefSiegeStatusCard } from './education-ui';
 
 export { thiefSiegeI18n };
 export { ThiefSiegeBoard };
-export { chooseThiefStep, shortestEscapePath, solveThiefSiege, suggestCopPlacement } from './solver';
+export { chooseBfsThiefStep, chooseThiefStep, shortestEscapePath, solveThiefSiege, suggestCopPlacement } from './solver';
 
 const metadata = {
   id: 'thief-siege',
@@ -64,7 +64,7 @@ export const thiefSiegePlugin: GamePlugin<ThiefSiegeState, ThiefSiegeMove> = {
   ai: {
     isAITurn: (s) => s.status === 'playing' && s.phase === 'thief',
     getAIMove: (s) => {
-      const move = chooseThiefStep(s);
+      const move = chooseBfsThiefStep(s);
       return move ? { move, delay: 450 } : null;
     },
     getAIMoveAsync: async (s) => {

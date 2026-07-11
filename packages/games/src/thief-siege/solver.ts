@@ -131,7 +131,7 @@ function degreeAfterStep(state: ThiefSiegeState, move: ThiefSiegeMove): number {
     .length;
 }
 
-function chooseBfsThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
+export function chooseBfsThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
   const normalized = normalizeTerminalState(state);
   if (normalized.status !== 'playing' || normalized.phase !== 'thief') return null;
 
@@ -194,7 +194,7 @@ export function chooseThiefSiegeAiMove(
     return { move: result.move, delay: Math.max(200, result.timeMs), tier: result.tier };
   }
 
-  const fallback = chooseThiefStep(normalized);
+  const fallback = chooseBfsThiefStep(normalized);
   return fallback ? { move: fallback, delay: 200, tier: 'bfs' } : null;
 }
 

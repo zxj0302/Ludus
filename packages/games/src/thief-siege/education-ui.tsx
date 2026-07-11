@@ -5,6 +5,11 @@ import { cellIndex } from './rules';
 import { shortestEscapePath } from './solver';
 import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 
+export function getThiefSiegeTierLabelKey(solverName?: string): string | null {
+  const tier = solverName?.match(/^escape-adversary\/(perfect|bounded|bfs)$/)?.[1];
+  return tier ? `thiefSiege.ai.tier.${tier}` : null;
+}
+
 export function formatThiefSiegeMove(
   move: ThiefSiegeMove,
   _index: number,
@@ -28,6 +33,7 @@ export function ThiefSiegeStatusCard({ gameState, solution }: StatusCardProps<Th
       : gameState.phase === 'cop'
         ? 'thiefSiege.phase.cop'
         : 'thiefSiege.phase.thief';
+  const aiTierLabelKey = getThiefSiegeTierLabelKey(solution?.stats.solverName);
 
   return (
     <GameCard title={t('education.currentState')} icon="🚨">
@@ -47,7 +53,11 @@ export function ThiefSiegeStatusCard({ gameState, solution }: StatusCardProps<Th
       <div className="mt-3 pt-3 border-t border-warm-stone-200 grid grid-cols-3 gap-2 text-sm">
         <StatCell label={t('thiefSiege.exits')} value={exitCount} />
         <StatCell label={t('thiefSiege.openCells')} value={openCells} />
-        <StatCell label={t('education.nodesExplored')} value={solution?.stats.nodesExplored ?? '—'} />
+        <StatCell
+          label={t(gameState.phase === 'thief' ? 'thiefSiege.ai.thinking' : 'education.nodesExplored')}
+          value={aiTierLabelKey ? t(aiTierLabelKey) : solution?.stats.nodesExplored ?? '—'}
+          colorClass={aiTierLabelKey ? 'text-logic-indigo-700' : undefined}
+        />
       </div>
     </GameCard>
   );

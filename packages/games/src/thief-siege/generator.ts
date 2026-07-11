@@ -60,7 +60,36 @@ function buildIrregularCells(rand: () => number, size: number, targetScore: numb
     }
   }
 
-  const obstacleRate = targetScore <= 33 ? 0.16 : targetScore <= 66 ? 0.12 : 0.08;
+  const exitCandidates: Pos[] = [];
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (cells[cellIndex(size, row, col)] === 'exit') exitCandidates.push({ row, col });
+    }
+  }
+  const exitBudget = targetScore <= 33 ? 1 : targetScore <= 66 ? 2 : 3;
+  const shuffledExits = [...exitCandidates].sort(() => rand() - 0.5);
+  const keptExits = new Set(shuffledExits.slice(0, Math.min(exitBudget, shuffledExits.length)).map(pos => cellIndex(size, pos.row, pos.col)));
+  for (const pos of exitCandidates) {
+    const idx = cellIndex(size, pos.row, pos.col);
+    if (!keptExits.has(idx)) cells[idx] = 'floor';
+  }
+  const direction = randInt(rand, 0, 3);
+  const primaryExit = direction === 0
+    ? { row: 0, col: center }
+    : direction === 1
+      ? { row: size - 1, col: center }
+      : direction === 2
+        ? { row: center, col: 0 }
+        : { row: center, col: size - 1 };
+  const gate = direction === 0
+    ? { row: center - 1, col: center }
+    : direction === 1
+      ? { row: center + 1, col: center }
+      : direction === 2
+        ? { row: center, col: center - 1 }
+        : { row: center, col: center + 1 };
+
+  const obstacleRate = targetScore <= 33 ? 0.22 : targetScore <= 66 ? 0.16 : 0.1;
   const centerSafeRadius = targetScore <= 33 ? 1 : 2;
   for (let row = 1; row < size - 1; row++) {
     for (let col = 1; col < size - 1; col++) {
@@ -71,6 +100,23 @@ function buildIrregularCells(rand: () => number, size: number, targetScore: numb
       if (rand() < obstacleRate) cells[idx] = 'obstacle';
     }
   }
+
+  if (primaryExit.row === center) {
+    const lo = Math.min(primaryExit.col, center);
+    const hi = Math.max(primaryExit.col, center);
+    for (let col = lo; col <= hi; col++) cells[cellIndex(size, center, col)] = 'floor';
+  } else {
+    const lo = Math.min(primaryExit.row, center);
+    const hi = Math.max(primaryExit.row, center);
+    for (let row = lo; row <= hi; row++) cells[cellIndex(size, row, center)] = 'floor';
+  }
+  cells[cellIndex(size, primaryExit.row, primaryExit.col)] = 'exit';
+  cells[cellIndex(size, center, center)] = 'floor';
+  for (const neighbor of neighbors4(size, size, center, center)) {
+    if (neighbor.row === gate.row && neighbor.col === gate.col) continue;
+    cells[cellIndex(size, neighbor.row, neighbor.col)] = 'obstacle';
+  }
+  cells[cellIndex(size, gate.row, gate.col)] = 'floor';
 
   return cells;
 }
@@ -101,6 +147,8 @@ function buildBottleneckWinCells(rand: () => number, size: number): { cells: Cel
 
 function findThiefStart(rand: () => number, size: number, cells: CellKind[]): Pos | null {
   const center = (size - 1) / 2;
+  if (cells[cellIndex(size, center, center)] === 'floor') return { row: center, col: center };
+
   const candidates: Pos[] = [];
 
   for (let row = 1; row < size - 1; row++) {
@@ -187,8 +235,8 @@ function createIrregularCandidate(
 }
 
 function createCandidate(rand: () => number, size: number, maxCops: number, targetScore: number): ThiefSiegeState | null {
-  return createConstructiveCandidate(rand, size, maxCops, targetScore)
-    ?? createIrregularCandidate(rand, size, maxCops, targetScore);
+  return createIrregularCandidate(rand, size, maxCops, targetScore)
+    ?? createConstructiveCandidate(rand, size, maxCops, targetScore);
 }
 
 function createFallbackState(maxCops: number, targetScore: number): ThiefSiegeState {

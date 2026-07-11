@@ -20,6 +20,7 @@
 - **审计修复第四批（低优先级）**：`DifficultySelector` 高级生成改为独立按钮；`splitEducationSections` 抽出并加回归测试；`gameStoreLevelGeneration.ts` 承接关卡生成；`generator-config.ts` 统一 PRNG/参数读取。
 - **审计修复第五批**：`gameStoreSolverRuntime.ts` 承接 AI/后台求解/对抗播放/提示逻辑；Sudoku 生成器全链路接入 `config.seed` 可复现。
 - **审计收尾**：`gameStoreProgress.ts` 外置进度持久化；CI 用 `pnpm validate:shell` 替代手工 grep；`shellBuildArtifacts` 在无 shell dist 时自动跳过。
+- **围堵小偷 v1.1 final-review Important 修复**：生成器恢复 irregular open-map 优先且保留 easy 可胜证明；同步 AI 改为 BFS-only；状态卡显示 AI 档位。
 
 ## ✅ DONE
 
@@ -38,6 +39,7 @@
   - 教学内容加载方案（Vite ?raw import → entrySetup.tsx → entry.education.content）
   - **§5 已按四种保证机制重写**（可解性/唯一解/最优解/难度可控 + 策略对比表）
   - **Markdown 格式修复**：全 11 个 .md 文件扫描，修复嵌套代码块高亮冲突、LaTeX 转义、占位符、裸 `<`、中文引号等 8 处问题
+- 围堵小偷 v1.1 final-review Important 修复：`packages/games/src/thief-siege/` + `.superpowers/sdd-v11/final-fix-report.md`，覆盖 open-map 生成、同步 BFS AI、AI tier UI。
 - **UI 设计系统**：`docs/phases/04-ui-design-system.md` ✅
 
   - "Playful Bento"设计哲学与 Bento Box 适配论证
@@ -164,7 +166,7 @@
 下一步二选一：
 
 1. 设计并规划独立新模块 **Angel and Devil**（无限图/围堵理论，不并入 `thief-siege`）。
-2. 继续 polish 围堵小偷 v1.1：补主变例树/AND-OR 可视化、扩大 seed 回归集、调参中/难关生成质量。
+2. 继续 polish 围堵小偷 v1.1：补主变例树/AND-OR 可视化、扩大 seed 回归集，并继续调参中/难关生成质量（Important final-review fix wave 已完成）。
 
 ## 🐛 KNOWN ISSUES
 
@@ -602,3 +604,4 @@
 - [2026-07-11] **围堵小偷 v1.1 设计对齐**：用户要求更大地图 + minimax 对抗 AI + 适当操作必胜；确认方案 A（易 11/中 15/难 19；混合可解保证；尽量完美 AI + Worker）。写入 `docs/superpowers/specs/2026-07-11-thief-siege-v1.1-design.md` 待审阅。
 - [2026-07-11] **围堵小偷 v1.1 计划**：spec 确认；写入 `docs/superpowers/plans/2026-07-11-thief-siege-v1.1.md`（尺寸→对抗引擎→生成保证→Worker/AI→文档）。待选 Subagent-Driven / Inline。
 - [2026-07-11] **围堵小偷 v1.1 Task 5 完成**：更新 L2/L3 × zh-CN/en 教学、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024 与本进度文件；57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功；v1.1 进入 DONE，NEXT 指向 Angel and Devil 或围堵小偷 polish。
+- [2026-07-11] **围堵小偷 v1.1 final-review Important 修复**：generator 改为 irregular open-map 优先并保留 constructive fallback；同步 AI 改为 BFS-only；StatusCard 显示 `escape-adversary/<tier>` 档位；新增回归测试。`pnpm --filter @ludus/games exec vitest run src/thief-siege/` 与 `pnpm typecheck` 成功。

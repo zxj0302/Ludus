@@ -14,6 +14,10 @@ function stateFromSeed(seed: number, difficultyRange: [number, number] = [1, 100
   return generateThiefSiegeLevel({ difficultyRange, seed }).initialState as ThiefSiegeState;
 }
 
+function openCellCount(state: ThiefSiegeState): number {
+  return state.cells.filter(cell => cell === 'floor' || cell === 'exit').length;
+}
+
 describe('generateThiefSiegeLevel', () => {
   it('generated level has escape path from thief to an exit', () => {
     for (let i = 0; i < 20; i++) {
@@ -65,6 +69,20 @@ describe('generateThiefSiegeLevel', () => {
     expect(mid.height).toBe(15);
     expect(hard.width).toBe(19);
     expect(hard.height).toBe(19);
+  });
+
+  it('keeps generated tiers substantially more open than corridor templates', () => {
+    const cases = [
+      { range: [10, 20], minimumOpenCells: 25 },
+      { range: [40, 50], minimumOpenCells: 50 },
+      { range: [80, 90], minimumOpenCells: 80 },
+    ] as const;
+
+    for (const { range, minimumOpenCells } of cases) {
+      const state = stateFromSeed(3, [...range]);
+
+      expect(openCellCount(state)).toBeGreaterThanOrEqual(minimumOpenCells);
+    }
   });
 
   it('harder ranges tend toward larger boards and fewer cops', () => {
