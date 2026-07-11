@@ -8,7 +8,7 @@ import {
   normalizeTerminalState,
 } from './rules';
 import { searchAdversary } from './adversary';
-import type { AdversaryBudget, AdversaryTier } from './adversary';
+import type { AdversaryBudget, AdversaryMoveResult, AdversaryTier } from './adversary';
 import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 
 type Pos = { row: number; col: number };
@@ -18,11 +18,19 @@ interface EscapeSearchResult {
   nodesExplored: number;
 }
 
-interface MoveChoice {
+export interface MoveChoice {
   move: ThiefSiegeMove | null;
   tier: AdversaryTier;
   nodesExplored: number;
 }
+
+export interface ThiefSiegeAiMoveAction {
+  move: ThiefSiegeMove;
+  delay: number;
+  tier: AdversaryTier;
+}
+
+type SearchAdversaryFn = (state: ThiefSiegeState, budget: AdversaryBudget) => AdversaryMoveResult;
 
 const FAST_ADVERSARY_BUDGET: AdversaryBudget = { timeMs: 80, maxDepth: 6, maxPlaceBranch: 10 };
 
@@ -144,13 +152,17 @@ function chooseBfsThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
   return [...legalSteps].sort((a, b) => degreeAfterStep(normalized, b) - degreeAfterStep(normalized, a))[0] ?? null;
 }
 
-function chooseThiefStepChoice(state: ThiefSiegeState, budget: AdversaryBudget = FAST_ADVERSARY_BUDGET): MoveChoice {
+export function chooseThiefStepChoice(
+  state: ThiefSiegeState,
+  budget: AdversaryBudget = FAST_ADVERSARY_BUDGET,
+  runAdversary: SearchAdversaryFn = searchAdversary,
+): MoveChoice {
   const normalized = normalizeTerminalState(state);
   if (normalized.status !== 'playing' || normalized.phase !== 'thief') {
     return { move: null, tier: 'bfs', nodesExplored: 0 };
   }
 
-  const adversary = searchAdversary(normalized, budget);
+  const adversary = runAdversary(normalized, budget);
   if (adversary.move?.type === 'step') {
     return {
       move: adversary.move,
@@ -168,6 +180,22 @@ function chooseThiefStepChoice(state: ThiefSiegeState, budget: AdversaryBudget =
 
 export function chooseThiefStep(state: ThiefSiegeState, budget?: AdversaryBudget): ThiefSiegeMove | null {
   return chooseThiefStepChoice(state, budget).move;
+}
+
+export function chooseThiefSiegeAiMove(
+  state: ThiefSiegeState,
+  budget: AdversaryBudget = getThiefSiegeAdversaryBudget(state),
+): ThiefSiegeAiMoveAction | null {
+  const normalized = normalizeTerminalState(state);
+  if (normalized.status !== 'playing' || normalized.phase !== 'thief') return null;
+
+  const result = searchAdversary(normalized, budget);
+  if (result.move?.type === 'step') {
+    return { move: result.move, delay: Math.max(200, result.timeMs), tier: result.tier };
+  }
+
+  const fallback = chooseThiefStep(normalized);
+  return fallback ? { move: fallback, delay: 200, tier: 'bfs' } : null;
 }
 
 export function suggestCopPlacement(state: ThiefSiegeState): ThiefSiegeMove | null {

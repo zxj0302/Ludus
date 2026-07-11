@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cellIndex, createInitialState } from './rules';
 import {
+  chooseThiefStepChoice,
   chooseThiefStep,
   shortestEscapePath,
   solveThiefSiege,
@@ -69,6 +70,60 @@ describe('chooseThiefStep', () => {
     };
 
     expect(chooseThiefStep(state)).toEqual({ type: 'step', row: 0, col: 1 });
+  });
+
+  it('steps onto an adjacent exit even with a shallow adversary budget', () => {
+    const state: ThiefSiegeState = {
+      ...createInitialState(),
+      width: 3,
+      height: 3,
+      cells: [
+        'exit', 'exit', 'exit',
+        'exit', 'floor', 'exit',
+        'exit', 'exit', 'exit',
+      ],
+      thief: { row: 1, col: 1 },
+      phase: 'thief',
+      currentPlayer: 1,
+    };
+
+    expect(chooseThiefStep(state, { timeMs: 1, maxDepth: 1 })).toEqual({ type: 'step', row: 0, col: 1 });
+  });
+
+  it('falls back to BFS when adversary search returns no step', () => {
+    const state: ThiefSiegeState = {
+      width: 5,
+      height: 3,
+      cells: [
+        'obstacle', 'obstacle', 'obstacle', 'obstacle', 'obstacle',
+        'exit', 'floor', 'floor', 'floor', 'exit',
+        'obstacle', 'obstacle', 'obstacle', 'obstacle', 'obstacle',
+      ],
+      thief: { row: 1, col: 2 },
+      cops: [],
+      phase: 'thief',
+      currentPlayer: 1,
+      maxCops: 10,
+      status: 'playing',
+    };
+
+    const choice = chooseThiefStepChoice(
+      state,
+      { timeMs: 1, maxDepth: 1 },
+      () => ({
+        move: null,
+        tier: 'bounded',
+        score: 0,
+        nodesExplored: 7,
+        timeMs: 1,
+      }),
+    );
+
+    expect(choice).toMatchObject({
+      move: { type: 'step', row: 1, col: 1 },
+      tier: 'bfs',
+      nodesExplored: 7,
+    });
   });
 
   it('returns null outside thief phase or terminal states', () => {

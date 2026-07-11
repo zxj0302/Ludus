@@ -127,7 +127,7 @@ export function scheduleAI(get: SolverStoreGet): void {
 
     if (!action) return;
     if (asyncPath) {
-      await new Promise(resolve => setTimeout(resolve, Math.min(Math.max(0, action.delay ?? 0), 50)));
+      await new Promise(resolve => setTimeout(resolve, Math.min(Math.max(0, action.delay ?? 0), 400)));
     }
 
     const latest = get();

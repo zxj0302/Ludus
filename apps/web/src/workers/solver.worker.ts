@@ -4,11 +4,9 @@ import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/sr
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
 import {
-  chooseThiefStep,
-  getThiefSiegeAdversaryBudget,
+  chooseThiefSiegeAiMove,
   solveThiefSiege,
 } from '@ludus/games/src/thief-siege/solver';
-import { searchAdversary } from '@ludus/games/src/thief-siege/adversary';
 import type { ThiefSiegeState } from '@ludus/games/src/thief-siege/types';
 import type { AiMoveTaskPayload, WorkerRequest, WorkerResponse } from '@ludus/core';
 
@@ -115,21 +113,10 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
       }
 
       const thiefState = state as unknown as ThiefSiegeState;
-      const result = searchAdversary(thiefState, budget ?? getThiefSiegeAdversaryBudget(thiefState));
-      if (result.move?.type === 'step') {
-        self.postMessage({
-          id,
-          type,
-          result: { move: result.move, delay: Math.max(200, result.timeMs), tier: result.tier },
-        });
-        return;
-      }
-
-      const fallback = chooseThiefStep(thiefState);
       self.postMessage({
         id,
         type,
-        result: fallback ? { move: fallback, delay: 200, tier: 'bfs' } : null,
+        result: chooseThiefSiegeAiMove(thiefState, budget),
       });
     } else {
       self.postMessage({ id, type, error: `Unknown task type: ${type}` });
