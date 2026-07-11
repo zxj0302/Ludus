@@ -48,6 +48,19 @@ describe('generateThiefSiegeLevel', () => {
     expect(level.difficulty.score).toBeLessThanOrEqual(100);
   });
 
+  it('maps difficulty tiers to 11 / 15 / 19', () => {
+    const easy = stateFromSeed(99, [1, 33]);
+    const mid = stateFromSeed(99, [34, 66]);
+    const hard = stateFromSeed(99, [67, 100]);
+
+    expect(easy.width).toBe(11);
+    expect(easy.height).toBe(11);
+    expect(mid.width).toBe(15);
+    expect(mid.height).toBe(15);
+    expect(hard.width).toBe(19);
+    expect(hard.height).toBe(19);
+  });
+
   it('harder ranges tend toward larger boards and fewer cops', () => {
     const easy = stateFromSeed(99, [1, 33]);
     const hard = stateFromSeed(99, [67, 100]);
@@ -57,8 +70,8 @@ describe('generateThiefSiegeLevel', () => {
     expect(hard.maxCops).toBeLessThanOrEqual(easy.maxCops);
   });
 
-  it('always produces board dimensions in {7, 9, 11}', () => {
-    const allowed = new Set([7, 9, 11]);
+  it('always produces board dimensions in {11, 15, 19}', () => {
+    const allowed = new Set([11, 15, 19]);
 
     for (let seed = 1; seed <= 30; seed++) {
       const state = stateFromSeed(seed);
@@ -66,13 +79,21 @@ describe('generateThiefSiegeLevel', () => {
       expect(allowed.has(state.height)).toBe(true);
       expect(state.width).toBe(state.height);
     }
+  });
 
-    const sizeOverrides = [1, 5, 8, 10, 12, 15, 7, 9, 11];
-    for (const size of sizeOverrides) {
+  it('clamps config.size into {11, 15, 19}', () => {
+    const expectedByRawSize = new Map([
+      [7, 11],
+      [9, 11],
+      [12, 11],
+      [20, 19],
+    ]);
+
+    for (const [size, expected] of expectedByRawSize) {
       const level = generateThiefSiegeLevel({ difficultyRange: [1, 100], seed: 42, size });
       const state = level.initialState as ThiefSiegeState;
-      expect(allowed.has(state.width)).toBe(true);
-      expect(allowed.has(state.height)).toBe(true);
+      expect(state.width).toBe(expected);
+      expect(state.height).toBe(expected);
       expect(state.width).toBe(state.height);
     }
   });

@@ -11,19 +11,19 @@ function randInt(rand: () => number, min: number, max: number): number {
   return min + Math.floor(rand() * (max - min + 1));
 }
 
-const ALLOWED_SIZES = [7, 9, 11] as const;
+const ALLOWED_SIZES = [11, 15, 19] as const;
 
 function normalizeSize(raw: number): number {
-  if (raw === 7 || raw === 9 || raw === 11) return raw;
+  if (raw === 11 || raw === 15 || raw === 19) return raw;
   return ALLOWED_SIZES.reduce((best, candidate) =>
     Math.abs(candidate - raw) < Math.abs(best - raw) ? candidate : best,
   );
 }
 
 function chooseSize(score: number): number {
-  if (score <= 33) return 7;
-  if (score <= 66) return 9;
-  return 11;
+  if (score <= 33) return 11;
+  if (score <= 66) return 15;
+  return 19;
 }
 
 function chooseMaxCops(rand: () => number, score: number): number {
@@ -140,20 +140,18 @@ export function generateThiefSiegeLevel(config: LevelConfig): Level {
     };
   }
 
-  const fallbackSize = 7;
+  const fallbackSize = 11;
   const fallbackState: ThiefSiegeState = {
     width: fallbackSize,
     height: fallbackSize,
-    cells: [
-      'exit', 'exit', 'exit', 'exit', 'exit', 'exit', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'floor', 'floor', 'floor', 'floor', 'floor', 'exit',
-      'exit', 'exit', 'exit', 'exit', 'exit', 'exit', 'exit',
-    ],
-    thief: { row: 3, col: 3 },
+    cells: Array.from({ length: fallbackSize * fallbackSize }, (_, idx) => {
+      const row = Math.floor(idx / fallbackSize);
+      const col = idx % fallbackSize;
+      return row === 0 || row === fallbackSize - 1 || col === 0 || col === fallbackSize - 1
+        ? 'exit'
+        : 'floor';
+    }),
+    thief: { row: 5, col: 5 },
     cops: [],
     phase: 'cop',
     currentPlayer: 0,
