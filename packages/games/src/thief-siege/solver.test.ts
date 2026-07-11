@@ -89,10 +89,10 @@ describe('suggestCopPlacement', () => {
     expect(path).toContainEqual({ row: move!.row, col: move!.col });
   });
 
-  it('returns any legal place when no escape path exists', () => {
+  it('returns null when the normalized state is already trapped', () => {
     const state = { ...blockedCenterState(), phase: 'cop' as const, currentPlayer: 0 as const };
 
-    expect(suggestCopPlacement(state)).toEqual({ type: 'place', row: 0, col: 0 });
+    expect(suggestCopPlacement(state)).toBeNull();
   });
 });
 
@@ -106,7 +106,7 @@ describe('solveThiefSiege', () => {
     expect(solution.trace?.visualizationData).toMatchObject({
       escapePath: expect.arrayContaining([createInitialState().thief]),
     });
-    expect(solution.stats.solverName).toContain('escape-bfs');
+    expect(solution.stats.solverName).toContain('escape-adversary/');
   });
 
   it('returns a thief step during thief phase', () => {

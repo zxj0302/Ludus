@@ -3,7 +3,8 @@ import type { GamePluginEntry } from '../types';
 import { generateThiefSiegeLevel } from './generator';
 import { createInitialState, legalMoves, applyMove, isSolved, isOwnState } from './rules';
 import { getDifficulty } from './difficulty';
-import { chooseThiefStep, solveThiefSiege } from './solver';
+import { chooseThiefStep, getThiefSiegeAdversaryBudget, solveThiefSiege } from './solver';
+import { searchAdversary } from './adversary';
 import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 import { thiefSiegeEducationManifest, thiefSiegeVisualizationManifest } from './manifest';
 import { ThiefSiegeBoard } from './render';
@@ -28,7 +29,7 @@ const metadata = {
       platform: 'web' as const,
       capabilities: {
         playable: true, solver: 'full' as const, generator: 'full' as const,
-        education: 'full' as const, visualization: 'full' as const, webWorker: false,
+        education: 'full' as const, visualization: 'full' as const, webWorker: true,
       },
     },
     {
@@ -66,6 +67,15 @@ export const thiefSiegePlugin: GamePlugin<ThiefSiegeState, ThiefSiegeMove> = {
     getAIMove: (s) => {
       const move = chooseThiefStep(s);
       return move ? { move, delay: 450 } : null;
+    },
+    getAIMoveAsync: async (s) => {
+      const result = searchAdversary(s, getThiefSiegeAdversaryBudget(s));
+      if (result.move?.type === 'step') {
+        return { move: result.move, delay: Math.max(200, result.timeMs), tier: result.tier };
+      }
+
+      const fallback = chooseThiefStep(s);
+      return fallback ? { move: fallback, delay: 200, tier: 'bfs' } : null;
     },
   },
 };

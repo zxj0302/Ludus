@@ -3,7 +3,14 @@
 import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
-import type { WorkerRequest, WorkerResponse } from '@ludus/core';
+import {
+  chooseThiefStep,
+  getThiefSiegeAdversaryBudget,
+  solveThiefSiege,
+} from '@ludus/games/src/thief-siege/solver';
+import { searchAdversary } from '@ludus/games/src/thief-siege/adversary';
+import type { ThiefSiegeState } from '@ludus/games/src/thief-siege/types';
+import type { AiMoveTaskPayload, WorkerRequest, WorkerResponse } from '@ludus/core';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const { id, type, payload } = e.data;
@@ -84,11 +91,46 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             error: err instanceof Error ? err.message : 'Unknown Worker error in sokoban solver',
           });
         }
+      } else if (gameId === 'thief-siege') {
+        try {
+          const solution = solveThiefSiege(state as unknown as ThiefSiegeState);
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in thief-siege solver',
+          });
+        }
       } else {
         self.postMessage({ id, type, error: `Unknown game: ${gameId}` });
       }
     } else if (type === 'generate') {
       self.postMessage({ id, type, error: 'Generation in Worker not yet implemented' });
+    } else if (type === 'ai-move') {
+      const { gameId, state, budget } = payload as AiMoveTaskPayload;
+      if (gameId !== 'thief-siege') {
+        self.postMessage({ id, type, error: `AI Worker not implemented for game: ${gameId}` });
+        return;
+      }
+
+      const thiefState = state as unknown as ThiefSiegeState;
+      const result = searchAdversary(thiefState, budget ?? getThiefSiegeAdversaryBudget(thiefState));
+      if (result.move?.type === 'step') {
+        self.postMessage({
+          id,
+          type,
+          result: { move: result.move, delay: Math.max(200, result.timeMs), tier: result.tier },
+        });
+        return;
+      }
+
+      const fallback = chooseThiefStep(thiefState);
+      self.postMessage({
+        id,
+        type,
+        result: fallback ? { move: fallback, delay: 200, tier: 'bfs' } : null,
+      });
     } else {
       self.postMessage({ id, type, error: `Unknown task type: ${type}` });
     }

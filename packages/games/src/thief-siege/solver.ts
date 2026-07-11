@@ -7,6 +7,8 @@ import {
   neighbors4,
   normalizeTerminalState,
 } from './rules';
+import { searchAdversary } from './adversary';
+import type { AdversaryBudget, AdversaryTier } from './adversary';
 import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 
 type Pos = { row: number; col: number };
@@ -14,6 +16,20 @@ type Pos = { row: number; col: number };
 interface EscapeSearchResult {
   path: Pos[] | null;
   nodesExplored: number;
+}
+
+interface MoveChoice {
+  move: ThiefSiegeMove | null;
+  tier: AdversaryTier;
+  nodesExplored: number;
+}
+
+const FAST_ADVERSARY_BUDGET: AdversaryBudget = { timeMs: 80, maxDepth: 6, maxPlaceBranch: 10 };
+
+export function getThiefSiegeAdversaryBudget(state: ThiefSiegeState): AdversaryBudget {
+  if (state.width <= 11) return { timeMs: 800, maxDepth: Infinity, maxPlaceBranch: 14 };
+  if (state.width <= 15) return { timeMs: 500, maxDepth: 10, maxPlaceBranch: 12 };
+  return { timeMs: 350, maxDepth: 6, maxPlaceBranch: 10 };
 }
 
 function samePos(a: Pos, b: Pos): boolean {
@@ -107,7 +123,7 @@ function degreeAfterStep(state: ThiefSiegeState, move: ThiefSiegeMove): number {
     .length;
 }
 
-export function chooseThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
+function chooseBfsThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
   const normalized = normalizeTerminalState(state);
   if (normalized.status !== 'playing' || normalized.phase !== 'thief') return null;
 
@@ -126,6 +142,32 @@ export function chooseThiefStep(state: ThiefSiegeState): ThiefSiegeMove | null {
   if (reachableStep) return reachableStep;
 
   return [...legalSteps].sort((a, b) => degreeAfterStep(normalized, b) - degreeAfterStep(normalized, a))[0] ?? null;
+}
+
+function chooseThiefStepChoice(state: ThiefSiegeState, budget: AdversaryBudget = FAST_ADVERSARY_BUDGET): MoveChoice {
+  const normalized = normalizeTerminalState(state);
+  if (normalized.status !== 'playing' || normalized.phase !== 'thief') {
+    return { move: null, tier: 'bfs', nodesExplored: 0 };
+  }
+
+  const adversary = searchAdversary(normalized, budget);
+  if (adversary.move?.type === 'step') {
+    return {
+      move: adversary.move,
+      tier: adversary.tier,
+      nodesExplored: adversary.nodesExplored,
+    };
+  }
+
+  return {
+    move: chooseBfsThiefStep(normalized),
+    tier: 'bfs',
+    nodesExplored: adversary.nodesExplored,
+  };
+}
+
+export function chooseThiefStep(state: ThiefSiegeState, budget?: AdversaryBudget): ThiefSiegeMove | null {
+  return chooseThiefStepChoice(state, budget).move;
 }
 
 export function suggestCopPlacement(state: ThiefSiegeState): ThiefSiegeMove | null {
@@ -150,9 +192,16 @@ export function solveThiefSiege(state: ThiefSiegeState): Solution {
   const startTime = performance.now();
   const normalized = normalizeTerminalState(state);
   const search = findShortestEscapePath(normalized);
-  const move = normalized.phase === 'cop'
-    ? suggestCopPlacement(normalized)
-    : chooseThiefStep(normalized);
+  let choice: MoveChoice;
+  if (normalized.phase === 'cop' && normalized.status === 'playing') {
+    const adversary = searchAdversary(normalized, FAST_ADVERSARY_BUDGET);
+    choice = adversary.move?.type === 'place'
+      ? { move: adversary.move, tier: adversary.tier, nodesExplored: adversary.nodesExplored }
+      : { move: suggestCopPlacement(normalized), tier: 'bfs', nodesExplored: adversary.nodesExplored };
+  } else {
+    choice = chooseThiefStepChoice(normalized);
+  }
+  const move = choice.move;
   const moves = move ? [move] : [];
   const escapePath = search.path ?? [];
   const timeMs = Math.round(performance.now() - startTime);
@@ -171,10 +220,10 @@ export function solveThiefSiege(state: ThiefSiegeState): Solution {
       visualizationData: { escapePath },
     },
     stats: {
-      nodesExplored: search.nodesExplored,
+      nodesExplored: search.nodesExplored + choice.nodesExplored,
       timeMs,
       solutionLength: moves.length,
-      solverName: 'escape-bfs + cut-heuristic',
+      solverName: `escape-adversary/${choice.tier}`,
       terminated: search.path == null ? 'exhausted' : 'solved',
     },
   };

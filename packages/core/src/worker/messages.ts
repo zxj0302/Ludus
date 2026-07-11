@@ -1,6 +1,6 @@
-// Web Worker 消息协议 — 求解/生成任务抽象
+// Web Worker 消息协议 — 求解/生成/AI 任务抽象
 
-export type WorkerTaskType = 'solve' | 'generate';
+export type WorkerTaskType = 'solve' | 'generate' | 'ai-move';
 
 export interface WorkerRequest {
   id: string;
@@ -25,4 +25,15 @@ export interface SolveTaskPayload {
 export interface GenerateTaskPayload {
   gameId: string;
   config: Record<string, unknown>;
+}
+
+/** AI 走子任务的 payload */
+export interface AiMoveTaskPayload {
+  gameId: string;
+  state: Record<string, unknown>;
+  budget?: {
+    timeMs: number;
+    maxDepth: number;
+    maxPlaceBranch?: number;
+  };
 }
