@@ -149,6 +149,11 @@
   - `packages/games/src/peg-solitaire/generator.ts`：按难度映射 `le3` / `one-any` / `one-center`，使用 seeded curated candidates + 轻量 dig-out + solver 验证。
   - `packages/games/src/peg-solitaire/difficulty.ts`：基于 peg count、mobility、goal strictness、center occupancy 的 0–100 难度评分。
   - 验证：Peg Solitaire 4 个测试文件 / 19 测试全过，`pnpm typecheck` 成功。
+- **孔明棋 Task 4 — playable plugin / Hub registry / Worker** ✅:
+  - `packages/games/src/peg-solitaire/` 新增 `render.tsx`、`manifest.ts`、`i18n.ts`、`education-ui.tsx`、`index.tsx`；实现英式十字盘可玩 UI、plugin metadata、状态卡与走子格式化。
+  - `packages/games/src/registry.ts` / `packages/games/src/index.ts` 注册并导出 `peg-solitaire`；`apps/web/src/entrySetup.tsx` 注入空 education content（Task 5 填充）。
+  - `apps/web/src/workers/solver.worker.ts` 通过 `@ludus/games/src/peg-solitaire/solver` 直接导入 `solvePegSolitaire`，避免 Worker 触碰 barrel。
+  - 验证：Peg Solitaire + load-smoke 39 测全过，`pnpm typecheck` 成功，`pnpm --filter ludus-web build` 成功。
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -164,14 +169,15 @@
 
 ## 🚧 IN PROGRESS
 
-- **Peg Solitaire（孔明棋）**：Task 1–3 已完成（geometry/rules、D4 solver、puzzles/generator/difficulty）。下一步 Task 4 接入 playable plugin UI、manifest/i18n、registry 与 Worker solve。
+- **Peg Solitaire（孔明棋）**：Task 1–4 已完成（geometry/rules、D4 solver、puzzles/generator/difficulty、playable plugin、Hub registry、Worker solve）。下一步 Task 5 补齐重教学内容、PegSearchViz 与开发者文档。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-按 `docs/superpowers/plans/2026-07-14-peg-solitaire.md` 执行 Task 4：
-1. 创建 `render.tsx`、`manifest.ts`、`i18n.ts`、`education-ui.tsx`、`index.tsx`
-2. 修改 `packages/games/src/registry.ts`、`packages/games/src/index.ts`、`apps/web/src/workers/solver.worker.ts`
-3. 验证 `pnpm --filter @ludus/games exec vitest run src/load-smoke.test.ts src/peg-solitaire/` 与 `pnpm typecheck`
+按 `docs/superpowers/plans/2026-07-14-peg-solitaire.md` 执行 Task 5：
+1. 创建 `packages/education/src/content/peg-solitaire/` 下 L2/L3 × zh-CN/en 四份教学内容
+2. 创建 `apps/web/src/components/PegSearchViz.tsx` 并在 `apps/web/src/entrySetup.tsx` 接入真实 education/viz/toolbar
+3. 创建 `docs/games/peg-solitaire.md`，必要时补充 ADR/进度记录
+4. 验证 `pnpm test:run` 与 `pnpm typecheck`
 
 Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-design.md`  
 Plan：`docs/superpowers/plans/2026-07-14-peg-solitaire.md`
@@ -618,3 +624,4 @@ Plan：`docs/superpowers/plans/2026-07-14-peg-solitaire.md`
 - [2026-07-14] **孔明棋设计启动**：用户选英式 33 孔、分级目标、完整教学求解器、经典+残局包；方案 A（bitmask+对称+Worker）；教学侧栏要求全面/严谨/有趣。写入 `docs/superpowers/specs/2026-07-14-peg-solitaire-design.md` 待审阅。
 - [2026-07-14] **孔明棋 spec 确认 + 计划**：写入 `docs/superpowers/plans/2026-07-14-peg-solitaire.md`（geometry→solver→generator→plugin→重教学/viz）。待选执行方式。
 - [2026-07-14] **孔明棋 Task 3 完成**：新增 puzzles / generator / difficulty 与 TDD 覆盖；生成器使用 seeded curated candidates + 轻量 dig-out，避免 full classic 重搜索；Peg 19 测与 `pnpm typecheck` 成功。
+- [2026-07-14] **孔明棋 Task 4 完成**：新增 playable plugin UI、manifest/i18n、education-ui、registry/barrel/web entrySetup 与 Worker solve；Peg + load-smoke 39 测、`pnpm typecheck`、`pnpm --filter ludus-web build` 成功。

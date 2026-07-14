@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -67,6 +67,7 @@ const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'fifteen':    { 'L2.zh-CN': l2zhFF, 'L2.en': l2enFF, 'L3.zh-CN': l3zhFF, 'L3.en': l3enFF },
   'water-jug':  { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
   'nonogram':   { 'L2.zh-CN': l2zhNO, 'L2.en': l2enNO, 'L3.zh-CN': l3zhNO, 'L3.en': l3enNO },
+  'peg-solitaire': {},
 };
 
 const ENTRY_MAP = {
@@ -78,6 +79,7 @@ const ENTRY_MAP = {
   'fifteen': fifteenEntry,
   'water-jug': waterJugEntry,
   'nonogram': nonogramEntry,
+  'peg-solitaire': pegSolitaireEntry,
 } as const;
 
 for (const [gameId, entry] of Object.entries(ENTRY_MAP)) {

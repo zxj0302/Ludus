@@ -8,6 +8,7 @@ import { wythoffPlugin, wythoffEntry } from './wythoff';
 import { fifteenPlugin, fifteenEntry } from './fifteen';
 import { waterJugPlugin, waterJugEntry } from './water-jug';
 import { nonogramPlugin, nonogramEntry } from './nonogram';
+import { pegSolitairePlugin, pegSolitaireEntry } from './peg-solitaire';
 // thief-siege: package kept for future work, intentionally not registered in Hub
 import { thiefSiegePlugin, thiefSiegeEntry } from './thief-siege';
 
@@ -23,6 +24,7 @@ pluginRegistry.set(wythoffPlugin.metadata.id, wythoffPlugin);
 pluginRegistry.set(fifteenPlugin.metadata.id, fifteenPlugin);
 pluginRegistry.set(waterJugPlugin.metadata.id, waterJugPlugin);
 pluginRegistry.set(nonogramPlugin.metadata.id, nonogramPlugin);
+pluginRegistry.set(pegSolitairePlugin.metadata.id, pegSolitairePlugin);
 
 export function getGame(id: string): GamePlugin | undefined {
   return pluginRegistry.get(id);
@@ -45,6 +47,7 @@ entryRegistry.set(wythoffEntry.plugin.metadata.id, wythoffEntry);
 entryRegistry.set(fifteenEntry.plugin.metadata.id, fifteenEntry);
 entryRegistry.set(waterJugEntry.plugin.metadata.id, waterJugEntry);
 entryRegistry.set(nonogramEntry.plugin.metadata.id, nonogramEntry);
+entryRegistry.set(pegSolitaireEntry.plugin.metadata.id, pegSolitaireEntry);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getGameEntry(id: string): GamePluginEntry<any, any> | undefined {
@@ -58,5 +61,5 @@ export function getAllEntries(): GamePluginEntry<any, any>[] {
 
 // -- Re-exports --
 
-export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, thiefSiegePlugin };
-export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, thiefSiegeEntry };
+export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, pegSolitairePlugin, thiefSiegePlugin };
+export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, thiefSiegeEntry };

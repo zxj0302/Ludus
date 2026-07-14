@@ -3,6 +3,7 @@
 import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
+import { solvePegSolitaire } from '@ludus/games/src/peg-solitaire/solver';
 import {
   chooseThiefSiegeAiMove,
   solveThiefSiege,
@@ -87,6 +88,17 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             id,
             type,
             error: err instanceof Error ? err.message : 'Unknown Worker error in sokoban solver',
+          });
+        }
+      } else if (gameId === 'peg-solitaire') {
+        try {
+          const solution = solvePegSolitaire(state as unknown as import('@ludus/games/src/peg-solitaire/types').PegSolitaireState);
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in peg-solitaire solver',
           });
         }
       } else if (gameId === 'thief-siege') {

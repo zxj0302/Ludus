@@ -6,6 +6,10 @@ describe('game load smoke', () => {
     expect(getAllGames().map(plugin => plugin.metadata.id)).not.toContain('thief-siege');
   });
 
+  it('registers peg-solitaire in the Hub registry', () => {
+    expect(getAllGames().map(plugin => plugin.metadata.id)).toContain('peg-solitaire');
+  });
+
   for (const plugin of getAllGames()) {
     const id = plugin.metadata.id;
     it(`${id}: generateLevel + isOwnState`, () => {
