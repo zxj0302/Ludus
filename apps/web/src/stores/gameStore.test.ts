@@ -1,5 +1,6 @@
 import type { GameState, Solution } from '@ludus/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ConnectFourState } from '@ludus/games';
 import { useGameStore } from './gameStore';
 import { useProgressStore } from './progressStore';
 import { buildProgressSnapshot } from '../utils/progressSnapshot';
@@ -222,5 +223,53 @@ describe('gameStore peg-solitaire smoke', () => {
     expect(after.solveError).toBeTruthy();
     expect(after.solution?.stats.terminated).toBe('timeout');
     expect(after.solution?.trace).toBeTruthy();
+  });
+
+  it('transitions connect-four choosing to playing before worker solve playback', () => {
+    vi.useFakeTimers();
+
+    const solution: Solution = {
+      solvable: true,
+      moves: [{ column: 3 }],
+      stats: {
+        nodesExplored: 10,
+        timeMs: 100,
+        solutionLength: 1,
+        solverName: 'test',
+        terminated: 'solved',
+      },
+      trace: {
+        type: 'minimax-tree',
+        steps: [],
+        visualizationData: { playerStarts: true },
+      },
+    };
+
+    vi.spyOn(solverRuntime, 'runSolverOffThread').mockImplementation((_plugin, _state, onResult) => {
+      onResult(solution);
+      return { cancel: vi.fn() };
+    });
+    vi.spyOn(solverRuntime, 'adversarialSolveStep').mockImplementation(() => {});
+
+    useGameStore.getState().loadGame('connect-four');
+    expect((useGameStore.getState().gameState as ConnectFourState).phase).toBe('choosing');
+
+    useGameStore.getState().requestSolve();
+
+    const hinted = useGameStore.getState();
+    expect(hinted.hintHighlight).toEqual({ row: 0, col: 0 });
+    expect((hinted.gameState as ConnectFourState).phase).toBe('choosing');
+
+    vi.advanceTimersByTime(800);
+
+    const afterTransition = useGameStore.getState();
+    const state = afterTransition.gameState as ConnectFourState;
+    expect(state.phase).toBe('playing');
+    expect(state.playerStarts).toBe(true);
+    expect(state.currentPlayer).toBe(0);
+    expect(afterTransition.adversarialPlayback).toBe(true);
+    expect(afterTransition.solvePlayback).toBe(true);
+
+    vi.useRealTimers();
   });
 });

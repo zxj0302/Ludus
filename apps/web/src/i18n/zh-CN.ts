@@ -21,6 +21,9 @@ const zhCN = {
     'game.pegSolitaire.name': '孔明棋',
     'game.pegSolitaire.description': '英式经典名局合集 — 搜索树 × D4 对称剪枝',
 
+    'game.connectFour.name': '四子棋',
+    'game.connectFour.description': '经典 Connect Four — Alpha-Beta 博弈树对战 AI',
+
     'game.sudoku.name': '数独',
     'game.sudoku.description': '在 9×9 网格中填入 1-9，利用 DLX 精确覆盖算法求解与生成唯一解关卡',
 
@@ -65,6 +68,7 @@ const zhCN = {
     'nim.nimSum': 'Nim-sum',
     'nim.gameTree': '博弈树',
     'education.nimMove': '取堆{{pile}} {{count}}颗',
+    'education.connectFourMove': '落第 {{column}} 列',
 
     'game.wythoff.name': 'Wythoff 博弈',
     'game.wythoff.description': '两堆石子，可以取一堆或同时取两堆——用黄金比例判断必胜位置',
@@ -179,8 +183,6 @@ const zhCN = {
     'generator.advanced.show': '高级生成',
     'generator.advanced.hide': '收起高级生成',
     'generator.advanced.unavailable': '高级生成（待支持）',
-    'generator.createCard.title': '出题不是随便调参数',
-    'generator.createCard.description': '这里解释如何用可解性、唯一解、已知最优和难度控制设计好关卡；实际参数实验请在难度菜单底部的「高级生成」中展开。',
     'generator.advanced.lightsOut.title': '点灯关卡生成控制台',
     'generator.advanced.lightsOut.description': '调整棋盘尺寸、反向步数与求解保证，生成一局可玩的点灯关卡。',
     'generator.advanced.sudoku.title': '数独关卡生成控制台',

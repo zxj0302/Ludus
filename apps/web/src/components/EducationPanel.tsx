@@ -9,7 +9,6 @@ import { useGameStore } from '../stores/gameStore';
 import type { DisclosureLevel } from '@ludus/ui';
 import { StatusCard } from '../statusCards';
 import { getPlayerStarts } from '../utils/solution';
-import { getSectionViewModel } from './educationSectionViewModel';
 import { splitEducationSections, type EducationStageKey } from './educationSectionParser';
 
 type Stage = EducationStageKey;
@@ -46,17 +45,6 @@ const SECTION_STYLES = {
   create: { icon: '\u{1F3A8}', borderColor: 'var(--violet-600)',           bgColor: 'var(--violet-50)',       headerColor: 'var(--violet-700)' },
 };
 
-function CreateSectionCallout() {
-  const { t } = useTranslation();
-
-  return (
-    <div className="mb-3 rounded-card border border-violet-200 bg-violet-50 px-3 py-2">
-      <p className="text-xs font-semibold text-violet-800">{t('generator.createCard.title')}</p>
-      <p className="mt-1 text-xs text-warm-stone-600">{t('generator.createCard.description')}</p>
-    </div>
-  );
-}
-
 const SectionCard = React.memo(function SectionCard({
   section, language,
 }: {
@@ -67,7 +55,6 @@ const SectionCard = React.memo(function SectionCard({
   if (!style) return <MarkdownRenderer content={section.body} />;
 
   const title = language.startsWith('zh') ? section.chinese : section.english;
-  const viewModel = getSectionViewModel(section);
 
   return (
     <motion.div
@@ -87,7 +74,6 @@ const SectionCard = React.memo(function SectionCard({
         </h3>
       </div>
       <div className="px-4 py-3">
-        {viewModel.showCreateDesignCallout && <CreateSectionCallout />}
         <MarkdownRenderer content={section.body} />
       </div>
     </motion.div>
@@ -130,6 +116,10 @@ export function EducationPanel({
 
   const depth = disclosureLevel >= 3 ? 'L3' : 'L2';
   const entry = useMemo(() => getGameEntry(gameId), [gameId]);
+  const isChoosingHand = gameId === 'connect-four'
+    && gameState != null
+    && typeof gameState === 'object'
+    && (gameState as { phase?: string }).phase === 'choosing';
   const rawMd = useMemo(() => {
     const md = entry?.education.content[`${depth}.${language}`] ?? '';
     const parts = md.split(/^---$/m);
@@ -252,7 +242,12 @@ export function EducationPanel({
                 <StatusCard gameId={gameId} gameState={gameState} solution={solution} />
               )}
 
-              {solution?.trace && (() => {
+              {isChoosingHand && entry?.ui?.choosingHint && (() => {
+                const ChoosingHint = entry.ui.choosingHint;
+                return <ChoosingHint />;
+              })()}
+
+              {solution?.trace && !isChoosingHand && (() => {
                 const VizComponent = entry?.visualization?.Component;
                 const matchTrace = entry?.visualization?.matchTrace;
                 if (!VizComponent || !matchTrace || !matchTrace(solution.trace as SolverTrace)) return null;
@@ -261,7 +256,7 @@ export function EducationPanel({
                 );
               })()}
 
-              {solution?.solvable && (() => {
+              {solution?.solvable && !isChoosingHand && (() => {
                 const isGameOver = gameState && entry?.plugin.isSolved(gameState);
                 const hasMoves = solution.moves.length > 0;
 

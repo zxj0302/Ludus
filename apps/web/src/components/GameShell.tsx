@@ -51,16 +51,21 @@ export function GameShell({ gameId }: Props) {
   // 防御：确保 state 与当前游戏匹配（切游戏时的瞬态保护）
   const stateMatchesPlugin = entry && gameState ? entry.isOwnState(gameState) : false;
 
-  const isWin: boolean =
+  const isGameOver: boolean =
     stateMatchesPlugin && !solvePlayback && plugin && gameState
       ? plugin.isSolved(gameState)
       : false;
 
+  const isWin: boolean =
+    stateMatchesPlugin && !solvePlayback && plugin && gameState
+      ? (plugin.ai?.isPlayerVictory?.(gameState) ?? isGameOver)
+      : false;
+
   useEffect(() => {
-    if (!startTime || isWin) return;
+    if (!startTime || isGameOver) return;
     const interval = setInterval(tick, 200);
     return () => clearInterval(interval);
-  }, [startTime, tick, isWin]);
+  }, [startTime, tick, isGameOver]);
 
   useEffect(() => {
     if (solution?.solvable && solverStatus === 'done' && solution.moves.length > 0) {
@@ -80,10 +85,10 @@ export function GameShell({ gameId }: Props) {
   }, [solvePlayback, adversarialPlayback, nextPlaybackStep, playStep]);
 
   const handleMove = useCallback((move: Move) => {
-    if (isWin || solvePlayback || solverStatus === 'running') return;
+    if (isGameOver || solvePlayback || solverStatus === 'running') return;
     applyMove(move);
     playToggle(); vibrate(5);
-  }, [isWin, solvePlayback, solverStatus, applyMove, playToggle, vibrate]);
+  }, [isGameOver, solvePlayback, solverStatus, applyMove, playToggle, vibrate]);
 
   // 游戏专属动作分发（Board 组件通过 entry.dispatch 调用）
   const handleDispatch = useCallback((action: { type: string; payload: unknown }) => {
@@ -204,7 +209,7 @@ export function GameShell({ gameId }: Props) {
                 <entry.BoardComponent
                   state={gameState}
                   onMove={handleMove}
-                  disabled={isWin || solvePlayback || solverStatus === 'running'}
+                  disabled={isGameOver || solvePlayback || solverStatus === 'running'}
                   highlightCell={highlightCell}
                   dispatch={handleDispatch}
                 />

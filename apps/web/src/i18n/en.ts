@@ -21,6 +21,9 @@ const en = {
     'game.pegSolitaire.name': 'Peg Solitaire',
     'game.pegSolitaire.description': 'Classic English-board catalog — search trees × D4 symmetry pruning',
 
+    'game.connectFour.name': 'Connect Four',
+    'game.connectFour.description': 'Classic Connect Four — Alpha-Beta game tree vs AI',
+
     'game.sudoku.name': 'Sudoku',
     'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 — solved with DLX exact cover algorithm, generated with unique solutions',
 
@@ -65,6 +68,7 @@ const en = {
     'nim.nimSum': 'Nim-sum',
     'nim.gameTree': 'Game tree',
     'education.nimMove': 'Remove {{count}} from pile {{pile}}',
+    'education.connectFourMove': 'Drop in column {{column}}',
 
     'game.wythoff.name': "Wythoff's Game",
     'game.wythoff.description': "Two piles of stones — remove from one pile or both equally. Use the golden ratio to spot winning positions.",
@@ -179,8 +183,6 @@ const en = {
     'generator.advanced.show': 'Advanced generation',
     'generator.advanced.hide': 'Hide advanced generation',
     'generator.advanced.unavailable': 'Advanced generation (soon)',
-    'generator.createCard.title': 'Designing levels is not just tweaking parameters',
-    'generator.createCard.description': 'This section explains how solvability, uniqueness, known optimal steps, and difficulty control make a level well-designed. Open Advanced generation from the bottom of the difficulty menu for parameter experiments.',
     'generator.advanced.lightsOut.title': 'Lights Out Generator Console',
     'generator.advanced.lightsOut.description': 'Tune board size, reverse moves, and solver guarantees for a playable Lights Out level.',
     'generator.advanced.sudoku.title': 'Sudoku Generator Console',

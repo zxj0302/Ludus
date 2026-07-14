@@ -4,6 +4,9 @@ import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/sr
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
 import { solvePegSolitaire } from '@ludus/games/src/peg-solitaire/solver';
+import { findBestMove, solveConnectFour } from '@ludus/games/src/connect-four/solver';
+import { resolveConnectFourAiOptions } from '@ludus/games/src/connect-four/difficulty';
+import type { ConnectFourState } from '@ludus/games/src/connect-four/types';
 import {
   chooseThiefSiegeAiMove,
   solveThiefSiege,
@@ -101,6 +104,20 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             error: err instanceof Error ? err.message : 'Unknown Worker error in peg-solitaire solver',
           });
         }
+      } else if (gameId === 'connect-four') {
+        try {
+          const solution = solveConnectFour(
+            state as unknown as import('@ludus/games/src/connect-four/types').ConnectFourState,
+            { maxDepth: 12, timeMs: 12_000 },
+          );
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in connect-four solver',
+          });
+        }
       } else if (gameId === 'thief-siege') {
         try {
           const solution = solveThiefSiege(state as unknown as ThiefSiegeState);
@@ -119,17 +136,28 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
       self.postMessage({ id, type, error: 'Generation in Worker not yet implemented' });
     } else if (type === 'ai-move') {
       const { gameId, state, budget } = payload as AiMoveTaskPayload;
-      if (gameId !== 'thief-siege') {
-        self.postMessage({ id, type, error: `AI Worker not implemented for game: ${gameId}` });
+      if (gameId === 'thief-siege') {
+        const thiefState = state as unknown as ThiefSiegeState;
+        self.postMessage({
+          id,
+          type,
+          result: chooseThiefSiegeAiMove(thiefState, budget),
+        });
         return;
       }
 
-      const thiefState = state as unknown as ThiefSiegeState;
-      self.postMessage({
-        id,
-        type,
-        result: chooseThiefSiegeAiMove(thiefState, budget),
-      });
+      if (gameId === 'connect-four') {
+        const c4State = state as unknown as ConnectFourState;
+        const move = findBestMove(c4State, 1, resolveConnectFourAiOptions(c4State));
+        self.postMessage({
+          id,
+          type,
+          result: move ? { move, delay: 600 } : null,
+        });
+        return;
+      }
+
+      self.postMessage({ id, type, error: `AI Worker not implemented for game: ${gameId}` });
     } else {
       self.postMessage({ id, type, error: `Unknown task type: ${type}` });
     }

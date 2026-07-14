@@ -146,6 +146,8 @@ export interface GamePluginEntry<
     toolbarSlot?: ComponentType<ToolbarSlotProps>;
     /** 教育侧边栏状态卡片 */
     statusCard?: ComponentType<StatusCardProps<S>>;
+    /** 选先后手等人机对战提示卡（可选） */
+    choosingHint?: ComponentType;
     /** 教育面板最优解预览（替代默认走子列表） */
     SolutionPreview?: ComponentType<SolutionPreviewProps<S>>;
   };
@@ -166,6 +168,9 @@ export interface GamePluginEntry<
     /** 可视化组件 */
     Component: ComponentType<VisualizationProps>;
   };
+
+  /** 可选：加载/换关时规范化状态（如人机对战空盘开局） */
+  prepareLoadedState?(state: S, options: { fresh: boolean }): S;
 
   /** 可选高级生成器控件 metadata + LevelConfig 映射 */
   generatorControls?: GeneratorControlsSpec;

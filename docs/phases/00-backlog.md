@@ -53,7 +53,7 @@
 - ⬜ Y（Hex 三角网格变体 / PSPACE / 蒙特卡洛+策略窃取 / 可生成）★ GamesCrafters
 - ⬜ Sim（Ramsey 博弈 / PSPACE-完全 / 策略窃取+后手必胜分析 / —）★ GamesCrafters
 - ⬜ 五子棋·井字棋（Minimax/Alpha-Beta / — / 博弈树 / 可生成残局）
-- ⬜ Connect 4（Minimax/Alpha-Beta / 已强解(Allis 1988, 4.5T 状态) / 博弈树+启发式+开局库 / 可生成残局）★ GamesCrafters
+- ⬜ Connect 4（Minimax/Alpha-Beta / 已强解(Allis 1988, 4.5T 状态) / 博弈树+启发式+开局库 / 可生成残局）★ GamesCrafters → **Hub 已上线 `connect-four` ✅**
 - ⬜ Nine Men's Morris 九子棋（Alpha-Beta / — / 博弈树+三连威胁评估 / 可生成残局）★ GamesCrafters
 - ⬜ Othello / Reversi（领土博弈 / — / Alpha-Beta+MCTS+模式库 / 可生成残局）★ GamesCrafters
 - ⬜ Abalone 推球棋（推力博弈 / — / Alpha-Beta / 可生成残局）★ GamesCrafters
@@ -227,7 +227,7 @@
 1. ✅ **Lights Out 点灯**（§5 线性代数 GF(2)）—— 阶段 4 垂直切片
 2. ✅ **数独**（§4 CSP/SAT，DLX + 唯一解生成）
 3. ✅ **Nim / Wythoff**（§2 组合博弈论）
-4. ⬜ **Connect 4**（§2 博弈树/Alpha-Beta，已强解，教育价值极高）★ GamesCrafters
+4. ✅ **Connect 4**（§2 博弈树/Alpha-Beta，已强解，教育价值极高）★ GamesCrafters
 5. ✅ **15-puzzle 滑块**（§7 搜索，A*/IDA*）
 6. ✅ **倒水谜题**（§13 数论）
 7. ✅ **Nonogram 数织**（§4 CSP）

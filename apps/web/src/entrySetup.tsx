@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -62,6 +62,11 @@ import l2enPG from '@ludus/education/src/content/peg-solitaire/l2.en.md?raw';
 import l3zhPG from '@ludus/education/src/content/peg-solitaire/l3.zh-CN.md?raw';
 import l3enPG from '@ludus/education/src/content/peg-solitaire/l3.en.md?raw';
 
+import l2zhC4 from '@ludus/education/src/content/connect-four/l2.zh-CN.md?raw';
+import l2enC4 from '@ludus/education/src/content/connect-four/l2.en.md?raw';
+import l3zhC4 from '@ludus/education/src/content/connect-four/l3.zh-CN.md?raw';
+import l3enC4 from '@ludus/education/src/content/connect-four/l3.en.md?raw';
+
 // Declarative entry setup — add new games here only
 const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'lights-out': { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
@@ -73,6 +78,7 @@ const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'water-jug':  { 'L2.zh-CN': l2zhWJ, 'L2.en': l2enWJ, 'L3.zh-CN': l3zhWJ, 'L3.en': l3enWJ },
   'nonogram':   { 'L2.zh-CN': l2zhNO, 'L2.en': l2enNO, 'L3.zh-CN': l3zhNO, 'L3.en': l3enNO },
   'peg-solitaire': { 'L2.zh-CN': l2zhPG, 'L2.en': l2enPG, 'L3.zh-CN': l3zhPG, 'L3.en': l3enPG },
+  'connect-four': { 'L2.zh-CN': l2zhC4, 'L2.en': l2enC4, 'L3.zh-CN': l3zhC4, 'L3.en': l3enC4 },
 };
 
 const ENTRY_MAP = {
@@ -85,6 +91,7 @@ const ENTRY_MAP = {
   'water-jug': waterJugEntry,
   'nonogram': nonogramEntry,
   'peg-solitaire': pegSolitaireEntry,
+  'connect-four': connectFourEntry,
 } as const;
 
 for (const [gameId, entry] of Object.entries(ENTRY_MAP)) {
@@ -104,6 +111,7 @@ const FifteenTreeViz = lazy(() => import('./components/FifteenTreeViz').then(m =
 const WaterJugTreeViz = lazy(() => import('./components/WaterJugTreeViz').then(m => ({ default: m.WaterJugTreeViz })));
 const NonogramTraceViz = lazy(() => import('./components/NonogramTraceViz').then(m => ({ default: m.NonogramTraceViz })));
 const PegSearchViz = lazy(() => import('./components/PegSearchViz').then(m => ({ default: m.PegSearchViz })));
+const ConnectFourTreeViz = lazy(() => import('./components/ConnectFourTreeViz').then(m => ({ default: m.ConnectFourTreeViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -198,6 +206,15 @@ pegSolitaireEntry.visualization = {
   )) as ComponentType<VisualizationProps>,
 };
 
+connectFourEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'minimax-tree',
+  Component: (({ trace, solution }: VisualizationProps) => (
+    <Suspense fallback={<Fallback />}>
+      <ConnectFourTreeViz trace={trace} solution={solution} />
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 3. UI extensions — web 专属 toolbar
 // ═══════════════════════════════════════════════════════════════
@@ -212,6 +229,7 @@ const TOOLBAR_SLOTS: Partial<Record<keyof typeof ENTRY_MAP, ComponentType<{ onNe
   'fifteen': GeneratorToolbar,
   'water-jug': GeneratorToolbar,
   'nonogram': GeneratorToolbar,
+  'connect-four': GeneratorToolbar,
 };
 
 for (const [gameId, toolbar] of Object.entries(TOOLBAR_SLOTS)) {

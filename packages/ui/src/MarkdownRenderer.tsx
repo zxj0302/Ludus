@@ -52,8 +52,8 @@ function splitTableCells(row: string): string[] {
   return cells.map(c => c.replace(/\x00M(\d+)\x00/g, (_, i) => mathSpans[parseInt(i)] ?? ''));
 }
 
-/** 简易 Markdown → HTML */
-function mdToHtml(md: string): string {
+/** 简易 Markdown → HTML（导出供单测） */
+export function mdToHtml(md: string): string {
   let html = '';
   const lines = md.split('\n');
   let inCodeBlock = false;
@@ -62,6 +62,20 @@ function mdToHtml(md: string): string {
   let inTable = false;
   let tableRows: string[] = [];
   let inList: 'ul' | 'ol' | null = null;
+
+  const flushTable = () => {
+    if (!inTable || tableRows.length === 0) return;
+    html += '<div class="overflow-x-auto my-3"><table class="w-full text-xs border-collapse"><thead>';
+    const headerCells = splitTableCells(tableRows[0]!).filter(c => c);
+    html += '<tr>' + headerCells.map(c => `<th class="border border-warm-stone-300 px-2 py-1 bg-warm-stone-100 text-left font-semibold">${inlineFormat(c)}</th>`).join('') + '</tr></thead><tbody>';
+    for (let r = 1; r < tableRows.length; r++) {
+      const cells = splitTableCells(tableRows[r]!).filter(c => c);
+      html += '<tr>' + cells.map(c => `<td class="border border-warm-stone-200 px-2 py-1">${inlineFormat(c)}</td>`).join('') + '</tr>';
+    }
+    html += '</tbody></table></div>';
+    inTable = false;
+    tableRows = [];
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i]!;
@@ -96,18 +110,7 @@ function mdToHtml(md: string): string {
       tableRows.push(line);
       continue;
     } else if (inTable) {
-      if (tableRows.length > 0) {
-        html += '<div class="overflow-x-auto my-3"><table class="w-full text-xs border-collapse"><thead>';
-        const headerCells = splitTableCells(tableRows[0]!).filter(c => c);
-        html += '<tr>' + headerCells.map(c => `<th class="border border-warm-stone-300 px-2 py-1 bg-warm-stone-100 text-left font-semibold">${inlineFormat(c)}</th>`).join('') + '</tr></thead><tbody>';
-        for (let r = 1; r < tableRows.length; r++) {
-          const cells = splitTableCells(tableRows[r]!).filter(c => c);
-          html += '<tr>' + cells.map(c => `<td class="border border-warm-stone-200 px-2 py-1">${inlineFormat(c)}</td>`).join('') + '</tr>';
-        }
-        html += '</tbody></table></div>';
-      }
-      inTable = false;
-      tableRows = [];
+      flushTable();
     }
 
     // Skip empty
@@ -198,6 +201,7 @@ function mdToHtml(md: string): string {
     html += `<pre class="bg-warm-stone-100 rounded-lg p-3 overflow-x-auto text-xs my-3 font-mono"><code>${escapeHtml(codeContent.trim())}</code></pre>`;
   }
   if (inList) html += inList === 'ul' ? '</ul>' : '</ol>';
+  flushTable();
 
   return html;
 }
@@ -214,6 +218,10 @@ function inlineFormat(text: string): string {
   result = result.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-warm-stone-800">$1</strong>');
   result = result.replace(/`([^`]+)`/g, '<code class="bg-warm-stone-100 text-logic-indigo-700 px-1 rounded text-xs font-mono">$1</code>');
   result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  result = result.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-logic-indigo-600 underline underline-offset-2 hover:text-logic-indigo-800">$1</a>',
+  );
 
   // 恢复 HTML blocks
   result = result.replace(/\x00HTML(\d+)\x00/g, (_, i) => htmlBlocks[parseInt(i)] ?? '');

@@ -4,7 +4,6 @@ import { getGame, getGameEntry } from '@ludus/games';
 import type { HighlightCell } from '@ludus/games';
 import type { DisclosureLevel } from '@ludus/ui';
 import i18n from '../i18n';
-import { getPlayerStarts } from '../utils/solution';
 import { scheduleTimeout, clearAllPlaybackTimers } from '../utils/playbackController';
 import { getCurrentElapsedMs, timerFieldsForSession } from '../utils/progressSnapshot';
 import { parseRestorableSnapshot, useProgressStore } from './progressStore';
@@ -20,6 +19,7 @@ import {
   applyHintFromSolution,
   clearPlaybackStateFields,
   clearSolverRuntimeTimers,
+  handleRequestSolveResult,
   isSolveInFlight,
   maybeRescheduleBackgroundSolve,
   runSolverOffThread,
@@ -184,6 +184,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       restored = false;
     }
 
+    if (entry?.prepareLoadedState && entry.isOwnState(state)) {
+      state = entry.prepareLoadedState(state, { fresh: !restored }) as GameState;
+      if (!restored) {
+        history = [state];
+        historyIndex = 0;
+      }
+    }
+
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
     let sol: Solution | null = null;
@@ -238,7 +246,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame) scheduleBackgroundSolve(get, set, state, gameId);
-    if (hasAI) scheduleAI(get);
+    if (hasAI && plugin.ai?.isAITurn(state)) scheduleAI(get);
   },
 
   applyMove: (move) => {
@@ -291,7 +299,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }
 
     if (!solvePlayback && plugin.ai && !nowSolved) scheduleAI(get);
-    if (!solvePlayback && !plugin.ai) maybeRescheduleBackgroundSolve(get, set);
+    if (!solvePlayback) maybeRescheduleBackgroundSolve(get, set);
   },
 
   prependHistory: (state) => {
@@ -456,7 +464,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       return;
     }
     const level = generated.level;
-    const state = level.initialState as GameState;
+    let state = level.initialState as GameState;
+    const entry = getGameEntry(gameId);
+    if (entry?.prepareLoadedState && entry.isOwnState(state)) {
+      state = entry.prepareLoadedState(state, { fresh: true }) as GameState;
+    }
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
     const sol = isFastGame ? plugin.solve(state) : null;
@@ -492,7 +504,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame && gameId) scheduleBackgroundSolve(get, set, state, gameId);
-    if (hasAI) scheduleAI(get);
+    if (hasAI && plugin.ai?.isAITurn(state)) scheduleAI(get);
   },
 
   loadCustomState: (state: GameState, meta?: { optimalSteps?: number | null }) => {
@@ -532,7 +544,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
 
     if (!isFastGame && gameId) scheduleBackgroundSolve(get, set, state, gameId);
-    if (hasAI) scheduleAI(get);
+    if (hasAI && plugin?.ai?.isAITurn(state)) scheduleAI(get);
   },
 
   requestSolve: () => {
@@ -551,30 +563,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     if (usesWebWorker(plugin)) {
       runSolverOffThread(plugin, gameState, (solution) => {
-        const { gameState: s, gameId: gid } = get();
-        if (!s || s !== savedState || gid !== savedGameId) {
-          finishSolve({ solverStatus: 'idle' });
-          return;
-        }
-        if (solution.solvable && solution.moves.length > 0) {
-          finishSolve({
-            solution,
-            solverStatus: 'done',
-            solvePlayback: true,
-            solveStepIndex: 0,
-            prePlaybackHistoryIndex: get().historyIndex,
-            hintMove: null,
-            hintHighlight: null,
-          });
-        } else if (solution.stats.terminated === 'timeout') {
-          finishSolve({
-            solution,
-            solverStatus: 'done',
-            solveError: i18n.t('game.status.timedOut'),
-          });
-        } else {
-          finishSolve({ solution, solverStatus: 'done' });
-        }
+        handleRequestSolveResult(get, set, savedState, savedGameId, solution, finishSolve);
       }, (errMsg) => {
         finishSolve({ solverStatus: 'idle', solveError: errMsg });
       });
@@ -587,74 +576,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         finishSolve({ solverStatus: 'idle' });
         return;
       }
-      const solution = p.solve(s);
-      const isAdversarial = !!p.ai;
-
-      if (isAdversarial) {
-        const sAny = s as Record<string, unknown>;
-
-        if (sAny.phase === 'choosing') {
-          const playerStarts = getPlayerStarts(solution);
-          set({
-            hintHighlight: { row: 0, col: playerStarts ? 0 : 1 },
-            solution,
-            solverStatus: 'done',
-          });
-          scheduleTimeout(() => {
-            const cur = get();
-            if (!cur.plugin?.ai) { finishSolve({}); return; }
-            const playingState = { ...sAny, currentPlayer: playerStarts ? 0 : 1, phase: 'playing' };
-            set({
-              gameState: playingState as GameState,
-              history: [s, playingState as GameState],
-              historyIndex: 1,
-              solvePlayback: true,
-              adversarialPlayback: true,
-              solveStepIndex: 0,
-              prePlaybackHistoryIndex: 0,
-              hintMove: null,
-              hintHighlight: null,
-            });
-            setSolveInFlight(false);
-            scheduleTimeout(() => adversarialSolveStep(get, set), 600);
-          }, 800);
-          return;
-        }
-
-        if (!solution.solvable || solution.moves.length === 0) {
-          finishSolve({ solution, solverStatus: 'done', solveError: i18n.t('game.status.noWinningMove') });
-          return;
-        }
-
-        finishSolve({
-          solution,
-          solverStatus: 'done',
-          solvePlayback: true,
-          adversarialPlayback: true,
-          solveStepIndex: 0,
-          prePlaybackHistoryIndex: get().historyIndex,
-          hintMove: null,
-          hintHighlight: null,
-        });
-        scheduleTimeout(() => adversarialSolveStep(get, set), 400);
-        return;
-      }
-
-      if (solution.solvable && solution.moves.length > 0) {
-        finishSolve({
-          solution,
-          solverStatus: 'done',
-          solvePlayback: true,
-          solveStepIndex: 0,
-          prePlaybackHistoryIndex: get().historyIndex,
-          hintMove: null,
-          hintHighlight: null,
-        });
-      } else if (solution.stats.terminated === 'timeout') {
-        finishSolve({ solution, solverStatus: 'done', solveError: i18n.t('game.status.timedOut') });
-      } else {
-        finishSolve({ solution, solverStatus: 'done' });
-      }
+      handleRequestSolveResult(get, set, savedState, savedGameId, p.solve(s), finishSolve);
     }, 50);
   },
 
