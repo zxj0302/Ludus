@@ -44,38 +44,6 @@ export function usesWebWorker(plugin: GamePlugin): boolean {
   return web?.capabilities.webWorker === true;
 }
 
-function requestWorkerAiMove(plugin: GamePlugin, state: GameState): Promise<AiMoveAction | null> {
-  return new Promise((resolve, reject) => {
-    const worker = new SolverWorker();
-    const reqId = `ai-${++bgWorkerReqId}`;
-    let done = false;
-
-    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      if (e.data.id !== reqId || done) return;
-      done = true;
-      worker.terminate();
-      if (e.data.error) {
-        reject(new Error(e.data.error));
-        return;
-      }
-      resolve((e.data.result ?? null) as AiMoveAction | null);
-    };
-
-    worker.onerror = (err) => {
-      if (done) return;
-      done = true;
-      worker.terminate();
-      reject(new Error(err.message || 'AI Worker failed'));
-    };
-
-    worker.postMessage({
-      id: reqId,
-      type: 'ai-move',
-      payload: { gameId: plugin.metadata.id, state: state as Record<string, unknown> },
-    } satisfies WorkerRequest);
-  });
-}
-
 export function clearPlaybackStateFields(): Partial<PlaybackStateFields> {
   return {
     solvePlayback: false,
@@ -96,8 +64,7 @@ export function clearSolverRuntimeTimers(): void {
 export function scheduleAI(get: SolverStoreGet): void {
   if (aiTimerId) clearTimeout(aiTimerId);
   const s = get();
-  const asyncPath = !!s.plugin?.ai?.getAIMoveAsync
-    || (s.plugin?.metadata.id === 'thief-siege' && usesWebWorker(s.plugin));
+  const asyncPath = !!s.plugin?.ai?.getAIMoveAsync;
   const initialDelay = asyncPath ? 0 : 600;
 
   aiTimerId = setTimeout(async () => {
@@ -106,20 +73,11 @@ export function scheduleAI(get: SolverStoreGet): void {
     if (!current.plugin?.ai || !current.gameState || current.solvePlayback) return;
     if (!current.plugin.ai.isAITurn(current.gameState)) return;
 
-    const requestedPlugin = current.plugin;
     const requestedAi = current.plugin.ai;
     const requestedState = current.gameState;
     let action: AiMoveAction | null = null;
 
-    if (requestedPlugin.metadata.id === 'thief-siege' && usesWebWorker(requestedPlugin)) {
-      try {
-        action = await requestWorkerAiMove(requestedPlugin, requestedState);
-      } catch {
-        action = requestedAi.getAIMoveAsync
-          ? await requestedAi.getAIMoveAsync(requestedState)
-          : requestedAi.getAIMove(requestedState);
-      }
-    } else if (requestedAi.getAIMoveAsync) {
+    if (requestedAi.getAIMoveAsync) {
       action = await requestedAi.getAIMoveAsync(requestedState);
     } else {
       action = requestedAi.getAIMove(requestedState);

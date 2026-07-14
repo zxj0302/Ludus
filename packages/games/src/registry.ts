@@ -9,8 +9,6 @@ import { fifteenPlugin, fifteenEntry } from './fifteen';
 import { waterJugPlugin, waterJugEntry } from './water-jug';
 import { nonogramPlugin, nonogramEntry } from './nonogram';
 import { pegSolitairePlugin, pegSolitaireEntry } from './peg-solitaire';
-// thief-siege: package kept for future work, intentionally not registered in Hub
-import { thiefSiegePlugin, thiefSiegeEntry } from './thief-siege';
 
 // -- Plugin registry (core interface) --
 
@@ -61,5 +59,5 @@ export function getAllEntries(): GamePluginEntry<any, any>[] {
 
 // -- Re-exports --
 
-export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, pegSolitairePlugin, thiefSiegePlugin };
-export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, thiefSiegeEntry };
+export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, pegSolitairePlugin };
+export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry };

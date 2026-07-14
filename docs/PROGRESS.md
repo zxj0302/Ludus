@@ -5,8 +5,8 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 8 款游戏。围堵小偷代码保留但已从 Hub **取消注册**（体验未达标，后续再开）。
-- **MVP 范围**：8 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅）；`thief-siege` 包保留、Hub 不可见。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 9 款游戏（含孔明棋）。围堵小偷模块已自代码库移除。
+- **MVP 范围**：9 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅ + 孔明棋 ✅）。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，481 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
@@ -20,8 +20,6 @@
 - **审计修复第四批（低优先级）**：`DifficultySelector` 高级生成改为独立按钮；`splitEducationSections` 抽出并加回归测试；`gameStoreLevelGeneration.ts` 承接关卡生成；`generator-config.ts` 统一 PRNG/参数读取。
 - **审计修复第五批**：`gameStoreSolverRuntime.ts` 承接 AI/后台求解/对抗播放/提示逻辑；Sudoku 生成器全链路接入 `config.seed` 可复现。
 - **审计收尾**：`gameStoreProgress.ts` 外置进度持久化；CI 用 `pnpm validate:shell` 替代手工 grep；`shellBuildArtifacts` 在无 shell dist 时自动跳过。
-- **围堵小偷 v1.1 final-review Important 修复**：生成器恢复 irregular open-map 优先且保留 easy 可胜证明；同步 AI 改为 BFS-only；状态卡显示 AI 档位。
-
 ## ✅ DONE
 
 - 录入项目宪法与会话协议：`CLAUDE.md`
