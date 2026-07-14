@@ -228,6 +228,18 @@
 - **风险**：中/难关没有全树证明，极端 seed 仍可能被更强搜索打穿；后续可用 seed 回归修生成器，或新增 AND-OR / 主变例树可视化。
 - **确认日期**：2026-07-11。
 
+### ADR-025 孔明棋：复用 search-tree trace 与诚实搜索证据面板
+
+- **状态**：✅ ACCEPTED
+- **决策**：
+  1. 孔明棋继续复用 `SolverTrace.type = 'search-tree'`，不新增 `peg-search` union 成员。
+  2. Web 层使用 `PegSearchViz` 作为“搜索证据面板”：展示探索节点、解长、耗时、最大深度、终止原因、D4 对称与返回路径；不伪装成完整搜索树证明。
+  3. 教学与文档必须明确区分 BFS 最短性、DFS 可达性、Worker 离线程执行、生成器可达验证、以及 `uniqueSolution: false` 的边界。
+- **理由**：现有 Sokoban/ Peg solver 都能表达为 `search-tree`，复用 trace contract 可减少 core 类型膨胀；孔明棋 v1 的 trace 目前没有完整 parent/child tree 样本，证据面板比“看似完整”的树图更诚实。
+- **影响**：`apps/web/src/entrySetup.tsx` 仅在 `peg-solitaire` entry 上把 `search-tree` 绑定到 `PegSearchViz`，避免与 Sokoban 的 `BFSTreeViz` 冲突；后续若 solver 输出完整节点关系，可在不改 core trace type 的前提下升级为 React Flow 树。
+- **风险**：当前可视化解释力度强于交互探索力度；若未来需要逐节点展开或对称轨道动画，需要扩展 `visualizationData` schema。
+- **确认日期**：2026-07-14。
+
 ---
 
 ## 📝 决策日志
@@ -243,3 +255,4 @@
   - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
   - **迁移计划**：10 步，全部完成。详见各阶段 commit 记录。最终包结构：core/games/education/ui 4 包 + apps/web。i18n/viz 包已移除。
 - [2026-07-11] ADR-024 (围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI) → ACCEPTED。
+- [2026-07-14] ADR-025 (孔明棋：复用 search-tree trace 与诚实搜索证据面板) → ACCEPTED。
