@@ -83,3 +83,29 @@ function buildJumps(): PegSolitaireMove[] {
 }
 
 export const JUMPS: ReadonlyArray<PegSolitaireMove> = buildJumps();
+
+type CoordTransform = (coord: HoleCoord) => HoleCoord;
+
+const D4_TRANSFORMS: ReadonlyArray<CoordTransform> = [
+  ({ row, col }) => ({ row, col }),
+  ({ row, col }) => ({ row: col, col: 6 - row }),
+  ({ row, col }) => ({ row: 6 - row, col: 6 - col }),
+  ({ row, col }) => ({ row: 6 - col, col: row }),
+  ({ row, col }) => ({ row, col: 6 - col }),
+  ({ row, col }) => ({ row: 6 - row, col }),
+  ({ row, col }) => ({ row: col, col: row }),
+  ({ row, col }) => ({ row: 6 - col, col: 6 - row }),
+] as const;
+
+function buildPermutation(transform: CoordTransform): number[] {
+  return HOLE_COORDS.map(coord => {
+    const mapped = transform(coord);
+    const hole = holeAt(mapped.row, mapped.col);
+    if (hole === undefined) {
+      throw new Error(`Invalid English-board symmetry at ${mapped.row},${mapped.col}`);
+    }
+    return hole;
+  });
+}
+
+export const D4_PERMUTATIONS: ReadonlyArray<ReadonlyArray<number>> = D4_TRANSFORMS.map(buildPermutation);
