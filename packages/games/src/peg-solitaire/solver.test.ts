@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CENTER_HOLE, HOLE_COORDS } from './geometry';
 import { applyMove, createClassicState, hasPeg, isSolved, popcount } from './rules';
 import { canonicalKey, solvePegSolitaire } from './solver';
-import type { PegSolitaireState } from './types';
+import type { PegSolitaireMove, PegSolitaireState } from './types';
 
 function bit(hole: number): number {
   return 2 ** hole;
@@ -25,7 +25,7 @@ function transformPegs(pegs: number, transform: (row: number, col: number) => { 
   return transformed;
 }
 
-function applyMoves(state: PegSolitaireState, moves: Array<{ from: number; over: number; to: number }>): PegSolitaireState {
+function applyMoves(state: PegSolitaireState, moves: PegSolitaireMove[]): PegSolitaireState {
   return moves.reduce((current, move) => applyMove(current, move), state);
 }
 
@@ -56,7 +56,7 @@ describe('Peg Solitaire D4 solver', () => {
     };
 
     const solution = solvePegSolitaire(state, { findShortest: true, timeMs: 1000 });
-    const solved = applyMoves(state, solution.moves);
+    const solved = applyMoves(state, solution.moves as PegSolitaireMove[]);
 
     expect(solution.solvable).toBe(true);
     expect(solution.moves).toHaveLength(3);

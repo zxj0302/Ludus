@@ -144,6 +144,11 @@
   - 小偷 AI 接入 `adversary.ts` 有限预算 minimax/alpha-beta，Web 通过 `ai-move` Worker 路径运行，超时/不可用时降级到 BFS 贪心。
   - 教学与文档更新：四份 `packages/education/src/content/thief-siege/*.md`、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024。
   - 验证：57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功。
+- **孔明棋 Task 3 — puzzles / generator / difficulty** ✅:
+  - `packages/games/src/peg-solitaire/puzzles.ts`：经典英式中心空盘 + 4 个精选微型/中型残局。
+  - `packages/games/src/peg-solitaire/generator.ts`：按难度映射 `le3` / `one-any` / `one-center`，使用 seeded curated candidates + 轻量 dig-out + solver 验证。
+  - `packages/games/src/peg-solitaire/difficulty.ts`：基于 peg count、mobility、goal strictness、center occupancy 的 0–100 难度评分。
+  - 验证：Peg Solitaire 4 个测试文件 / 19 测试全过，`pnpm typecheck` 成功。
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -159,12 +164,17 @@
 
 ## 🚧 IN PROGRESS
 
-- **Angel and Devil** 设计启动（独立模块，不并入 `thief-siege`）。
+- **Peg Solitaire（孔明棋）**：Task 1–3 已完成（geometry/rules、D4 solver、puzzles/generator/difficulty）。下一步 Task 4 接入 playable plugin UI、manifest/i18n、registry 与 Worker solve。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-为 **Angel and Devil** 写独立设计 spec：棋盘拓扑、胜负条件、有限/无限图边界、玩家角色、教学抽象；确认后再写实现计划。  
-围堵小偷：代码留在 `packages/games/src/thief-siege/`，Hub 已取消注册，待体验达标后再重新挂上。
+按 `docs/superpowers/plans/2026-07-14-peg-solitaire.md` 执行 Task 4：
+1. 创建 `render.tsx`、`manifest.ts`、`i18n.ts`、`education-ui.tsx`、`index.tsx`
+2. 修改 `packages/games/src/registry.ts`、`packages/games/src/index.ts`、`apps/web/src/workers/solver.worker.ts`
+3. 验证 `pnpm --filter @ludus/games exec vitest run src/load-smoke.test.ts src/peg-solitaire/` 与 `pnpm typecheck`
+
+Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-design.md`  
+Plan：`docs/superpowers/plans/2026-07-14-peg-solitaire.md`
 
 ## 🐛 KNOWN ISSUES
 
@@ -605,3 +615,6 @@
 - [2026-07-11] **围堵小偷 v1.1 Task 5 完成**：更新 L2/L3 × zh-CN/en 教学、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024 与本进度文件；57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功；v1.1 进入 DONE，NEXT 指向 Angel and Devil 或围堵小偷 polish。
 - [2026-07-11] **围堵小偷 v1.1 final-review Important 修复**：generator 改为 irregular open-map 优先并保留 constructive fallback；同步 AI 改为 BFS-only；StatusCard 显示 `escape-adversary/<tier>` 档位；新增回归测试。`pnpm --filter @ludus/games exec vitest run src/thief-siege/` 与 `pnpm typecheck` 成功。
 - [2026-07-14] **围堵小偷取消 Hub 注册**：用户反馈体验不佳；从 `registry` / `entrySetup` 移除，源码与单测保留；NEXT 转向独立模块 Angel and Devil 设计。
+- [2026-07-14] **孔明棋设计启动**：用户选英式 33 孔、分级目标、完整教学求解器、经典+残局包；方案 A（bitmask+对称+Worker）；教学侧栏要求全面/严谨/有趣。写入 `docs/superpowers/specs/2026-07-14-peg-solitaire-design.md` 待审阅。
+- [2026-07-14] **孔明棋 spec 确认 + 计划**：写入 `docs/superpowers/plans/2026-07-14-peg-solitaire.md`（geometry→solver→generator→plugin→重教学/viz）。待选执行方式。
+- [2026-07-14] **孔明棋 Task 3 完成**：新增 puzzles / generator / difficulty 与 TDD 覆盖；生成器使用 seeded curated candidates + 轻量 dig-out，避免 full classic 重搜索；Peg 19 测与 `pnpm typecheck` 成功。
