@@ -25,3 +25,7 @@
 - `pnpm --filter @ludus/games exec vitest run src/load-smoke.test.ts src/peg-solitaire/` — 39 passed
 - `pnpm typecheck` — passed
 - `pnpm --filter ludus-web build` — passed; Worker bundle produced
+
+## Review Fix
+
+- Removed Peg Solitaire's local `category.search` translations so the shared Hub values remain authoritative.

@@ -17,7 +17,6 @@ export const pegSolitaireI18n = {
     'pegSolitaire.searchMode': '搜索模式',
     'pegSolitaire.d4': 'D4',
     'education.pegSolitaireMove': '从 {{from}} 跳过 {{over}} 到 {{to}}',
-    'category.search': '搜索',
   },
   en: {
     'game.pegSolitaire.name': 'Peg Solitaire',
@@ -37,6 +36,5 @@ export const pegSolitaireI18n = {
     'pegSolitaire.searchMode': 'Search',
     'pegSolitaire.d4': 'D4',
     'education.pegSolitaireMove': 'Jump from {{from}} over {{over}} to {{to}}',
-    'category.search': 'Search',
   },
 };
