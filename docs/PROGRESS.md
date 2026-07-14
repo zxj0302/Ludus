@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布**；8 款游戏 MVP 超额完成；横切与审计主线已收口。
-- **MVP 范围**：8 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅），超 MVP 目标（原定 3 款）。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 8 款游戏。围堵小偷代码保留但已从 Hub **取消注册**（体验未达标，后续再开）。
+- **MVP 范围**：8 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，425 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，481 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：51 个测试文件，425 测试全过。
+- **测试覆盖**：57 个测试文件，481 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
 - **审计修复第二批**：Nonogram playable state 不再携带 `solution`；`isOwnState`/Canvas 渲染改为基于线索判定通关；高级生成失败时保留当前关卡并显示 `generatorError`，普通 toolbar 生成仍允许 fallback。
@@ -20,6 +20,7 @@
 - **审计修复第四批（低优先级）**：`DifficultySelector` 高级生成改为独立按钮；`splitEducationSections` 抽出并加回归测试；`gameStoreLevelGeneration.ts` 承接关卡生成；`generator-config.ts` 统一 PRNG/参数读取。
 - **审计修复第五批**：`gameStoreSolverRuntime.ts` 承接 AI/后台求解/对抗播放/提示逻辑；Sudoku 生成器全链路接入 `config.seed` 可复现。
 - **审计收尾**：`gameStoreProgress.ts` 外置进度持久化；CI 用 `pnpm validate:shell` 替代手工 grep；`shellBuildArtifacts` 在无 shell dist 时自动跳过。
+- **围堵小偷 v1.1 final-review Important 修复**：生成器恢复 irregular open-map 优先且保留 easy 可胜证明；同步 AI 改为 BFS-only；状态卡显示 AI 档位。
 
 ## ✅ DONE
 
@@ -38,6 +39,7 @@
   - 教学内容加载方案（Vite ?raw import → entrySetup.tsx → entry.education.content）
   - **§5 已按四种保证机制重写**（可解性/唯一解/最优解/难度可控 + 策略对比表）
   - **Markdown 格式修复**：全 11 个 .md 文件扫描，修复嵌套代码块高亮冲突、LaTeX 转义、占位符、裸 `<`、中文引号等 8 处问题
+- 围堵小偷 v1.1 final-review Important 修复：`packages/games/src/thief-siege/` + `.superpowers/sdd-v11/final-fix-report.md`，覆盖 open-map 生成、同步 BFS AI、AI tier UI。
 - **UI 设计系统**：`docs/phases/04-ui-design-system.md` ✅
 
   - "Playful Bento"设计哲学与 Bento Box 适配论证
@@ -131,6 +133,62 @@
   - 新增 13 文件（9 core + 4 edu），修改 7 文件（core types/registry/barrel/entrySetup/statusCards/EducationPanel/i18n 自动合并）
   - isFastSolver: true（BFS 状态空间小，即时求解）
   - SolverTrace type 新增 `'bfs-state-search'`（packages/core/src/types/plugin.ts）
+- **阶段 5h — 围堵小偷 (Thief Siege)** ✅:
+  - Core/Game: types + rules + escape BFS solver/AI + irregular-mask generator + difficulty + plugin/board UI 全部自包含于 `packages/games/src/thief-siege/`
+  - Web: `entrySetup.tsx` 注入四份教学 raw markdown，注册 `EscapePathViz` 处理 `escape-path` trace，并接入 `GeneratorToolbar`
+  - 教学: 四份 markdown（L2/L3 × zh-CN/en），五段式结构，明确 BFS/瓶颈直觉且不声称完整 minimax
+  - 文档: `docs/games/thief-siege.md` 记录规则、模块地图、solver/generator/AI wiring 与扩展边界
+  - 验证: 55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功
+- **围堵小偷 v1.1** ✅:
+  - 地图尺寸按难度升级为 11 / 15 / 19；简单关通过 `copHasWinningStrategy` 严格验证，中/难关采用瓶颈构造 + 浅层对抗抽检。
+  - 小偷 AI 接入 `adversary.ts` 有限预算 minimax/alpha-beta，Web 通过 `ai-move` Worker 路径运行，超时/不可用时降级到 BFS 贪心。
+  - 教学与文档更新：四份 `packages/education/src/content/thief-siege/*.md`、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024。
+  - 验证：57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功。
+- **孔明棋 Task 3 — puzzles / generator / difficulty** ✅:
+  - `packages/games/src/peg-solitaire/puzzles.ts`：经典英式中心空盘 + 4 个精选微型/中型残局。
+  - `packages/games/src/peg-solitaire/generator.ts`：按难度映射 `le3` / `one-any` / `one-center`，使用 seeded curated candidates + 轻量 dig-out + solver 验证。
+  - `packages/games/src/peg-solitaire/difficulty.ts`：基于 peg count、mobility、goal strictness、center occupancy 的 0–100 难度评分。
+  - 验证：Peg Solitaire 4 个测试文件 / 19 测试全过，`pnpm typecheck` 成功。
+- **孔明棋 Task 4 — playable plugin / Hub registry / Worker** ✅:
+  - `packages/games/src/peg-solitaire/` 新增 `render.tsx`、`manifest.ts`、`i18n.ts`、`education-ui.tsx`、`index.tsx`；实现英式十字盘可玩 UI、plugin metadata、状态卡与走子格式化。
+  - `packages/games/src/registry.ts` / `packages/games/src/index.ts` 注册并导出 `peg-solitaire`；`apps/web/src/entrySetup.tsx` 注入空 education content（Task 5 填充）。
+  - `apps/web/src/workers/solver.worker.ts` 通过 `@ludus/games/src/peg-solitaire/solver` 直接导入 `solvePegSolitaire`，避免 Worker 触碰 barrel。
+  - 验证：Peg Solitaire + load-smoke 39 测全过，`pnpm typecheck` 成功，`pnpm --filter ludus-web build` 成功。
+- **孔明棋 Task 5 — rich education / PegSearchViz / docs** ✅:
+  - `packages/education/src/content/peg-solitaire/` 新增 L2/L3 × zh-CN/en 四份重教学内容，显式包含 hooks 与 rigorous claims，覆盖 bitmask、D4、BFS/DFS、Worker、生成验证与 Lights Out 对比。
+  - `apps/web/src/components/PegSearchViz.tsx` + `apps/web/src/entrySetup.tsx` 接入 `search-tree` 证据面板、raw markdown 与 `GeneratorToolbar`。
+  - `docs/games/peg-solitaire.md` 与 `docs/DECISIONS.md` ADR-025 记录 search-tree 复用和可视化边界。
+  - 验证：`pnpm test:run` 503 测全过（3 skipped）；`pnpm typecheck` 成功。
+- **孔明棋 bugfix 批次** ✅:
+  - 删除无解精选关 `middle-band-one-any`；扩充为 10 个已验证残局（含 5–6 步中/难）。
+  - 生成器禁止未验证 fallback；非法走子不再改写 state 引用；终局 `stuck/won` 禁用棋盘并提示。
+  - 选子状态随 undo/新关重置；默认开局改为经典中心空（`one-center`）。
+  - 验证：Peg Solitaire 5 文件 / 21 测全过。
+- **孔明棋难度/新关卡修复** ✅:
+  - 难度分按 goal 对齐 Hub 易/中/难档；「随机」跨三档抽 goal。
+  - 生成器改为逆向合成 + 验证，刷新不再卡在 2 个微型残局；每次生成附带新 seed。
+  - `GeneratorToolbar` 切档时显式传入 `difficultyRange`，避免与 store 写入竞态。
+  - 验证：Peg 25 测 + web generator/store 相关测全过。
+- **孔明棋 spec 纠偏** ✅:
+  - 生成器回到 §5.2：经典主入口 + 精选残局 + 从经典挖空并验证；Hub 默认 hard `[67,100]`。
+  - `PegSearchViz` 改为 React Flow 主变例树；`manifest.library = 'react-flow'`；ADR-025 / `docs/games/peg-solitaire.md` 同步。
+  - 难度分恢复 §5.3 综合（目标严格度 + 子数负载 + 机动性）。
+  - 验证：Peg 25 测全过。
+- **孔明棋 v1.1 合集选关** ✅:
+  - 按确认 spec：移除 `le3` 与挖空生成；`PEG_CATALOG` 经典名局；取消程序化造关。
+  - 教学四份 md 强调 `one-any` vs `one-center`；ADR-026。
+- **孔明棋 v1.2 模式+选关** ✅:
+  - 取消难度选择；`PegSolitaireToolbar` 对齐推箱子（模式「剩一 / 中心剩一」+ 名局）。
+  - `generateLevel` 降为 Hub 回退；教学/spec/ADR/开发者文档同步；Peg 22 测全过。
+- **孔明棋合集扩充** ✅:
+  - 录入希腊十字/金字塔/箭头/菱形/房屋/大菱形等教科书名局；中心模式增加中心星、南端空、D4 归心变体。
+  - 说明：模式按 goal 过滤，同一盘面未必两边都可解。
+
+- **孔明棋审查修复（P0–P2）** ✅:
+  - Hub `seed: 0` → 经典；`loadGame`/`newLevel` 读 `level.optimalSteps`；Worker 超时不进 playback。
+  - `isSolved` 以 goal 为准；后台求解保留合集最优 + 挂 timeout trace（供实时分析）；`generator: degraded` + ADR-025 勘误。
+  - `Collection` 抽到 `types/levelCollection`；LevelSelector `shortLabel`；orphan i18n / 死导出清理。
+  - 二次审查：resume 恢复 optimalSteps；超时不误标剩余步/不播错误音；viz 超时 Length 显示 —。
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -146,15 +204,13 @@
 
 ## 🚧 IN PROGRESS
 
-（无进行中工件）
+- 无。Peg Solitaire viz/记号/公式修复已落地。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-`v0.2.0` 已打 tag 并触发 Release workflow。下一步（产品向）：
+手动冒烟 Hub `peg-solitaire`：首进经典+最优31；实时分析有树；resume 保留最优；超时无错误音/无空回放。确认后可 merge / PR。
 
-1. **增量新游戏**：backlog 候选 **Connect 4**（博弈树/Alpha-Beta）或 **Peg Solitaire**（搜索）；一次一款，完整 DoD。
-2. **横切可选**：PWA 离线、Hub 成就展示、Sokoban 程序化生成器。
-3. **（暂缓）移动端真机**：Android SDK 配置后 `pnpm sync:mobile`。
+Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`
 
 ## 🐛 KNOWN ISSUES
 
@@ -162,10 +218,11 @@
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
 - 本机移动端真机运行环境未完成（**暂缓**）：`pnpm validate:shell` 模拟验证通过；`cap run android` 仍依赖 Android SDK，待后续配置
+- **围堵小偷**已从 Hub 取消注册：玩法/生成/AI 体验未达标；源码与测试保留
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
-- 阶段 6 / 7 横切与发布已基本完成；高级出题控件已手动确认无问题。移动端真机验证暂缓，当前以 `pnpm validate:shell` 模拟验证套壳链路。
+- 移动端真机验证暂缓；日常 `pnpm validate:shell`。
 
 ## 📝 SESSION LOG
 
@@ -469,14 +526,14 @@
     - Fallback：100 次未匹配则返回最接近请求区间的候选；极端情况退回经典 (3,5)→4
     - uniqueSolution 修正：true → false（BFS 返回一条最短路径，不保证唯一）
   - 281 测试全过，typecheck 零错误，vite build 8.11s
-	- [2026-07-08] **倒水谜题全面审计与修复**：
-	  - 🔴 **L3 文档 §5.4 难度公式错误**（zh-CN + en）：文档描述单组件公式，实际代码使用双组件公式（深度 0–80 + 状态空间 0–20）。已修正为实际公式 + 分解说明。
-	  - 🔴 **L3 §5.5 伪代码过时**：缺少拒绝采样、optimalSteps<3 过滤、pickTargetsByDifficulty、fallback 链。已重写。
-	  - 🔴 **generator.ts 死代码**：targetPreference 变量三个分支执行完全相同代码。已移除变量、合并为单行。同时移除逻辑永假检查 capGcd > max(capacities)。
-	  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
-	  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
-	  - 281 测试全过，typecheck 零错误，vite build 8.32s
-	- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。
+- [2026-07-08] **倒水谜题全面审计与修复**：
+  - 🔴 **L3 文档 §5.4 难度公式错误**（zh-CN + en）：文档描述单组件公式，实际代码使用双组件公式（深度 0–80 + 状态空间 0–20）。已修正为实际公式 + 分解说明。
+  - 🔴 **L3 §5.5 伪代码过时**：缺少拒绝采样、optimalSteps<3 过滤、pickTargetsByDifficulty、fallback 链。已重写。
+  - 🔴 **generator.ts 死代码**：targetPreference 变量三个分支执行完全相同代码。已移除变量、合并为单行。同时移除逻辑永假检查 capGcd > max(capacities)。
+  - 🟡 **types.ts 4 个未使用常量**（MAX_CAPACITY/MIN_CAPACITY/MIN_TARGET/MAX_BFS_DEPTH）：已删除。
+  - 🟡 **状态空间因素表**：从「间接指标」→「直接贡献 0–20 分加成」。
+  - 281 测试全过，typecheck 零错误，vite build 8.32s
+- [2026-07-08] **阶段 5g — Nonogram** 完整实现。首款 Canvas 渲染 + NP-complete 游戏。线求解+回溯搜索+唯一解验证。330 测试全过。
 - [2026-07-08] **Nonogram 回溯搜索树可视化 + 生成器强化**：
   - **回溯搜索树可视化**（NonogramTraceViz.tsx）：SVG 树展示回溯分支过程。Leaf-counting 布局算法（叶节点依次排布，内部节点居中于子节点）。颜色编码：灰=线求解根节点、蓝=分支节点、绿=得解、红=矛盾。节点显示：格坐标(R行C列) + 猜测(■/✕) + 新确定格子数。Tab 切换线求解步骤 / 回溯搜索树。
   - **求解器增强**（solver.ts）：新增 `isFullyLineSolvable()` 导出函数，供生成器判断谜题是否纯线求解。
@@ -585,3 +642,33 @@
 - [2026-07-10] **审计第五批修复**：`gameStoreSolverRuntime.ts` 抽取 AI 调度、后台求解、对抗播放、离线程求解与提示应用；Sudoku `generateSudokuLevel` 全随机路径改用 seeded RNG，`config.seed` 可复现同一盘面。425 测试全过，`pnpm typecheck` 成功。
 - [2026-07-10] **审计收尾**：`gameStoreProgress.ts` 外置 `persistGameSession`；CI `.github/workflows/ci.yml` 改用 `pnpm validate:shell`；`shellBuildArtifacts` 在无 shell dist 时 skip。425 测试全过，`pnpm validate:shell` 成功。
 - [2026-07-10] **v0.2.0 发布**：CI `22fbba5` 绿灯；版本号同步至 `0.2.0`；更新 CHANGELOG/README/CONTRIBUTING/`07-release.md`；打 tag `v0.2.0` 触发 Release workflow 产出 Windows 安装包。
+- [2026-07-10] **围堵小偷设计启动**：用户选定方案 A（玩家放警察、AI 小偷逃边缘、警察不移动、方格+不规则轮廓）；中文名「围堵小偷」id=`thief-siege`；Angel and Devil 列为后续。写入 `docs/superpowers/specs/2026-07-10-thief-siege-design.md` 待评审。
+- [2026-07-10] **围堵小偷 spec 确认 + 实现计划**：用户确认设计；写入 `docs/superpowers/plans/2026-07-10-thief-siege.md`（Task 1–5）。下一步按计划实现。
+- [2026-07-10] **围堵小偷 Task 5 完成**：补齐 L2/L3 × zh-CN/en 教学、`EscapePathViz`、`entrySetup` wiring、`docs/games/thief-siege.md`；55 个测试文件 / 466 测试全过，`pnpm typecheck` 成功。
+- [2026-07-10] **围堵小偷 Subagent-Driven 收尾**：Tasks 1–5 全完成于 `feat/thief-siege`（9 commits）；终审修复 maxCops 耗尽软锁（跳过警察回合继续小偷走）；规则/求解/生成/冒烟 57 测 + typecheck 绿。
+- [2026-07-11] **围堵小偷 v1.1 设计对齐**：用户要求更大地图 + minimax 对抗 AI + 适当操作必胜；确认方案 A（易 11/中 15/难 19；混合可解保证；尽量完美 AI + Worker）。写入 `docs/superpowers/specs/2026-07-11-thief-siege-v1.1-design.md` 待审阅。
+- [2026-07-11] **围堵小偷 v1.1 计划**：spec 确认；写入 `docs/superpowers/plans/2026-07-11-thief-siege-v1.1.md`（尺寸→对抗引擎→生成保证→Worker/AI→文档）。待选 Subagent-Driven / Inline。
+- [2026-07-11] **围堵小偷 v1.1 Task 5 完成**：更新 L2/L3 × zh-CN/en 教学、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024 与本进度文件；57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功；v1.1 进入 DONE，NEXT 指向 Angel and Devil 或围堵小偷 polish。
+- [2026-07-11] **围堵小偷 v1.1 final-review Important 修复**：generator 改为 irregular open-map 优先并保留 constructive fallback；同步 AI 改为 BFS-only；StatusCard 显示 `escape-adversary/<tier>` 档位；新增回归测试。`pnpm --filter @ludus/games exec vitest run src/thief-siege/` 与 `pnpm typecheck` 成功。
+- [2026-07-14] **围堵小偷取消 Hub 注册**：用户反馈体验不佳；从 `registry` / `entrySetup` 移除，源码与单测保留；NEXT 转向独立模块 Angel and Devil 设计。
+- [2026-07-14] **孔明棋设计启动**：用户选英式 33 孔、分级目标、完整教学求解器、经典+残局包；方案 A（bitmask+对称+Worker）；教学侧栏要求全面/严谨/有趣。写入 `docs/superpowers/specs/2026-07-14-peg-solitaire-design.md` 待审阅。
+- [2026-07-14] **孔明棋 spec 确认 + 计划**：写入 `docs/superpowers/plans/2026-07-14-peg-solitaire.md`（geometry→solver→generator→plugin→重教学/viz）。待选执行方式。
+- [2026-07-14] **孔明棋 Task 3 完成**：新增 puzzles / generator / difficulty 与 TDD 覆盖；生成器使用 seeded curated candidates + 轻量 dig-out，避免 full classic 重搜索；Peg 19 测与 `pnpm typecheck` 成功。
+- [2026-07-14] **孔明棋 Task 4 完成**：新增 playable plugin UI、manifest/i18n、education-ui、registry/barrel/web entrySetup 与 Worker solve；Peg + load-smoke 39 测、`pnpm typecheck`、`pnpm --filter ludus-web build` 成功。
+- [2026-07-14] **孔明棋 Task 5 完成**：新增 L2/L3 × zh-CN/en 重教学内容、`PegSearchViz`、entrySetup wiring、`docs/games/peg-solitaire.md` 与 ADR-025；`pnpm test:run` 与 `pnpm typecheck` 成功。
+- [2026-07-14] **孔明棋 bugfix**：修复无解 curated 关、生成器未验证 fallback、非法走子污染 history、stuck/won UI、选子不同步、默认开局；Peg 21 测全过。
+- [2026-07-14] **孔明棋难度/刷新修复**：goal 难度分对齐 Hub 三档；逆向合成换盘；新 seed + 切档显式传 range；Peg 25 测全过。
+- [2026-07-14] **孔明棋 spec 纠偏**：生成器恢复经典+精选+挖空验证；React Flow 主变例；Hub 默认 hard；ADR-025/文档同步。
+- [2026-07-14] **孔明棋 v1.1 设计（待审）**：用户确认难度方案 A；关卡改为经典合集、取消程序化生成与 le3 游玩目标。Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`。
+- [2026-07-14] **孔明棋 v1.1 合集选关落地**：catalog picker、双目标、教学/ADR-026；Peg 26 测全过。
+- [2026-07-14] **孔明棋 v1.2 模式+选关**：取消难度 UI；`PegSolitaireToolbar`（剩一/中心剩一+名局）；教学/spec/ADR 同步；Peg 22 测、web tsc 通过。
+- [2026-07-14] **孔明棋合集扩充**：教科书名局（希腊十字/金字塔/箭头/菱形等）+ 中心归心变体；解释双模式列表为何不同。
+- [2026-07-14] **孔明棋最优步数修复**：后台重求解不再覆盖开局最优；选关写入合集 `knownSolutionLength`（= 子数−1）。
+- [2026-07-14] **孔明棋 viz/记号/公式修复**：求解器 `sampleSolutionTree` 主变+旁支采样；孔位英式 a–g×1–7（中心 d4）；状态卡对齐 Sokoban；Markdown 支持 `\(...\)` 并改写 peg 教学内容公式。
+- [2026-07-14] **孔明棋求解叙事+viz 配色**：教育文档澄清 BFS/DFS 分工与高效剪枝边界；`PegSearchViz` 改为 indigo knowledge-card 壳（对齐 Sokoban BFSTreeViz）。
+- [2026-07-14] **「当前棋盘状态」配色**：`GameCard`/`StatCell` 改为 indigo 壳，与 Live Analysis 的 KnowledgeCard / 搜索树一致。
+- [2026-07-14] **孔明棋棋盘坐标**：棋盘外缘标注列 a–g、行 1–7（中心 d4），与走子/可视化记号一致。
+- [2026-07-14] **孔明棋全面审查**：核心规则/记号/合集小关可靠；P0=Hub 首进非经典 seed、Worker solve 超时仍 playback；P1=文档 ADR 冲突、optimalSteps 未入顶栏、大盘 5s DFS 难解；风格大体对齐 Sokoban。
+- [2026-07-14] **孔明棋审查修复落地**：Hub seed0+optimalSteps；Worker timeout 不 playback；isSolved 看 goal；大盘跳过后台搜；ADR-025 勘误；Collection 抽离；i18n/死代码清理；合集≤20 子验最优长。
+- [2026-07-14] **孔明棋 viz 回归**：后台求解始终跑以供采样树；合集最优不覆盖；超时仍挂 trace。
+- [2026-07-14] **孔明棋二次审查修复**：resume 读 progress.optimalSteps；bg timeout 不把 opening 最优塞进 remaining；错误音仅 `solveError`；hint 超时提示；viz Length 超时显示 —。

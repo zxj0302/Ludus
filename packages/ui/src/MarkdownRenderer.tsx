@@ -8,16 +8,26 @@ interface Props {
 
 /** 将 LaTeX 公式渲染为 HTML */
 function renderMath(text: string): string {
-  // $$...$$ block math (multiline support)
+  // $$...$$ or \[...\] block math
   let html = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
+    } catch { return `<code>${escapeHtml(formula)}</code>`; }
+  });
+  html = html.replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
     try {
       return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
     } catch { return `<code>${escapeHtml(formula)}</code>`; }
   });
   // $...$ inline math (single line, not followed by another $)
   html = html.replace(/\$(.+?)\$/g, (_, formula) => {
-    // 排除纯文本中的 $ 符号（如价格）
     if (/^\d+(\.\d+)?$/.test(formula.trim())) return `$${formula}$`;
+    try {
+      return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
+    } catch { return `<code>${escapeHtml(formula)}</code>`; }
+  });
+  // \(...\) inline math (common in LaTeX-authored markdown)
+  html = html.replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
     try {
       return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
     } catch { return `<code>${escapeHtml(formula)}</code>`; }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GamePlugin, GameState, Level, Move, Solution } from '@ludus/core';
 import { getGame, getGameEntry } from '@ludus/games';
+import type { HighlightCell } from '@ludus/games';
 import type { DisclosureLevel } from '@ludus/ui';
 import i18n from '../i18n';
 import { getPlayerStarts } from '../utils/solution';
@@ -58,7 +59,7 @@ interface GameStore {
   solveError: string | null;
 
   hintMove: Move | null;
-  hintHighlight: { row: number; col: number; value?: number } | null;
+  hintHighlight: HighlightCell | null;
   initialOptimalSteps: number | null;
   currentOptimalSteps: number | null;
 
@@ -84,13 +85,13 @@ interface GameStore {
   resetGeneratorParams: (gameId: string) => void;
 
   loadGame: (gameId: string, options?: { resume?: boolean }) => void;
-  loadCustomState: (state: GameState) => void;
+  loadCustomState: (state: GameState, meta?: { optimalSteps?: number | null }) => void;
   prependHistory: (state: GameState) => void;
   applyMove: (move: Move) => void;
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  newLevel: (options?: { useGeneratorParams?: boolean }) => void;
+  newLevel: (options?: { useGeneratorParams?: boolean; difficultyRange?: [number, number] }) => void;
   requestSolve: () => void;
   requestHint: () => void;
   nextPlaybackStep: () => void;
@@ -159,6 +160,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       }
     }
 
+    const progressRecord = useProgressStore.getState().getRecord(gameId);
+
     if (!state || !history || historyIndex === undefined) {
       const generated = generatePlayableLevel(
         plugin,
@@ -191,10 +194,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         sol = null;
       }
     }
-    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
-    const savedElapsed = restored
-      ? (useProgressStore.getState().getRecord(gameId)?.elapsedMs ?? 0)
-      : 0;
+    const solvedLength = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
+    // Catalog / generated levels may carry known optimal without a sync solve (e.g. peg-solitaire).
+    // Resume restores optimalSteps from progress store.
+    const opt = solvedLength
+      ?? generatedLevel?.optimalSteps
+      ?? (restored ? progressRecord?.optimalSteps ?? null : null)
+      ?? null;
+    const savedElapsed = restored ? (progressRecord?.elapsedMs ?? 0) : 0;
     const isSolved = plugin.isSolved(state);
     const timer = timerFieldsForSession(restored, savedElapsed, isSolved);
 
@@ -433,7 +440,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     clearSolverRuntimeTimers();
     const { plugin, gameId } = get();
     if (!plugin || !gameId) return;
-    const difficultyRange = getDifficultyRangeForGame(get().difficultyRangeByGame, gameId);
+    const difficultyRange = options?.difficultyRange
+      ?? getDifficultyRangeForGame(get().difficultyRangeByGame, gameId);
     const params = options?.useGeneratorParams
       ? getGeneratorParams(plugin.metadata.id, get().generatorParamsByGame[plugin.metadata.id])
       : null;
@@ -452,7 +460,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const isFastGame = plugin.metadata.isFastSolver;
     const hasAI = !!plugin.ai;
     const sol = isFastGame ? plugin.solve(state) : null;
-    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
+    const solvedLength = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
+    const opt = solvedLength ?? level.optimalSteps ?? null;
     set({
       gameState: state,
       history: [state],
@@ -486,13 +495,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (hasAI) scheduleAI(get);
   },
 
-  loadCustomState: (state: GameState) => {
+  loadCustomState: (state: GameState, meta?: { optimalSteps?: number | null }) => {
     clearSolverRuntimeTimers();
     const { plugin, gameId } = get();
     const isFastGame = plugin?.metadata.isFastSolver;
     const hasAI = !!plugin?.ai;
     const sol = isFastGame ? plugin?.solve(state) ?? null : null;
-    const opt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
+    const solvedOpt = sol?.solvable && sol.stats.solutionLength > 0 ? sol.stats.solutionLength : null;
+    const opt = hasAI ? null : (meta?.optimalSteps ?? solvedOpt);
     set({
       gameState: state,
       history: [state],
@@ -502,8 +512,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       solveError: null,
       hintMove: null,
       hintHighlight: null,
-      initialOptimalSteps: hasAI ? null : opt,
-      currentOptimalSteps: hasAI ? null : opt,
+      initialOptimalSteps: opt,
+      currentOptimalSteps: opt,
       ...clearPlaybackStateFields(),
       startTime: Date.now(),
       elapsed: 0,
@@ -546,15 +556,25 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           finishSolve({ solverStatus: 'idle' });
           return;
         }
-        finishSolve({
-          solution,
-          solverStatus: 'done',
-          solvePlayback: true,
-          solveStepIndex: 0,
-          prePlaybackHistoryIndex: get().historyIndex,
-          hintMove: null,
-          hintHighlight: null,
-        });
+        if (solution.solvable && solution.moves.length > 0) {
+          finishSolve({
+            solution,
+            solverStatus: 'done',
+            solvePlayback: true,
+            solveStepIndex: 0,
+            prePlaybackHistoryIndex: get().historyIndex,
+            hintMove: null,
+            hintHighlight: null,
+          });
+        } else if (solution.stats.terminated === 'timeout') {
+          finishSolve({
+            solution,
+            solverStatus: 'done',
+            solveError: i18n.t('game.status.timedOut'),
+          });
+        } else {
+          finishSolve({ solution, solverStatus: 'done' });
+        }
       }, (errMsg) => {
         finishSolve({ solverStatus: 'idle', solveError: errMsg });
       });

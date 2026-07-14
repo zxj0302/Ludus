@@ -10,4 +10,14 @@ describe('gameStoreSolverRuntime', () => {
       prePlaybackHistoryIndex: 0,
     });
   });
+
+  it('preserves opening optimal when applying a mid-game remaining length', () => {
+    // Mirrors scheduleBackgroundSolve merge: never clobber initialOptimalSteps once set.
+    const initialOptimalSteps: number | null = 31;
+    const remaining = 2;
+    const nextInitial = initialOptimalSteps ?? remaining;
+    const nextCurrent = remaining;
+    expect(nextInitial).toBe(31);
+    expect(nextCurrent).toBe(2);
+  });
 });

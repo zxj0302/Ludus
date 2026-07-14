@@ -3,7 +3,13 @@
 import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
-import type { WorkerRequest, WorkerResponse } from '@ludus/core';
+import { solvePegSolitaire } from '@ludus/games/src/peg-solitaire/solver';
+import {
+  chooseThiefSiegeAiMove,
+  solveThiefSiege,
+} from '@ludus/games/src/thief-siege/solver';
+import type { ThiefSiegeState } from '@ludus/games/src/thief-siege/types';
+import type { AiMoveTaskPayload, WorkerRequest, WorkerResponse } from '@ludus/core';
 
 self.onmessage = (e: MessageEvent<WorkerRequest>) => {
   const { id, type, payload } = e.data;
@@ -84,11 +90,46 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
             error: err instanceof Error ? err.message : 'Unknown Worker error in sokoban solver',
           });
         }
+      } else if (gameId === 'peg-solitaire') {
+        try {
+          const solution = solvePegSolitaire(state as unknown as import('@ludus/games/src/peg-solitaire/types').PegSolitaireState);
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in peg-solitaire solver',
+          });
+        }
+      } else if (gameId === 'thief-siege') {
+        try {
+          const solution = solveThiefSiege(state as unknown as ThiefSiegeState);
+          self.postMessage({ id, type: 'solve', result: solution });
+        } catch (err) {
+          self.postMessage({
+            id,
+            type,
+            error: err instanceof Error ? err.message : 'Unknown Worker error in thief-siege solver',
+          });
+        }
       } else {
         self.postMessage({ id, type, error: `Unknown game: ${gameId}` });
       }
     } else if (type === 'generate') {
       self.postMessage({ id, type, error: 'Generation in Worker not yet implemented' });
+    } else if (type === 'ai-move') {
+      const { gameId, state, budget } = payload as AiMoveTaskPayload;
+      if (gameId !== 'thief-siege') {
+        self.postMessage({ id, type, error: `AI Worker not implemented for game: ${gameId}` });
+        return;
+      }
+
+      const thiefState = state as unknown as ThiefSiegeState;
+      self.postMessage({
+        id,
+        type,
+        result: chooseThiefSiegeAiMove(thiefState, budget),
+      });
     } else {
       self.postMessage({ id, type, error: `Unknown task type: ${type}` });
     }

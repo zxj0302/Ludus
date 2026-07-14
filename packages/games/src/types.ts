@@ -37,6 +37,10 @@ export interface HighlightCell {
   row: number;
   col: number;
   value?: number; // Sudoku 等需要显示数字
+  /** Jump-style moves: the peg/piece to operate */
+  from?: { row: number; col: number };
+  /** Jump-style moves: the jumped-over cell */
+  over?: { row: number; col: number };
 }
 
 export interface SolutionPreviewProps<S extends GameState = GameState> {

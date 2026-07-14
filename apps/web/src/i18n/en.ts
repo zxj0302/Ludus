@@ -18,6 +18,9 @@ const en = {
     'game.sokoban.name': 'Sokoban',
     'game.sokoban.description': 'Push boxes to goal tiles — BFS search for the shortest path in a PSPACE state space',
 
+    'game.pegSolitaire.name': 'Peg Solitaire',
+    'game.pegSolitaire.description': 'Classic English-board catalog — search trees × D4 symmetry pruning',
+
     'game.sudoku.name': 'Sudoku',
     'game.sudoku.description': 'Fill the 9×9 grid with digits 1-9 — solved with DLX exact cover algorithm, generated with unique solutions',
 
@@ -177,7 +180,7 @@ const en = {
     'generator.advanced.hide': 'Hide advanced generation',
     'generator.advanced.unavailable': 'Advanced generation (soon)',
     'generator.createCard.title': 'Designing levels is not just tweaking parameters',
-    'generator.createCard.description': 'This section explains how solvability, uniqueness, known optimal steps, and difficulty control make a level well-designed. Use Advanced generation in the toolbar for parameter experiments.',
+    'generator.createCard.description': 'This section explains how solvability, uniqueness, known optimal steps, and difficulty control make a level well-designed. Open Advanced generation from the bottom of the difficulty menu for parameter experiments.',
     'generator.advanced.lightsOut.title': 'Lights Out Generator Console',
     'generator.advanced.lightsOut.description': 'Tune board size, reverse moves, and solver guarantees for a playable Lights Out level.',
     'generator.advanced.sudoku.title': 'Sudoku Generator Console',
@@ -293,6 +296,7 @@ const en = {
     'matrix.viewElimSteps': 'Click "Elimination Steps" to view the Gaussian elimination process',
 
     'category.linear-algebra': 'Linear Algebra',
+    'category.graph-theory': 'Graph Theory',
     'category.search': 'Search Algorithms',
     'category.number-theory': 'Number Theory',
 

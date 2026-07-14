@@ -85,7 +85,7 @@ export interface Solution {
 }
 
 export interface SolverTrace {
-  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'wythoff-beatty' | 'a-star-search' | 'bfs-state-search' | 'custom';
+  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'wythoff-beatty' | 'a-star-search' | 'bfs-state-search' | 'escape-path' | 'custom';
   steps: TraceStep[];
   /** 附加的可视化数据，各游戏的 visualizationManifest 定义其格式 */
   visualizationData?: unknown;
@@ -213,5 +213,7 @@ export interface GamePlugin<
     isAITurn(state: S): boolean;
     /** 获取 AI 走子 + 建议延迟(ms)，null = AI 无法行动 */
     getAIMove(state: S): { move: M; delay: number } | null;
+    /** 可选异步 AI 路径，供 Worker 或重搜索游戏避免阻塞 UI */
+    getAIMoveAsync?(state: S): Promise<{ move: M; delay: number; tier?: string } | null>;
   };
 }

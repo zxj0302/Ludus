@@ -1,20 +1,26 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Collection } from '../hooks/useSokobanLevels';
+import type { Collection } from '../types/levelCollection';
 
 interface Props {
-  collections: Collection[];
+  collections: Collection<unknown>[];
   selectedCollection: string;
   selectedLevelIdx: number;
   totalInCollection: number;
   onCollectionChange: (name: string) => void;
   onLevelSelect: (index: number) => void;
+  /** Optional: replace default "n / total" option labels (e.g. named peg puzzles). */
+  formatLevelOption?: (index: number, total: number) => string;
+  /** Optional label for the collection row (default: levelSelector.collection). */
+  collectionLabelKey?: string;
 }
 
 export function LevelSelector({
   collections, selectedCollection, selectedLevelIdx,
   totalInCollection,
   onCollectionChange, onLevelSelect,
+  formatLevelOption,
+  collectionLabelKey = 'levelSelector.collection',
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -39,8 +45,9 @@ export function LevelSelector({
   }, [selectedCollection, onCollectionChange, onLevelSelect]);
 
   const currentColl = collections.find(c => c.name === selectedCollection);
+  const collShort = currentColl?.shortLabel ?? currentColl?.label ?? '';
   const label = currentColl
-    ? `${currentColl.label.split(' ')[0]} ${selectedLevelIdx + 1}/${totalInCollection}`
+    ? `${collShort} ${selectedLevelIdx + 1}/${totalInCollection}`
     : t('levelSelector.select');
 
   return (
@@ -60,7 +67,7 @@ export function LevelSelector({
         >
           {/* 合集选择 */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-warm-stone-400 shrink-0">{t('levelSelector.collection')}</span>
+            <span className="text-warm-stone-400 shrink-0">{t(collectionLabelKey)}</span>
             <select
               value={selectedCollection}
               onChange={e => onCollectionChange(e.target.value)}
@@ -86,7 +93,11 @@ export function LevelSelector({
               className="flex-1 px-2 py-1 rounded text-xs font-medium bg-warm-stone-100 text-warm-stone-700 border border-warm-stone-300 cursor-pointer"
             >
               {Array.from({ length: totalInCollection }, (_, i) => (
-                <option key={i} value={i}>{i + 1} / {totalInCollection}</option>
+                <option key={i} value={i}>
+                  {formatLevelOption
+                    ? formatLevelOption(i, totalInCollection)
+                    : `${i + 1} / ${totalInCollection}`}
+                </option>
               ))}
             </select>
             <button

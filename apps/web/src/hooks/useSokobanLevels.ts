@@ -1,15 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { parseSokobanLevels, getAllLevels } from '@ludus/games';
 import type { SokobanState } from '@ludus/games';
+import type { Collection } from '../types/levelCollection';
 
 import microbanRaw from '../levels/Microban.txt?raw';
 import originalRaw from '../levels/Original.xsb?raw';
 
-export interface Collection {
-  name: string;
-  label: string;
-  levels: SokobanState[];
-}
+export type { Collection };
 
 function parseSafe(text: string, label: string): SokobanState[] {
   try { return parseSokobanLevels(text); }
@@ -17,24 +14,24 @@ function parseSafe(text: string, label: string): SokobanState[] {
 }
 
 // 内置关卡来自 core 层单一真相源
-const BUILTIN_COLLECTION: Collection = {
+const BUILTIN_COLLECTION: Collection<SokobanState> = {
   name: 'builtin',
   label: 'Built-in',
   levels: getAllLevels(),
 };
 
-const EXTERNAL_TEMPLATES: Omit<Collection, 'levels'>[] = [
+const EXTERNAL_TEMPLATES: Omit<Collection<SokobanState>, 'levels'>[] = [
   { name: 'microban', label: 'Microban (Skinner)' },
   { name: 'original', label: 'Original + Extra (90)' },
 ];
 
 let parsed = false;
-const EXTERNAL_CACHE: Collection[] = [
+const EXTERNAL_CACHE: Collection<SokobanState>[] = [
   { ...EXTERNAL_TEMPLATES[0]!, levels: [] },
   { ...EXTERNAL_TEMPLATES[1]!, levels: [] },
 ];
 
-export function useSokobanLevels(enabled = true): Collection[] {
+export function useSokobanLevels(enabled = true): Collection<SokobanState>[] {
   const [version, setVersion] = useState(0);
 
   useEffect(() => {

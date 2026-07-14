@@ -13,7 +13,7 @@ export interface DifficultySelectorProps {
   onPresetChange: (range: [number, number], preset: DifficultyPreset) => void;
   /** Optional explicit regenerate button (same preset, new seed). */
   onGenerate?: () => void;
-  /** Optional secondary generator action shown as its own button (not inside the select). */
+  /** Optional advanced generation toggle, shown inside the difficulty dropdown (not as a toolbar button). */
   onAdvancedSelect?: () => void;
   advancedLabelKey?: string;
   showAdvancedUnavailable?: boolean;
@@ -38,13 +38,7 @@ const refreshBtnClass =
   'px-2.5 py-1.5 rounded-btn text-xs font-semibold transition-all duration-150 active:scale-[0.97] ' +
   'bg-logic-indigo-600 text-white hover:bg-logic-indigo-700 shadow-sm';
 
-const advancedBtnClass =
-  'px-2.5 py-1.5 rounded-btn text-xs font-medium transition-all duration-150 active:scale-[0.97] ' +
-  'bg-warm-stone-100 text-warm-stone-700 hover:bg-warm-stone-200 border border-warm-stone-200';
-
-const advancedUnavailableClass =
-  'px-2.5 py-1.5 rounded-btn text-xs font-medium text-warm-stone-400 ' +
-  'bg-warm-stone-50 border border-warm-stone-100 cursor-not-allowed';
+const ADVANCED_OPTION_VALUE = '__advanced_generation__';
 
 export function DifficultySelector({
   value,
@@ -62,14 +56,20 @@ export function DifficultySelector({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (e.target.value === ADVANCED_OPTION_VALUE) {
+        onAdvancedSelect?.();
+        // Keep the visible preset so re-selecting the same difficulty still fires onChange later.
+        e.target.value = current;
+        return;
+      }
       const preset = e.target.value as DifficultyPreset;
       onPresetChange(presetToRange(preset), preset);
     },
-    [onPresetChange],
+    [current, onAdvancedSelect, onPresetChange],
   );
 
   return (
-    <div className={`inline-flex items-center gap-2 flex-wrap ${className}`}>
+    <div className={`inline-flex items-center gap-2 ${className}`}>
       <label className={wrapperClass}>
         <span className="sr-only">{t('generator.difficulty')}</span>
         <select
@@ -83,30 +83,19 @@ export function DifficultySelector({
               {t(opt.i18nKey)}
             </option>
           ))}
+          {(onAdvancedSelect || showAdvancedUnavailable) && (
+            <>
+              <option disabled value="__separator__">────────</option>
+              {onAdvancedSelect ? (
+                <option value={ADVANCED_OPTION_VALUE}>{t(advancedLabelKey)}</option>
+              ) : (
+                <option disabled value="__advanced_unavailable__">{t(advancedUnavailableLabelKey)}</option>
+              )}
+            </>
+          )}
         </select>
         <span className={arrowClass} aria-hidden="true">▾</span>
       </label>
-
-      {onAdvancedSelect && (
-        <button
-          type="button"
-          onClick={onAdvancedSelect}
-          className={advancedBtnClass}
-          aria-label={t(advancedLabelKey)}
-        >
-          {t(advancedLabelKey)}
-        </button>
-      )}
-
-      {!onAdvancedSelect && showAdvancedUnavailable && (
-        <span
-          className={advancedUnavailableClass}
-          title={t(advancedUnavailableLabelKey)}
-          aria-disabled="true"
-        >
-          {t(advancedUnavailableLabelKey)}
-        </span>
-      )}
 
       {onGenerate && (
         <button

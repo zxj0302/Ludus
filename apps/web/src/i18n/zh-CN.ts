@@ -18,6 +18,9 @@ const zhCN = {
     'game.sokoban.name': '推箱子',
     'game.sokoban.description': '把箱子推到目标点上——用 BFS 搜索在 PSPACE 状态空间中寻找最短路径',
 
+    'game.pegSolitaire.name': '孔明棋',
+    'game.pegSolitaire.description': '英式经典名局合集 — 搜索树 × D4 对称剪枝',
+
     'game.sudoku.name': '数独',
     'game.sudoku.description': '在 9×9 网格中填入 1-9，利用 DLX 精确覆盖算法求解与生成唯一解关卡',
 
@@ -177,7 +180,7 @@ const zhCN = {
     'generator.advanced.hide': '收起高级生成',
     'generator.advanced.unavailable': '高级生成（待支持）',
     'generator.createCard.title': '出题不是随便调参数',
-    'generator.createCard.description': '这里解释如何用可解性、唯一解、已知最优和难度控制设计好关卡；实际参数实验请在工具栏的「高级生成」中进行。',
+    'generator.createCard.description': '这里解释如何用可解性、唯一解、已知最优和难度控制设计好关卡；实际参数实验请在难度菜单底部的「高级生成」中展开。',
     'generator.advanced.lightsOut.title': '点灯关卡生成控制台',
     'generator.advanced.lightsOut.description': '调整棋盘尺寸、反向步数与求解保证，生成一局可玩的点灯关卡。',
     'generator.advanced.sudoku.title': '数独关卡生成控制台',
@@ -293,6 +296,7 @@ const zhCN = {
     'matrix.viewElimSteps': '点击「消元步骤」查看高斯消元过程',
 
     'category.linear-algebra': '线性代数',
+    'category.graph-theory': '图论',
     'category.search': '搜索算法',
     'category.number-theory': '数论',
 

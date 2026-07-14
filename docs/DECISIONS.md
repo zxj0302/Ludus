@@ -214,6 +214,48 @@
 
 ---
 
+## 五、游戏模块决策
+
+### ADR-024 围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI
+
+- **状态**：✅ ACCEPTED
+- **决策**：
+  1. 围堵小偷地图按难度扩展为 **11 / 15 / 19** 三档，替代 v1 的 7 / 9 / 11。
+  2. 关卡生成采用混合可胜保证：简单 11×11 必须通过 `copHasWinningStrategy` 搜索验证；中等/困难采用瓶颈构造 + 浅层对抗抽检，明确不声称全局数学证明。
+  3. 小偷 AI 从纯 BFS 贪心升级为对抗搜索优先：Worker 中运行有限预算 minimax/alpha-beta；超时标记 `bounded`；不可用或无合法对抗步时降级到 BFS 贪心。
+- **理由**：v1 地图偏小且小偷只跟随当前最短路，玩家容易通过局部堵路获胜。v1.1 用更大地图和未来回合视角增强围堵手感，同时保留 BFS 逃脱路径作为可解释教学核心。
+- **影响**：`packages/games/src/thief-siege/adversary.ts` 成为对抗搜索核心；`generator.ts` 调用同一引擎做 easy 证明和 mid/hard 抽检；Web 通过 `ai-move` Worker 避免大图搜索阻塞 UI；教育文档必须诚实区分“已证明”和“构造+抽检”。
+- **风险**：中/难关没有全树证明，极端 seed 仍可能被更强搜索打穿；后续可用 seed 回归修生成器，或新增 AND-OR / 主变例树可视化。
+- **确认日期**：2026-07-11。
+
+### ADR-025 孔明棋：search-tree trace + React Flow 采样搜索树
+
+- **状态**：✅ ACCEPTED（2026-07-14；**2026-07-14 勘误**：生成表述以 ADR-026 为准）
+- **决策**：
+  1. 孔明棋继续复用 `SolverTrace.type = 'search-tree'`，不新增 `peg-search` union 成员。
+  2. Web 层 `PegSearchViz` 使用 **React Flow** 展示求解器返回的**采样搜索树**（橙主变 + 有限灰旁支）并附探索统计；明确标注这不是完整状态空间展开。
+  3. ~~关卡生成器 = 挖空~~ → **已由 ADR-026 废止**。关卡真相源为经典名局合集；`generateLevel` 仅 Hub 首载回退（seed 0 → classic）。
+  4. 教学与文档必须区分 BFS（浅盘最短）与 DFS（深盘可达）、Worker、合集 `knownSolutionLength`，以及 `uniqueSolution: false`。
+- **理由**：确认 spec / DoD 要求 React Flow；采样树满足「搜索可视化」而不伪装完整证明。挖空生成与 v1.1/v1.2 合集制冲突，故勘误。
+- **影响**：`manifest.library = 'react-flow'`；Hub 首进由 `buildGeneratorLevelConfig('peg-solitaire', …, null)` 固定 `seed: 0`。
+- **风险**：完整 parent/child 搜索树仍需扩展；经典全盘 32 子在浏览器预算内常 timeout——产品以合集长度 + 诚实超时为准，非每次重证 31 步路径。
+- **确认日期**：2026-07-14（勘误同日）。
+
+### ADR-026 孔明棋 v1.1：经典合集选关（取消程序化生成）
+
+- **状态**：✅ ACCEPTED（v1.2 UX 修订 2026-07-14）
+- **决策**：
+  1. 游玩目标仅 `one-any` / `one-center`；移除可玩 `le3`。
+  2. 关卡来源为英式盘**经典名局合集**；禁止挖空 / 逆向合成；`generatedBy = 'classic-catalog'`。
+  3. **v1.2**：取消 Hub 难度三档；UI 对齐推箱子——模式（剩一 / 中心剩一）+ 名局列表（`PegSolitaireToolbar`）。
+  4. `generateLevel` 仅作 Hub 首载回退（默认 one-center；seed 0 → classic）。
+  5. 教学必须对比两种目标；`le3` 仅作历史旁注。
+- **理由**：用户确认自制生成体验不佳；后续明确不要难度分类，要直接选关与模式切换。
+- **影响**：`puzzles.ts` 为关卡真相源；`tier` 降为遗留元数据；教育与 `docs/games/peg-solitaire.md` 同步。
+- **确认日期**：2026-07-14。
+
+---
+
 ## 📝 决策日志
 
 - ADR-001/002/003/004/009/010/011/012 录入（项目立项阶段）。
@@ -226,3 +268,6 @@
   - **新增接口**：`GamePluginEntry`（`packages/games/src/types.ts`）— 包装 `GamePlugin` + BoardComponent + isOwnState + i18n + ui 扩展 + education + visualization
   - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
   - **迁移计划**：10 步，全部完成。详见各阶段 commit 记录。最终包结构：core/games/education/ui 4 包 + apps/web。i18n/viz 包已移除。
+- [2026-07-11] ADR-024 (围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI) → ACCEPTED。
+- [2026-07-14] ADR-025 (孔明棋：search-tree + React Flow 采样树) → ACCEPTED；同日勘误废止挖空生成表述（以 ADR-026 为准）。
+- [2026-07-14] ADR-026 (孔明棋 v1.1：经典合集选关，取消程序化生成与 le3 游玩目标) → ACCEPTED。

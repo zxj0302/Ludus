@@ -41,15 +41,24 @@ export function buildGeneratorLevelConfig(
   difficultyRange: [number, number],
   params?: GeneratorParams | null,
 ): LevelConfig {
-  if (params === null) return { difficultyRange };
+  // Peg Hub first-load / fallback: seed 0 → classic center-vacant (ADR-026).
+  if (gameId === 'peg-solitaire' && params == null) {
+    return { difficultyRange, seed: 0 };
+  }
+
+  // Fresh seed on every generate so rapid "新关卡" clicks never collide on Date.now().
+  const seed = Math.floor(Math.random() * 0x7fffffff);
+
+  if (params === null) return { difficultyRange, seed };
 
   const controls = getGameEntry(gameId)?.generatorControls;
-  if (!controls) return { difficultyRange };
+  if (!controls) return { difficultyRange, seed };
 
-  return controls.buildLevelConfig(
+  const built = controls.buildLevelConfig(
     difficultyRange,
     getGeneratorParams(gameId, params),
   );
+  return { ...built, seed: built.seed ?? seed };
 }
 
 export function summarizeGeneratedLevel(level: Level | null): { labelKey: string; value: string | number }[] {
@@ -74,5 +83,6 @@ const GENERATED_BY_LABEL_KEYS: Record<string, string> = {
   'random-walk': 'generator.method.randomWalk',
   'random-piles': 'generator.method.randomPiles',
   'classic set': 'generator.method.classicSet',
+  'classic-catalog': 'generator.method.classicSet',
   'initial-state-fallback': 'generator.method.initialStateFallback',
 };
