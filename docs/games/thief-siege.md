@@ -1,5 +1,7 @@
 # Thief Siege Developer Notes
 
+> **Hub status (2026-07-14):** **Parked / unregistered.** Package code and unit tests remain under `packages/games/src/thief-siege/`, but the game is **not** in `registry` / `entrySetup`, so it does not appear in the Hub. Re-enable only after playable quality is acceptable.
+
 ## Identity
 
 - **Game id**: `thief-siege`

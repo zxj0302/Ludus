@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { getAllGames, getGameEntry } from './registry';
 
 describe('game load smoke', () => {
-  it('includes thief-siege in the game registry', () => {
-    expect(getAllGames().map(plugin => plugin.metadata.id)).toContain('thief-siege');
+  it('does not register parked thief-siege in the Hub registry', () => {
+    expect(getAllGames().map(plugin => plugin.metadata.id)).not.toContain('thief-siege');
   });
 
   for (const plugin of getAllGames()) {

@@ -5,8 +5,8 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；9 款游戏 MVP 超额完成；围堵小偷 v1.1（大地图 + 对抗 AI + 混合可胜保证）已完成。
-- **MVP 范围**：9 款游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅ + 围堵小偷 ✅），超 MVP 目标（原定 3 款）。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 8 款游戏。围堵小偷代码保留但已从 Hub **取消注册**（体验未达标，后续再开）。
+- **MVP 范围**：8 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
 - **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，481 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
@@ -159,14 +159,12 @@
 
 ## 🚧 IN PROGRESS
 
-- 无。
+- **Angel and Devil** 设计启动（独立模块，不并入 `thief-siege`）。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-下一步二选一：
-
-1. 设计并规划独立新模块 **Angel and Devil**（无限图/围堵理论，不并入 `thief-siege`）。
-2. 继续 polish 围堵小偷 v1.1：补主变例树/AND-OR 可视化、扩大 seed 回归集，并继续调参中/难关生成质量（Important final-review fix wave 已完成）。
+为 **Angel and Devil** 写独立设计 spec：棋盘拓扑、胜负条件、有限/无限图边界、玩家角色、教学抽象；确认后再写实现计划。  
+围堵小偷：代码留在 `packages/games/src/thief-siege/`，Hub 已取消注册，待体验达标后再重新挂上。
 
 ## 🐛 KNOWN ISSUES
 
@@ -174,6 +172,7 @@
 - Sokoban 生成器为 Microban 选关（v0.1），尚未实现高质量程序化生成
 - `GamePluginEntry.education.content` 仍由 `entrySetup.tsx` 注入（Vite `?raw` 限制，架构上可接受）
 - 本机移动端真机运行环境未完成（**暂缓**）：`pnpm validate:shell` 模拟验证通过；`cap run android` 仍依赖 Android SDK，待后续配置
+- **围堵小偷**已从 Hub 取消注册：玩法/生成/AI 体验未达标；源码与测试保留
 
 ## 📌 OPEN QUESTIONS / 待我确认
 
@@ -605,3 +604,4 @@
 - [2026-07-11] **围堵小偷 v1.1 计划**：spec 确认；写入 `docs/superpowers/plans/2026-07-11-thief-siege-v1.1.md`（尺寸→对抗引擎→生成保证→Worker/AI→文档）。待选 Subagent-Driven / Inline。
 - [2026-07-11] **围堵小偷 v1.1 Task 5 完成**：更新 L2/L3 × zh-CN/en 教学、`docs/games/thief-siege.md`、`docs/DECISIONS.md` ADR-024 与本进度文件；57 个测试文件 / 481 测试全过，`pnpm typecheck` 成功；v1.1 进入 DONE，NEXT 指向 Angel and Devil 或围堵小偷 polish。
 - [2026-07-11] **围堵小偷 v1.1 final-review Important 修复**：generator 改为 irregular open-map 优先并保留 constructive fallback；同步 AI 改为 BFS-only；StatusCard 显示 `escape-adversary/<tier>` 档位；新增回归测试。`pnpm --filter @ludus/games exec vitest run src/thief-siege/` 与 `pnpm typecheck` 成功。
+- [2026-07-14] **围堵小偷取消 Hub 注册**：用户反馈体验不佳；从 `registry` / `entrySetup` 移除，源码与单测保留；NEXT 转向独立模块 Angel and Devil 设计。

@@ -8,6 +8,7 @@ import { wythoffPlugin, wythoffEntry } from './wythoff';
 import { fifteenPlugin, fifteenEntry } from './fifteen';
 import { waterJugPlugin, waterJugEntry } from './water-jug';
 import { nonogramPlugin, nonogramEntry } from './nonogram';
+// thief-siege: package kept for future work, intentionally not registered in Hub
 import { thiefSiegePlugin, thiefSiegeEntry } from './thief-siege';
 
 // -- Plugin registry (core interface) --
@@ -22,7 +23,6 @@ pluginRegistry.set(wythoffPlugin.metadata.id, wythoffPlugin);
 pluginRegistry.set(fifteenPlugin.metadata.id, fifteenPlugin);
 pluginRegistry.set(waterJugPlugin.metadata.id, waterJugPlugin);
 pluginRegistry.set(nonogramPlugin.metadata.id, nonogramPlugin);
-pluginRegistry.set(thiefSiegePlugin.metadata.id, thiefSiegePlugin);
 
 export function getGame(id: string): GamePlugin | undefined {
   return pluginRegistry.get(id);
@@ -45,7 +45,6 @@ entryRegistry.set(wythoffEntry.plugin.metadata.id, wythoffEntry);
 entryRegistry.set(fifteenEntry.plugin.metadata.id, fifteenEntry);
 entryRegistry.set(waterJugEntry.plugin.metadata.id, waterJugEntry);
 entryRegistry.set(nonogramEntry.plugin.metadata.id, nonogramEntry);
-entryRegistry.set(thiefSiegeEntry.plugin.metadata.id, thiefSiegeEntry);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getGameEntry(id: string): GamePluginEntry<any, any> | undefined {
