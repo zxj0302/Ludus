@@ -127,7 +127,7 @@
 ## 7. 搜索 / 启发式
 
 - ⬜ 滑块 8/15-puzzle（最短路径搜索 / NP-难(一般) / A*/IDA*+模式数据库 / 可生成已知最优）
-- ⬜ Peg Solitaire 孔明棋（可达性搜索 / NP-完全 / 回溯+哈希剪枝+对称约简 / 可生成已知最优）★ GamesCrafters / cut-the-knot
+- ✅ Peg Solitaire 孔明棋（可达性搜索 / NP-完全 / 回溯+哈希剪枝+对称约简 / 经典名局合集）★ GamesCrafters / cut-the-knot
 - ⬜ 迷宫（最短路 / P / BFS/Dijkstra/A* / 可生成）
 - ⬜ 倒水谜题（状态 BFS / P / gcd+裴蜀/BFS / 可生成已知最优）
 - ⬜ 过河问题（状态搜索 / P / BFS / 可生成）
@@ -228,10 +228,10 @@
 2. ✅ **数独**（§4 CSP/SAT，DLX + 唯一解生成）
 3. ✅ **Nim / Wythoff**（§2 组合博弈论）
 4. ⬜ **Connect 4**（§2 博弈树/Alpha-Beta，已强解，教育价值极高）★ GamesCrafters
-5. ⬜ **15-puzzle 滑块**（§7 搜索，A*/IDA*）
-6. ⬜ **倒水谜题**（§13 数论）
-7. ⬜ **Nonogram 数织**（§4 CSP）
-8. ⬜ **Peg Solitaire 孔明棋**（§7 搜索，回溯+对称约简）★ 四平台共有
+5. ✅ **15-puzzle 滑块**（§7 搜索，A*/IDA*）
+6. ✅ **倒水谜题**（§13 数论）
+7. ✅ **Nonogram 数织**（§4 CSP）
+8. ✅ **Peg Solitaire 孔明棋**（§7 搜索，回溯+对称约简）★ 四平台共有
 
 > 说明：复杂度标注为粗略归类，正式归类与论证在各游戏的"揭示抽象"段（阶段 3/5）中精确给出并附引用。
 >

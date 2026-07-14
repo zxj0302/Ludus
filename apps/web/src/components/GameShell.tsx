@@ -10,7 +10,7 @@ import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
 import { GeneratorToolbar } from './GeneratorToolbar';
 import { EducationPanel } from './EducationPanel';
 import { useSound } from '../hooks/useSound';
-import { shouldRunGenericPlayback } from './playbackMode';
+import { shouldPlaySolveErrorSound, shouldRunGenericPlayback } from './playbackMode';
 
 interface Props { gameId: string }
 
@@ -66,8 +66,7 @@ export function GameShell({ gameId }: Props) {
     if (solution?.solvable && solverStatus === 'done' && solution.moves.length > 0) {
       playSolve(); vibrate(20);
     }
-    // Only play error for user-facing solve/hint failures — not quiet background timeouts.
-    if (solveError && solverStatus === 'done') playError();
+    if (shouldPlaySolveErrorSound(solveError, solverStatus, solution)) playError();
   }, [solution, solverStatus, solveError, playSolve, playError, vibrate]);
 
   useEffect(() => {

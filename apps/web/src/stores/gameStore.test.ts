@@ -1,7 +1,10 @@
-import type { GameState } from '@ludus/core';
+import type { GameState, Solution } from '@ludus/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGameStore } from './gameStore';
 import { useProgressStore } from './progressStore';
+import { buildProgressSnapshot } from '../utils/progressSnapshot';
+import * as solverRuntime from './gameStoreSolverRuntime';
+import type { PegSolitaireState } from '@ludus/games';
 
 beforeEach(() => {
   useGameStore.setState({
@@ -148,5 +151,76 @@ describe('gameStore generator params', () => {
 
     expect(useGameStore.getState().difficultyRangeByGame['lights-out']).toEqual([34, 66]);
     expect(useGameStore.getState().difficultyRangeByGame['sudoku']).toEqual([1, 33]);
+  });
+});
+
+describe('gameStore peg-solitaire smoke', () => {
+  it('loads classic center-vacant with catalog optimal 31 on Hub first entry', () => {
+    useGameStore.getState().loadGame('peg-solitaire');
+
+    const { gameState, initialOptimalSteps, lastGeneratedLevel } = useGameStore.getState();
+    const peg = gameState as PegSolitaireState;
+
+    expect(peg.catalogId).toBe('classic-center-vacant');
+    expect(peg.goal).toBe('one-center');
+    expect(initialOptimalSteps).toBe(31);
+    expect(lastGeneratedLevel?.optimalSteps).toBe(31);
+    expect(lastGeneratedLevel?.generatedBy).toBe('classic-catalog');
+  });
+
+  it('restores optimalSteps when resuming a saved session', () => {
+    useGameStore.getState().loadGame('peg-solitaire');
+    const { gameState, history, historyIndex } = useGameStore.getState();
+    const snapshot = buildProgressSnapshot('peg-solitaire', gameState!, history, historyIndex);
+
+    useProgressStore.getState().saveSession({
+      gameId: 'peg-solitaire',
+      snapshot,
+      isSolved: false,
+      optimalSteps: 31,
+      elapsedMs: 12_000,
+      newSession: true,
+    });
+
+    useGameStore.getState().loadGame('peg-solitaire', { resume: true });
+
+    const resumed = useGameStore.getState();
+    expect(resumed.initialOptimalSteps).toBe(31);
+    expect(resumed.currentOptimalSteps).toBe(31);
+    expect((resumed.gameState as PegSolitaireState).catalogId).toBe('classic-center-vacant');
+  });
+
+  it('does not start playback when worker solve times out', () => {
+    const timeoutSolution: Solution = {
+      solvable: false,
+      moves: [],
+      stats: {
+        nodesExplored: 120,
+        timeMs: 5000,
+        solutionLength: 0,
+        solverName: 'peg-dfs',
+        terminated: 'timeout',
+      },
+      trace: {
+        type: 'search-tree',
+        steps: [],
+        visualizationData: { nodes: [] },
+      },
+    };
+
+    vi.spyOn(solverRuntime, 'runSolverOffThread').mockImplementation((_plugin, _state, onResult) => {
+      onResult(timeoutSolution);
+      return { cancel: vi.fn() };
+    });
+
+    useGameStore.getState().loadGame('peg-solitaire');
+    useGameStore.getState().requestSolve();
+
+    const after = useGameStore.getState();
+    expect(after.solvePlayback).toBe(false);
+    expect(after.solverStatus).toBe('done');
+    expect(after.solveError).toBeTruthy();
+    expect(after.solution?.stats.terminated).toBe('timeout');
+    expect(after.solution?.trace).toBeTruthy();
   });
 });

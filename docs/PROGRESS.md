@@ -5,12 +5,12 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 8 款游戏。围堵小偷代码保留但已从 Hub **取消注册**（体验未达标，后续再开）。
-- **MVP 范围**：8 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅）；`thief-siege` 包保留、Hub 不可见。
+- **当前阶段**：**阶段 7 — v0.2.0 审计硬化版发布后增量**；Hub 上线 **9** 款游戏。围堵小偷代码保留但已从 Hub **取消注册**（体验未达标，后续再开）。
+- **MVP 范围**：9 款上线游戏（Lights Out ✅ + Sokoban ✅ + Sudoku ✅ + Nim ✅ + Wythoff ✅ + 15-Puzzle ✅ + 倒水谜题 ✅ + Nonogram ✅ + **孔明棋 Peg Solitaire ✅**）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，481 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**518** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace type 新增 `'a-star-search'` + `'bfs-state-search'`。
-- **测试覆盖**：57 个测试文件，481 测试全过。
+- **测试覆盖**：62 个测试文件，518 测试全过。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
 - **审计修复第二批**：Nonogram playable state 不再携带 `solution`；`isOwnState`/Canvas 渲染改为基于线索判定通关；高级生成失败时保留当前关卡并显示 `generatorError`，普通 toolbar 生成仍允许 fallback。
@@ -202,15 +202,25 @@
   - **验证通过**：(a) 三层体验同实例切换 (b) `vite build` 成功 (c) 中英双语覆盖 (d) Worker 基础设施就绪
   - **构建产物**：dist ~568KB (gzip ~160KB)，React/Motion/Router/Worker 分包
 
+- **孔明棋冒烟回归 + 超时音效修复** ✅:
+  - 自动化冒烟：`loadGame` 经典中心空 + optimal 31；resume 恢复 optimalSteps；Worker timeout 不进入 playback。
+  - `shouldPlaySolveErrorSound`：timeout 仍显示文案但不播错误音；+4 回归测。
+  - 全量 `pnpm test:run` 518 过；`pnpm typecheck` 绿。
+
 ## 🚧 IN PROGRESS
 
-- 无。Peg Solitaire viz/记号/公式修复已落地。
+- 无。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-手动冒烟 Hub `peg-solitaire`：首进经典+最优31；实时分析有树；resume 保留最优；超时无错误音/无空回放。确认后可 merge / PR。
+1. **（可选）** 浏览器快速确认 Hub `peg-solitaire`：首进经典、侧边栏最优 31、实时分析有搜索树、resume 保留最优。
+2. **选下一款增量游戏**（建议三选一，待你确认）：
+   - **Connect 4**（backlog §2 早期顺序 #4，Alpha-Beta / 已强解，教育价值高）
+   - **围堵小偷 polish**（源码在库，Hub 未注册）
+   - **Angel and Devil** 独立模块设计（围堵小偷取消注册后的备选追逃方向）
+3. 若孔明棋分支待合并：开 PR / tag `v0.2.1` 前同步版本号。
 
-Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`
+Spec（孔明棋，已交付）：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`
 
 ## 🐛 KNOWN ISSUES
 
@@ -671,4 +681,4 @@ Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`
 - [2026-07-14] **孔明棋全面审查**：核心规则/记号/合集小关可靠；P0=Hub 首进非经典 seed、Worker solve 超时仍 playback；P1=文档 ADR 冲突、optimalSteps 未入顶栏、大盘 5s DFS 难解；风格大体对齐 Sokoban。
 - [2026-07-14] **孔明棋审查修复落地**：Hub seed0+optimalSteps；Worker timeout 不 playback；isSolved 看 goal；大盘跳过后台搜；ADR-025 勘误；Collection 抽离；i18n/死代码清理；合集≤20 子验最优长。
 - [2026-07-14] **孔明棋 viz 回归**：后台求解始终跑以供采样树；合集最优不覆盖；超时仍挂 trace。
-- [2026-07-14] **孔明棋二次审查修复**：resume 读 progress.optimalSteps；bg timeout 不把 opening 最优塞进 remaining；错误音仅 `solveError`；hint 超时提示；viz Length 超时显示 —。
+- [2026-07-14] **孔明棋冒烟回归 + 超时音效**：store 冒烟 3 测 + `shouldPlaySolveErrorSound`；timeout 不播错误音；518 测全过。
