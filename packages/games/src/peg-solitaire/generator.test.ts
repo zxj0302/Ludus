@@ -1,53 +1,65 @@
 import { describe, expect, it } from 'vitest';
-import { applyMove, isOwnState, meetsGoal, popcount } from './rules';
-import { generatePegSolitaireLevel, goalFromDifficultyRange } from './generator';
-import { solvePegSolitaire } from './solver';
-import type { PegSolitaireMove, PegSolitaireState } from './types';
+import { isOwnState } from './rules';
+import { generatePegSolitaireLevel } from './generator';
+import { CLASSIC_CENTER_EMPTY, PEG_CATALOG, catalogByGoal } from './puzzles';
+import type { PegSolitaireState } from './types';
 
-function applyMoves(state: PegSolitaireState, moves: PegSolitaireMove[]): PegSolitaireState {
-  return moves.reduce((current, move) => applyMove(current, move), state);
-}
-
-describe('Peg Solitaire generator', () => {
-  it.each([
-    [[1, 33] as [number, number], 'le3'],
-    [[34, 66] as [number, number], 'one-any'],
-    [[67, 100] as [number, number], 'one-center'],
-    [[20, 80] as [number, number], 'one-any'],
-  ])('maps difficulty range %j to %s goal', (range, goal) => {
-    expect(goalFromDifficultyRange(range)).toBe(goal);
-  });
-
-  it('generates owned solvable states for seeds 1 through 5', () => {
-    for (let seed = 1; seed <= 5; seed += 1) {
+describe('Peg Solitaire catalog picker (Hub fallback)', () => {
+  it('deals only one-center catalog states (default cultural entry)', () => {
+    for (let seed = 0; seed < 12; seed += 1) {
       const level = generatePegSolitaireLevel({ difficultyRange: [1, 100], seed });
       const state = level.initialState as unknown as PegSolitaireState;
-      const solution = solvePegSolitaire(state, { findShortest: true, timeMs: 1000 });
-      const solved = applyMoves(state, solution.moves as PegSolitaireMove[]);
-
-      expect(level.gameId).toBe('peg-solitaire');
+      expect(state.goal).toBe('one-center');
       expect(isOwnState(state)).toBe(true);
-      expect(solution.solvable).toBe(true);
-      expect(meetsGoal(solved.pegs, state.goal)).toBe(true);
-      expect(popcount(state.pegs)).toBeGreaterThan(popcount(solved.pegs));
-      expect(level.optimalSteps).toBe(solution.moves.length);
-      expect(level.difficulty.score).toBeGreaterThanOrEqual(0);
-      expect(level.difficulty.score).toBeLessThanOrEqual(100);
+      expect(level.generatedBy).toBe('classic-catalog');
+      expect(state.catalogId).toBeTruthy();
     }
   });
 
-  it.each([
-    [[1, 33] as [number, number], 'le3', 3],
-    [[34, 66] as [number, number], 'one-any', 1],
-    [[67, 100] as [number, number], 'one-center', 1],
-  ])('generates a %s puzzle that can meet its peg-count target', (range, goal, targetPegs) => {
-    const level = generatePegSolitaireLevel({ difficultyRange: range, seed: 3 });
-    const state = level.initialState as unknown as PegSolitaireState;
-    const solution = solvePegSolitaire(state, { findShortest: true, timeMs: 1000 });
-    const solved = applyMoves(state, solution.moves as PegSolitaireMove[]);
+  it('only deals bitmasks from the one-center shelf', () => {
+    const allowed = new Set(catalogByGoal('one-center').map(entry => entry.pegs));
+    for (let seed = 0; seed < 20; seed += 1) {
+      const state = generatePegSolitaireLevel({ difficultyRange: [67, 100], seed })
+        .initialState as unknown as PegSolitaireState;
+      expect(allowed.has(state.pegs)).toBe(true);
+    }
+  });
 
-    expect(state.goal).toBe(goal);
-    expect(popcount(solved.pegs)).toBeLessThanOrEqual(targetPegs);
-    expect(meetsGoal(solved.pegs, state.goal)).toBe(true);
+  it('includes classic center-vacant among seed picks', () => {
+    const levels = Array.from({ length: catalogByGoal('one-center').length }, (_, seed) =>
+      generatePegSolitaireLevel({ difficultyRange: [1, 100], seed }),
+    );
+    expect(
+      levels.some(level => {
+        const state = level.initialState as unknown as PegSolitaireState;
+        return state.pegs === CLASSIC_CENTER_EMPTY.pegs;
+      }),
+    ).toBe(true);
+  });
+
+  it('changes catalog picks across seeds', () => {
+    const ids = new Set(
+      Array.from({ length: 12 }, (_, seed) => {
+        const level = generatePegSolitaireLevel({ difficultyRange: [1, 100], seed: seed * 3 });
+        return (level.initialState as unknown as PegSolitaireState).catalogId;
+      }),
+    );
+    expect(ids.size).toBeGreaterThan(1);
+  });
+
+  it('never invents boards outside PEG_CATALOG', () => {
+    const allowed = new Set(PEG_CATALOG.map(entry => entry.pegs));
+    for (let seed = 0; seed < 15; seed += 1) {
+      const state = generatePegSolitaireLevel({ difficultyRange: [1, 100], seed })
+        .initialState as unknown as PegSolitaireState;
+      expect(allowed.has(state.pegs)).toBe(true);
+    }
+  });
+
+  it('seed 0 always deals classic center-vacant', () => {
+    const level = generatePegSolitaireLevel({ difficultyRange: [1, 100], seed: 0 });
+    const state = level.initialState as unknown as PegSolitaireState;
+    expect(state.catalogId).toBe(CLASSIC_CENTER_EMPTY.id);
+    expect(level.optimalSteps).toBe(31);
   });
 });

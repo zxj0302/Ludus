@@ -35,7 +35,7 @@ describe('generatorControls', () => {
       requireKnownOptimal: false,
     });
 
-    expect(config).toEqual({
+    expect(config).toMatchObject({
       difficultyRange: [34, 66],
       size: 3,
       requireUniqueSolution: true,
@@ -45,6 +45,22 @@ describe('generatorControls', () => {
         maxMoves: 8,
       },
     });
+    expect(typeof config.seed).toBe('number');
+  });
+
+  it('uses seed 0 for peg-solitaire Hub first-load (classic center-vacant)', () => {
+    const a = buildGeneratorLevelConfig('peg-solitaire', [1, 33], null);
+    const b = buildGeneratorLevelConfig('peg-solitaire', [1, 33], null);
+    expect(a.seed).toBe(0);
+    expect(b.seed).toBe(0);
+  });
+
+  it('always attaches a fresh seed for games without fixed Hub seed', () => {
+    const a = buildGeneratorLevelConfig('sokoban', [1, 33], null);
+    const b = buildGeneratorLevelConfig('sokoban', [1, 33], null);
+    expect(typeof a.seed).toBe('number');
+    expect(typeof b.seed).toBe('number');
+    expect(a.seed).not.toBe(b.seed);
   });
 
   it('uses safe defaults for Sudoku and Nonogram configs', () => {

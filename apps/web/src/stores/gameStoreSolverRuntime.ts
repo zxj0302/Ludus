@@ -242,16 +242,23 @@ export function scheduleBackgroundSolve(
       currentS,
       (bgSol) => {
         bgSolveCancel = null;
-        const { gameState: latestS, gameId: latestId } = get();
+        const { gameState: latestS, gameId: latestId, initialOptimalSteps } = get();
         if (latestS !== savedState || latestId !== savedGameId) return;
         if (bgSol.solvable && bgSol.moves.length > 0) {
+          const len = bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null;
+          // Do not overwrite opening / catalog optimal after mid-game re-solves.
           set({
             solution: bgSol,
-            initialOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
-            currentOptimalSteps: bgSol.stats.solutionLength > 0 ? bgSol.stats.solutionLength : null,
+            initialOptimalSteps: initialOptimalSteps ?? len,
+            currentOptimalSteps: len,
           });
         } else {
-          set({ currentOptimalSteps: null });
+          // Do NOT copy opening optimal into currentOptimalSteps (would mislabel remaining).
+          // Still attach timeout explore sample for Live Analysis viz.
+          set({
+            solution: bgSol.trace ? bgSol : get().solution,
+            currentOptimalSteps: null,
+          });
         }
       },
       () => { bgSolveCancel = null; },
@@ -309,7 +316,11 @@ export function applyHintFromSolution(
       currentOptimalSteps: null,
       solution,
       solverStatus: 'done',
-      solveError: isAdversarial ? i18n.t('game.status.noWinningMove') : null,
+      solveError: isAdversarial
+        ? i18n.t('game.status.noWinningMove')
+        : solution.stats.terminated === 'timeout'
+          ? i18n.t('game.status.timedOut')
+          : null,
     });
   }
 }

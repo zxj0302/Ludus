@@ -57,21 +57,39 @@ describe('Peg Solitaire rules', () => {
     const offCenterWin: PegSolitaireState = { pegs: bit(0), goal: 'one-center', status: 'playing' };
 
     expect(meetsGoal(centerWin.pegs, centerWin.goal)).toBe(true);
+    expect(isSolved(centerWin)).toBe(true); // status may lag; goal is authoritative
     expect(isSolved({ ...centerWin, status: 'won' })).toBe(true);
     expect(meetsGoal(offCenterWin.pegs, offCenterWin.goal)).toBe(false);
+    expect(isSolved(offCenterWin)).toBe(false);
   });
 
-  it('marks a non-winning board as stuck when it has no legal moves', () => {
-    const state: PegSolitaireState = { pegs: bit(0), goal: 'one-center', status: 'playing' };
+  it('marks a non-winning board as stuck when a jump leaves an off-center singleton', () => {
+    const state: PegSolitaireState = { pegs: bit(0) + bit(1), goal: 'one-center', status: 'playing' };
     const next = applyMove(state, { from: 0, over: 1, to: 2 });
 
-    expect(next).toEqual({ ...state, status: 'stuck' });
+    expect(next.status).toBe('stuck');
+    expect(popcount(next.pegs)).toBe(1);
+    expect(legalMoves(next)).toEqual([]);
     expect(isSolved(next)).toBe(false);
   });
 
+  it('ignores illegal moves without rewriting history-facing state identity', () => {
+    const state = createClassicState('one-center');
+    const illegal = { from: 0, over: 1, to: 2 };
+
+    expect(applyMove(state, illegal)).toBe(state);
+  });
+
   it('recognizes owned states conservatively', () => {
-    expect(isOwnState(createClassicState('le3'))).toBe(true);
-    expect(isOwnState({ pegs: 2 ** 33, goal: 'le3', status: 'playing' })).toBe(false);
+    expect(isOwnState(createClassicState('one-center'))).toBe(true);
+    expect(isOwnState({ pegs: 2 ** 33, goal: 'one-any', status: 'playing' })).toBe(false);
+    expect(isOwnState({ pegs: 1, goal: 'le3', status: 'playing' })).toBe(false);
     expect(isOwnState({ pegs: 1, goal: 'center', status: 'playing' })).toBe(false);
+  });
+
+  it('one-any accepts any singleton but one-center does not', () => {
+    expect(meetsGoal(bit(0), 'one-any')).toBe(true);
+    expect(meetsGoal(bit(0), 'one-center')).toBe(false);
+    expect(meetsGoal(bit(CENTER_HOLE), 'one-center')).toBe(true);
   });
 });

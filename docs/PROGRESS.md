@@ -159,6 +159,36 @@
   - `apps/web/src/components/PegSearchViz.tsx` + `apps/web/src/entrySetup.tsx` 接入 `search-tree` 证据面板、raw markdown 与 `GeneratorToolbar`。
   - `docs/games/peg-solitaire.md` 与 `docs/DECISIONS.md` ADR-025 记录 search-tree 复用和可视化边界。
   - 验证：`pnpm test:run` 503 测全过（3 skipped）；`pnpm typecheck` 成功。
+- **孔明棋 bugfix 批次** ✅:
+  - 删除无解精选关 `middle-band-one-any`；扩充为 10 个已验证残局（含 5–6 步中/难）。
+  - 生成器禁止未验证 fallback；非法走子不再改写 state 引用；终局 `stuck/won` 禁用棋盘并提示。
+  - 选子状态随 undo/新关重置；默认开局改为经典中心空（`one-center`）。
+  - 验证：Peg Solitaire 5 文件 / 21 测全过。
+- **孔明棋难度/新关卡修复** ✅:
+  - 难度分按 goal 对齐 Hub 易/中/难档；「随机」跨三档抽 goal。
+  - 生成器改为逆向合成 + 验证，刷新不再卡在 2 个微型残局；每次生成附带新 seed。
+  - `GeneratorToolbar` 切档时显式传入 `difficultyRange`，避免与 store 写入竞态。
+  - 验证：Peg 25 测 + web generator/store 相关测全过。
+- **孔明棋 spec 纠偏** ✅:
+  - 生成器回到 §5.2：经典主入口 + 精选残局 + 从经典挖空并验证；Hub 默认 hard `[67,100]`。
+  - `PegSearchViz` 改为 React Flow 主变例树；`manifest.library = 'react-flow'`；ADR-025 / `docs/games/peg-solitaire.md` 同步。
+  - 难度分恢复 §5.3 综合（目标严格度 + 子数负载 + 机动性）。
+  - 验证：Peg 25 测全过。
+- **孔明棋 v1.1 合集选关** ✅:
+  - 按确认 spec：移除 `le3` 与挖空生成；`PEG_CATALOG` 经典名局；取消程序化造关。
+  - 教学四份 md 强调 `one-any` vs `one-center`；ADR-026。
+- **孔明棋 v1.2 模式+选关** ✅:
+  - 取消难度选择；`PegSolitaireToolbar` 对齐推箱子（模式「剩一 / 中心剩一」+ 名局）。
+  - `generateLevel` 降为 Hub 回退；教学/spec/ADR/开发者文档同步；Peg 22 测全过。
+- **孔明棋合集扩充** ✅:
+  - 录入希腊十字/金字塔/箭头/菱形/房屋/大菱形等教科书名局；中心模式增加中心星、南端空、D4 归心变体。
+  - 说明：模式按 goal 过滤，同一盘面未必两边都可解。
+
+- **孔明棋审查修复（P0–P2）** ✅:
+  - Hub `seed: 0` → 经典；`loadGame`/`newLevel` 读 `level.optimalSteps`；Worker 超时不进 playback。
+  - `isSolved` 以 goal 为准；后台求解保留合集最优 + 挂 timeout trace（供实时分析）；`generator: degraded` + ADR-025 勘误。
+  - `Collection` 抽到 `types/levelCollection`；LevelSelector `shortLabel`；orphan i18n / 死导出清理。
+  - 二次审查：resume 恢复 optimalSteps；超时不误标剩余步/不播错误音；viz 超时 Length 显示 —。
 
 - **阶段 4 垂直切片 — Lights Out 端到端样板** ✅：
 
@@ -174,14 +204,13 @@
 
 ## 🚧 IN PROGRESS
 
-- 无。Peg Solitaire Task 1–5 已完成，等待 Task 5 代码审查/体验验证结果。
+- 无。Peg Solitaire viz/记号/公式修复已落地。
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-审查并体验 Peg Solitaire 端到端：打开 Hub 中 `peg-solitaire`，检查 L1 玩法、L2/L3 侧栏、`PegSearchViz`、GeneratorToolbar 三档目标是否一致；如需继续，优先做 Task 5 review fixes 或 polish。
+手动冒烟 Hub `peg-solitaire`：首进经典+最优31；实时分析有树；resume 保留最优；超时无错误音/无空回放。确认后可 merge / PR。
 
-Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-design.md`  
-Plan：`docs/superpowers/plans/2026-07-14-peg-solitaire.md`
+Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`
 
 ## 🐛 KNOWN ISSUES
 
@@ -627,3 +656,19 @@ Plan：`docs/superpowers/plans/2026-07-14-peg-solitaire.md`
 - [2026-07-14] **孔明棋 Task 3 完成**：新增 puzzles / generator / difficulty 与 TDD 覆盖；生成器使用 seeded curated candidates + 轻量 dig-out，避免 full classic 重搜索；Peg 19 测与 `pnpm typecheck` 成功。
 - [2026-07-14] **孔明棋 Task 4 完成**：新增 playable plugin UI、manifest/i18n、education-ui、registry/barrel/web entrySetup 与 Worker solve；Peg + load-smoke 39 测、`pnpm typecheck`、`pnpm --filter ludus-web build` 成功。
 - [2026-07-14] **孔明棋 Task 5 完成**：新增 L2/L3 × zh-CN/en 重教学内容、`PegSearchViz`、entrySetup wiring、`docs/games/peg-solitaire.md` 与 ADR-025；`pnpm test:run` 与 `pnpm typecheck` 成功。
+- [2026-07-14] **孔明棋 bugfix**：修复无解 curated 关、生成器未验证 fallback、非法走子污染 history、stuck/won UI、选子不同步、默认开局；Peg 21 测全过。
+- [2026-07-14] **孔明棋难度/刷新修复**：goal 难度分对齐 Hub 三档；逆向合成换盘；新 seed + 切档显式传 range；Peg 25 测全过。
+- [2026-07-14] **孔明棋 spec 纠偏**：生成器恢复经典+精选+挖空验证；React Flow 主变例；Hub 默认 hard；ADR-025/文档同步。
+- [2026-07-14] **孔明棋 v1.1 设计（待审）**：用户确认难度方案 A；关卡改为经典合集、取消程序化生成与 le3 游玩目标。Spec：`docs/superpowers/specs/2026-07-14-peg-solitaire-catalog-design.md`。
+- [2026-07-14] **孔明棋 v1.1 合集选关落地**：catalog picker、双目标、教学/ADR-026；Peg 26 测全过。
+- [2026-07-14] **孔明棋 v1.2 模式+选关**：取消难度 UI；`PegSolitaireToolbar`（剩一/中心剩一+名局）；教学/spec/ADR 同步；Peg 22 测、web tsc 通过。
+- [2026-07-14] **孔明棋合集扩充**：教科书名局（希腊十字/金字塔/箭头/菱形等）+ 中心归心变体；解释双模式列表为何不同。
+- [2026-07-14] **孔明棋最优步数修复**：后台重求解不再覆盖开局最优；选关写入合集 `knownSolutionLength`（= 子数−1）。
+- [2026-07-14] **孔明棋 viz/记号/公式修复**：求解器 `sampleSolutionTree` 主变+旁支采样；孔位英式 a–g×1–7（中心 d4）；状态卡对齐 Sokoban；Markdown 支持 `\(...\)` 并改写 peg 教学内容公式。
+- [2026-07-14] **孔明棋求解叙事+viz 配色**：教育文档澄清 BFS/DFS 分工与高效剪枝边界；`PegSearchViz` 改为 indigo knowledge-card 壳（对齐 Sokoban BFSTreeViz）。
+- [2026-07-14] **「当前棋盘状态」配色**：`GameCard`/`StatCell` 改为 indigo 壳，与 Live Analysis 的 KnowledgeCard / 搜索树一致。
+- [2026-07-14] **孔明棋棋盘坐标**：棋盘外缘标注列 a–g、行 1–7（中心 d4），与走子/可视化记号一致。
+- [2026-07-14] **孔明棋全面审查**：核心规则/记号/合集小关可靠；P0=Hub 首进非经典 seed、Worker solve 超时仍 playback；P1=文档 ADR 冲突、optimalSteps 未入顶栏、大盘 5s DFS 难解；风格大体对齐 Sokoban。
+- [2026-07-14] **孔明棋审查修复落地**：Hub seed0+optimalSteps；Worker timeout 不 playback；isSolved 看 goal；大盘跳过后台搜；ADR-025 勘误；Collection 抽离；i18n/死代码清理；合集≤20 子验最优长。
+- [2026-07-14] **孔明棋 viz 回归**：后台求解始终跑以供采样树；合集最优不覆盖；超时仍挂 trace。
+- [2026-07-14] **孔明棋二次审查修复**：resume 读 progress.optimalSteps；bg timeout 不把 opening 最优塞进 remaining；错误音仅 `solveError`；hint 超时提示；viz Length 超时显示 —。

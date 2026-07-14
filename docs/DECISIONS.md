@@ -228,16 +228,30 @@
 - **风险**：中/难关没有全树证明，极端 seed 仍可能被更强搜索打穿；后续可用 seed 回归修生成器，或新增 AND-OR / 主变例树可视化。
 - **确认日期**：2026-07-11。
 
-### ADR-025 孔明棋：复用 search-tree trace 与诚实搜索证据面板
+### ADR-025 孔明棋：search-tree trace + React Flow 采样搜索树
 
-- **状态**：✅ ACCEPTED
+- **状态**：✅ ACCEPTED（2026-07-14；**2026-07-14 勘误**：生成表述以 ADR-026 为准）
 - **决策**：
   1. 孔明棋继续复用 `SolverTrace.type = 'search-tree'`，不新增 `peg-search` union 成员。
-  2. Web 层使用 `PegSearchViz` 作为“搜索证据面板”：展示探索节点、解长、耗时、最大深度、终止原因、D4 对称与返回路径；不伪装成完整搜索树证明。
-  3. 教学与文档必须明确区分 BFS 最短性、DFS 可达性、Worker 离线程执行、生成器可达验证、以及 `uniqueSolution: false` 的边界。
-- **理由**：现有 Sokoban/ Peg solver 都能表达为 `search-tree`，复用 trace contract 可减少 core 类型膨胀；孔明棋 v1 的 trace 目前没有完整 parent/child tree 样本，证据面板比“看似完整”的树图更诚实。
-- **影响**：`apps/web/src/entrySetup.tsx` 仅在 `peg-solitaire` entry 上把 `search-tree` 绑定到 `PegSearchViz`，避免与 Sokoban 的 `BFSTreeViz` 冲突；后续若 solver 输出完整节点关系，可在不改 core trace type 的前提下升级为 React Flow 树。
-- **风险**：当前可视化解释力度强于交互探索力度；若未来需要逐节点展开或对称轨道动画，需要扩展 `visualizationData` schema。
+  2. Web 层 `PegSearchViz` 使用 **React Flow** 展示求解器返回的**采样搜索树**（橙主变 + 有限灰旁支）并附探索统计；明确标注这不是完整状态空间展开。
+  3. ~~关卡生成器 = 挖空~~ → **已由 ADR-026 废止**。关卡真相源为经典名局合集；`generateLevel` 仅 Hub 首载回退（seed 0 → classic）。
+  4. 教学与文档必须区分 BFS（浅盘最短）与 DFS（深盘可达）、Worker、合集 `knownSolutionLength`，以及 `uniqueSolution: false`。
+- **理由**：确认 spec / DoD 要求 React Flow；采样树满足「搜索可视化」而不伪装完整证明。挖空生成与 v1.1/v1.2 合集制冲突，故勘误。
+- **影响**：`manifest.library = 'react-flow'`；Hub 首进由 `buildGeneratorLevelConfig('peg-solitaire', …, null)` 固定 `seed: 0`。
+- **风险**：完整 parent/child 搜索树仍需扩展；经典全盘 32 子在浏览器预算内常 timeout——产品以合集长度 + 诚实超时为准，非每次重证 31 步路径。
+- **确认日期**：2026-07-14（勘误同日）。
+
+### ADR-026 孔明棋 v1.1：经典合集选关（取消程序化生成）
+
+- **状态**：✅ ACCEPTED（v1.2 UX 修订 2026-07-14）
+- **决策**：
+  1. 游玩目标仅 `one-any` / `one-center`；移除可玩 `le3`。
+  2. 关卡来源为英式盘**经典名局合集**；禁止挖空 / 逆向合成；`generatedBy = 'classic-catalog'`。
+  3. **v1.2**：取消 Hub 难度三档；UI 对齐推箱子——模式（剩一 / 中心剩一）+ 名局列表（`PegSolitaireToolbar`）。
+  4. `generateLevel` 仅作 Hub 首载回退（默认 one-center；seed 0 → classic）。
+  5. 教学必须对比两种目标；`le3` 仅作历史旁注。
+- **理由**：用户确认自制生成体验不佳；后续明确不要难度分类，要直接选关与模式切换。
+- **影响**：`puzzles.ts` 为关卡真相源；`tier` 降为遗留元数据；教育与 `docs/games/peg-solitaire.md` 同步。
 - **确认日期**：2026-07-14。
 
 ---
@@ -255,4 +269,5 @@
   - **新增字段**：`GamePlugin.ai?: { isAITurn, getAIMove }`（对抗游戏 AI 对手的通用抽象）
   - **迁移计划**：10 步，全部完成。详见各阶段 commit 记录。最终包结构：core/games/education/ui 4 包 + apps/web。i18n/viz 包已移除。
 - [2026-07-11] ADR-024 (围堵小偷 v1.1：大地图、混合可胜保证与对抗 AI) → ACCEPTED。
-- [2026-07-14] ADR-025 (孔明棋：复用 search-tree trace 与诚实搜索证据面板) → ACCEPTED。
+- [2026-07-14] ADR-025 (孔明棋：search-tree + React Flow 采样树) → ACCEPTED；同日勘误废止挖空生成表述（以 ADR-026 为准）。
+- [2026-07-14] ADR-026 (孔明棋 v1.1：经典合集选关，取消程序化生成与 le3 游玩目标) → ACCEPTED。

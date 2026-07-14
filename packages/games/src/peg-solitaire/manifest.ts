@@ -22,5 +22,5 @@ export const pegSolitaireVisualizationManifest: VisualizationManifest = {
   gameId: 'peg-solitaire',
   traceType: 'search-tree',
   componentName: 'PegSearchViz',
-  library: 'custom-svg',
+  library: 'react-flow',
 };

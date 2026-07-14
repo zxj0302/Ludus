@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 const uiSrc = resolve(dirname(fileURLToPath(import.meta.url)), 'DifficultySelector.tsx');
 
-describe('DifficultySelector semantics', () => {
-  it('keeps difficulty presets in the native select without action options', () => {
+describe('DifficultySelector layout', () => {
+  it('keeps advanced generation inside the difficulty dropdown, not as a toolbar button', () => {
     const source = readFileSync(uiSrc, 'utf8');
-    expect(source).not.toContain('__advanced_generation__');
-    expect(source).toContain('onAdvancedSelect');
-    expect(source).toMatch(/onClick=\{onAdvancedSelect\}/);
+    expect(source).toContain('ADVANCED_OPTION_VALUE');
+    expect(source).not.toMatch(/onClick=\{onAdvancedSelect\}/);
+    expect(source).not.toContain('flex-wrap');
   });
 });

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import type { GameState, Move } from '@ludus/core';
 import { getGame, getGameEntry } from '@ludus/games';
+import type { HighlightCell } from '@ludus/games';
 import { useShallow } from 'zustand/react/shallow';
 import { useGameStore } from '../stores/gameStore';
 import { GameToolbar, GameStatusBar, ErrorBoundary } from '@ludus/ui';
@@ -65,8 +66,9 @@ export function GameShell({ gameId }: Props) {
     if (solution?.solvable && solverStatus === 'done' && solution.moves.length > 0) {
       playSolve(); vibrate(20);
     }
-    if (solution && !solution.solvable) playError();
-  }, [solution, solverStatus, playSolve, playError, vibrate]);
+    // Only play error for user-facing solve/hint failures — not quiet background timeouts.
+    if (solveError && solverStatus === 'done') playError();
+  }, [solution, solverStatus, solveError, playSolve, playError, vibrate]);
 
   useEffect(() => {
     if (isWin && historyIndex > 0) { playWin(); vibrate(30); }
@@ -123,7 +125,7 @@ export function GameShell({ gameId }: Props) {
 
   // 以下 plugin 和 gameState 均非 null，且 state 与 gameId 匹配
 
-  let highlightCell: { row: number; col: number; value?: number } | null = null;
+  let highlightCell: HighlightCell | null = null;
 
   // 直接高亮坐标优先（对抗游戏选先后手等无需 moveToHighlight 的场景）
   if (hintHighlight) {

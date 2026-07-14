@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CENTER_HOLE, HOLE_COORDS } from './geometry';
+import { CENTER_HOLE, HOLE_COORDS, holeNotation } from './geometry';
 import { applyMove, createClassicState, hasPeg, isSolved, popcount } from './rules';
-import { canonicalKey, solvePegSolitaire } from './solver';
+import { canonicalKey, sampleSolutionTree, solvePegSolitaire } from './solver';
 import type { PegSolitaireMove, PegSolitaireState } from './types';
 
 function bit(hole: number): number {
@@ -30,6 +30,13 @@ function applyMoves(state: PegSolitaireState, moves: PegSolitaireMove[]): PegSol
 }
 
 describe('Peg Solitaire D4 solver', () => {
+  it('uses English algebraic hole notation (center = d4)', () => {
+    expect(holeNotation(CENTER_HOLE)).toBe('d4');
+    expect(holeNotation(0)).toBe('c1');
+    expect(holeNotation(32)).toBe('e7');
+    expect(HOLE_COORDS).toHaveLength(33);
+  });
+
   it('canonicalKey is invariant under rotations and reflections', () => {
     const pegs = bit(0) + bit(4) + bit(13) + bit(CENTER_HOLE) + bit(25) + bit(32);
     const variants = [
@@ -65,6 +72,16 @@ describe('Peg Solitaire D4 solver', () => {
     expect(popcount(solved.pegs)).toBe(1);
     expect(isSolved(solved)).toBe(true);
     expect(hasPeg(solved.pegs, CENTER_HOLE)).toBe(true);
+
+    const tree = sampleSolutionTree(state, solution.moves as PegSolitaireMove[]);
+    const pathNodes = tree.filter(n => n.onPath);
+    const branchNodes = tree.filter(n => !n.onPath && n.parentId);
+    expect(pathNodes).toHaveLength(4); // root + 3 moves
+    expect(branchNodes.length).toBeGreaterThan(0);
+    expect(tree.every(n => n.id.startsWith('n'))).toBe(true);
+    const vizTree = (solution.trace?.visualizationData as { treeNodes?: unknown[] } | undefined)?.treeNodes;
+    expect(Array.isArray(vizTree)).toBe(true);
+    expect((vizTree?.length ?? 0)).toBeGreaterThan(pathNodes.length - 1);
   });
 
   it('starts searching the classic board without throwing when budgeted', () => {

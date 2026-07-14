@@ -57,5 +57,6 @@ describe('GamePluginEntry generator controls', () => {
   it('games without advanced controls omit generatorControls', () => {
     expect(getGameEntry('nim')?.generatorControls).toBeUndefined();
     expect(getGameEntry('sokoban')?.generatorControls).toBeUndefined();
+    expect(getGameEntry('peg-solitaire')?.generatorControls).toBeUndefined();
   });
 });

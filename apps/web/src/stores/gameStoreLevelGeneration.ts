@@ -4,6 +4,12 @@ import { buildGeneratorLevelConfig, type GeneratorParams } from '../generatorCon
 
 export const DEFAULT_DIFFICULTY_RANGE: [number, number] = [1, 100];
 
+/** Spec-aligned first-open defaults (Hub falls back here when no per-game preset is saved). */
+const GAME_DEFAULT_DIFFICULTY_RANGE: Record<string, [number, number]> = {
+  // Peg uses catalog UX; Hub first load forces seed 0 (classic) in buildGeneratorLevelConfig.
+  // Range is unused by generatePegSolitaireLevel — kept only so Hub has a stable preset key.
+};
+
 export function fallbackLevel(plugin: GamePlugin): Level {
   const initialState = plugin.initialState();
   return {
@@ -52,5 +58,7 @@ export function getDifficultyRangeForGame(
   gameId: string | null,
 ): [number, number] {
   if (!gameId) return DEFAULT_DIFFICULTY_RANGE;
-  return difficultyRangeByGame[gameId] ?? DEFAULT_DIFFICULTY_RANGE;
+  return difficultyRangeByGame[gameId]
+    ?? GAME_DEFAULT_DIFFICULTY_RANGE[gameId]
+    ?? DEFAULT_DIFFICULTY_RANGE;
 }

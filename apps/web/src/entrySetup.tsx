@@ -203,14 +203,15 @@ pegSolitaireEntry.visualization = {
 // ═══════════════════════════════════════════════════════════════
 
 import { SokobanToolbar } from './components/SokobanToolbar';
+import { PegSolitaireToolbar } from './components/PegSolitaireToolbar';
 import { GeneratorToolbar } from './components/GeneratorToolbar';
 
 const TOOLBAR_SLOTS: Partial<Record<keyof typeof ENTRY_MAP, ComponentType<{ onNewLevel: () => void; dispatch?: (action: { type: string; payload: unknown }) => void }>>> = {
   'sokoban': SokobanToolbar,
+  'peg-solitaire': PegSolitaireToolbar,
   'fifteen': GeneratorToolbar,
   'water-jug': GeneratorToolbar,
   'nonogram': GeneratorToolbar,
-  'peg-solitaire': GeneratorToolbar,
 };
 
 for (const [gameId, toolbar] of Object.entries(TOOLBAR_SLOTS)) {

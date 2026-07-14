@@ -15,6 +15,16 @@ export const HOLE_COUNT = 33;
  */
 export const CENTER_HOLE = 16;
 
+/**
+ * English algebraic label: columns a–g left→right, rows 1–7 top→bottom.
+ * Center hole is **d4** (Beasley / recreational-math convention).
+ */
+export function holeNotation(hole: number): string {
+  const coord = HOLE_COORDS[hole];
+  if (!coord) return `?${hole}`;
+  return `${'abcdefg'[coord.col]}${coord.row + 1}`;
+}
+
 export type HoleCoord = { row: number; col: number };
 
 export const HOLE_COORDS: ReadonlyArray<HoleCoord> = [

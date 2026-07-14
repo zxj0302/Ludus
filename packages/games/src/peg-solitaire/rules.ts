@@ -3,7 +3,7 @@ import { CENTER_HOLE, HOLE_COUNT, JUMPS } from './geometry';
 
 export type { PegGoal, PegSolitaireMove, PegSolitaireState };
 
-const GOALS = new Set<PegGoal>(['le3', 'one-any', 'one-center']);
+const GOALS = new Set<PegGoal>(['one-any', 'one-center']);
 const STATUSES = new Set<PegSolitaireState['status']>(['playing', 'won', 'stuck']);
 const ALL_PEGS = 2 ** HOLE_COUNT - 1;
 
@@ -60,34 +60,38 @@ export function hasPeg(pegs: number, hole: number): boolean {
 
 export function createClassicState(goal: PegGoal): PegSolitaireState {
   const pegs = ALL_PEGS - bit(CENTER_HOLE);
-  return { pegs, goal, status: normalizeStatus(pegs, goal) };
+  return {
+    pegs,
+    goal,
+    status: normalizeStatus(pegs, goal),
+    catalogId: 'classic-center-vacant',
+  };
 }
 
 export function legalMoves(state: PegSolitaireState): PegSolitaireMove[] {
+  if (state.status !== 'playing') return [];
   return JUMPS.filter(jump => hasPeg(state.pegs, jump.from) && hasPeg(state.pegs, jump.over) && !hasPeg(state.pegs, jump.to));
 }
 
 export function applyMove(state: PegSolitaireState, move: PegSolitaireMove): PegSolitaireState {
+  if (state.status !== 'playing' || !isLegalMove(state, move)) return state;
+
   let pegs = state.pegs;
+  pegs = clearPeg(pegs, move.from);
+  pegs = clearPeg(pegs, move.over);
+  pegs = setPeg(pegs, move.to);
 
-  if (isLegalMove(state, move)) {
-    pegs = clearPeg(pegs, move.from);
-    pegs = clearPeg(pegs, move.over);
-    pegs = setPeg(pegs, move.to);
-  }
-
-  return { pegs, goal: state.goal, status: normalizeStatus(pegs, state.goal) };
+  return { pegs, goal: state.goal, status: normalizeStatus(pegs, state.goal), catalogId: state.catalogId };
 }
 
 export function meetsGoal(pegs: number, goal: PegGoal): boolean {
   const pegCount = popcount(pegs);
-  if (goal === 'le3') return pegCount <= 3;
   if (goal === 'one-any') return pegCount === 1;
   return pegCount === 1 && hasPeg(pegs, CENTER_HOLE);
 }
 
 export function isSolved(state: PegSolitaireState): boolean {
-  return state.status === 'won';
+  return meetsGoal(state.pegs, state.goal);
 }
 
 export function isOwnState(state: unknown): state is PegSolitaireState {
