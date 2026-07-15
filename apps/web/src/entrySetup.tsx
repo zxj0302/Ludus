@@ -10,7 +10,7 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import type { Solution, GameState, SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry, kaylesEntry,
 } from '@ludus/games';
 
 // ═══════════════════════════════════════════════════════════════
@@ -77,6 +77,11 @@ import l2enGG from '@ludus/education/src/content/grundys-game/l2.en.md?raw';
 import l3zhGG from '@ludus/education/src/content/grundys-game/l3.zh-CN.md?raw';
 import l3enGG from '@ludus/education/src/content/grundys-game/l3.en.md?raw';
 
+import l2zhKY from '@ludus/education/src/content/kayles/l2.zh-CN.md?raw';
+import l2enKY from '@ludus/education/src/content/kayles/l2.en.md?raw';
+import l3zhKY from '@ludus/education/src/content/kayles/l3.zh-CN.md?raw';
+import l3enKY from '@ludus/education/src/content/kayles/l3.en.md?raw';
+
 // Declarative entry setup — add new games here only
 const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'lights-out': { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
@@ -91,6 +96,7 @@ const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'connect-four': { 'L2.zh-CN': l2zhC4, 'L2.en': l2enC4, 'L3.zh-CN': l3zhC4, 'L3.en': l3enC4 },
   'euclids-game': { 'L2.zh-CN': l2zhEG, 'L2.en': l2enEG, 'L3.zh-CN': l3zhEG, 'L3.en': l3enEG },
   'grundys-game': { 'L2.zh-CN': l2zhGG, 'L2.en': l2enGG, 'L3.zh-CN': l3zhGG, 'L3.en': l3enGG },
+  'kayles': { 'L2.zh-CN': l2zhKY, 'L2.en': l2enKY, 'L3.zh-CN': l3zhKY, 'L3.en': l3enKY },
 };
 
 const ENTRY_MAP = {
@@ -106,6 +112,7 @@ const ENTRY_MAP = {
   'connect-four': connectFourEntry,
   'euclids-game': euclidsGameEntry,
   'grundys-game': grundysGameEntry,
+  'kayles': kaylesEntry,
 } as const;
 
 for (const [gameId, entry] of Object.entries(ENTRY_MAP)) {
@@ -128,6 +135,7 @@ const PegSearchViz = lazy(() => import('./components/PegSearchViz').then(m => ({
 const ConnectFourTreeViz = lazy(() => import('./components/ConnectFourTreeViz').then(m => ({ default: m.ConnectFourTreeViz })));
 const EuclidPhiViz = lazy(() => import('./components/EuclidPhiViz').then(m => ({ default: m.EuclidPhiViz })));
 const GrundyMexViz = lazy(() => import('./components/GrundyMexViz').then(m => ({ default: m.GrundyMexViz })));
+const KaylesMexViz = lazy(() => import('./components/KaylesMexViz').then(m => ({ default: m.KaylesMexViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -253,6 +261,17 @@ grundysGameEntry.visualization = {
   )) as ComponentType<VisualizationProps>,
 };
 
+kaylesEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'kayles-mex',
+  Component: (({ trace, gameState }: VisualizationProps) => (
+    <Suspense fallback={<Fallback />}>
+      {gameState && kaylesEntry.isOwnState(gameState) && (
+        <KaylesMexViz key={gameState.alive.map(a => (a ? '1' : '0')).join('')} trace={trace} state={gameState} />
+      )}
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 3. UI extensions — web 专属 toolbar
 // ═══════════════════════════════════════════════════════════════
@@ -270,6 +289,7 @@ const TOOLBAR_SLOTS: Partial<Record<keyof typeof ENTRY_MAP, ComponentType<{ onNe
   'connect-four': GeneratorToolbar,
   'euclids-game': GeneratorToolbar,
   'grundys-game': GeneratorToolbar,
+  'kayles': GeneratorToolbar,
 };
 
 for (const [gameId, toolbar] of Object.entries(TOOLBAR_SLOTS)) {

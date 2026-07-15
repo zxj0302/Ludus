@@ -251,6 +251,7 @@ const en = {
     'generator.method.randomPiles': 'Random pile layout',
     'generator.method.pPositionBias': 'P-position biased sampling',
     'generator.method.nPositionBias': 'N-position biased sampling',
+    'generator.method.chainLength': 'Chain length sampling',
     'generator.method.classicSet': 'Classic level set',
     'generator.method.initialStateFallback': 'Default initial state',
 

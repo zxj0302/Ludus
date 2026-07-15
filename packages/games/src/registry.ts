@@ -12,6 +12,7 @@ import { pegSolitairePlugin, pegSolitaireEntry } from './peg-solitaire';
 import { connectFourPlugin, connectFourEntry } from './connect-four';
 import { euclidsGamePlugin, euclidsGameEntry } from './euclids-game';
 import { grundysGamePlugin, grundysGameEntry } from './grundys-game';
+import { kaylesPlugin, kaylesEntry } from './kayles';
 // thief-siege: package kept for future work, intentionally not registered in Hub
 import { thiefSiegePlugin, thiefSiegeEntry } from './thief-siege';
 
@@ -31,6 +32,7 @@ pluginRegistry.set(pegSolitairePlugin.metadata.id, pegSolitairePlugin);
 pluginRegistry.set(connectFourPlugin.metadata.id, connectFourPlugin);
 pluginRegistry.set(euclidsGamePlugin.metadata.id, euclidsGamePlugin);
 pluginRegistry.set(grundysGamePlugin.metadata.id, grundysGamePlugin);
+pluginRegistry.set(kaylesPlugin.metadata.id, kaylesPlugin);
 
 export function getGame(id: string): GamePlugin | undefined {
   return pluginRegistry.get(id);
@@ -57,6 +59,7 @@ entryRegistry.set(pegSolitaireEntry.plugin.metadata.id, pegSolitaireEntry);
 entryRegistry.set(connectFourEntry.plugin.metadata.id, connectFourEntry);
 entryRegistry.set(euclidsGameEntry.plugin.metadata.id, euclidsGameEntry);
 entryRegistry.set(grundysGameEntry.plugin.metadata.id, grundysGameEntry);
+entryRegistry.set(kaylesEntry.plugin.metadata.id, kaylesEntry);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getGameEntry(id: string): GamePluginEntry<any, any> | undefined {
@@ -70,5 +73,5 @@ export function getAllEntries(): GamePluginEntry<any, any>[] {
 
 // -- Re-exports --
 
-export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, pegSolitairePlugin, connectFourPlugin, euclidsGamePlugin, grundysGamePlugin, thiefSiegePlugin };
-export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry, thiefSiegeEntry };
+export { lightsOutPlugin, sokobanPlugin, sudokuPlugin, nimPlugin, wythoffPlugin, fifteenPlugin, waterJugPlugin, nonogramPlugin, pegSolitairePlugin, connectFourPlugin, euclidsGamePlugin, grundysGamePlugin, kaylesPlugin, thiefSiegePlugin };
+export { lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry, kaylesEntry, thiefSiegeEntry };

@@ -84,6 +84,7 @@ const GENERATED_BY_LABEL_KEYS: Record<string, string> = {
   'random-piles': 'generator.method.randomPiles',
   'p-position-bias': 'generator.method.pPositionBias',
   'n-position-bias': 'generator.method.nPositionBias',
+  'chain-length': 'generator.method.chainLength',
   'classic set': 'generator.method.classicSet',
   'classic-catalog': 'generator.method.classicSet',
   'initial-state-fallback': 'generator.method.initialStateFallback',

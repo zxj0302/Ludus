@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **12** 款游戏（含 **Grundy's Game** ✅）。
-- **MVP 范围**：12 款上线游戏（… + **Euclid's Game ✅** + **Grundy's Game ✅**）；`thief-siege` 包保留、Hub 不可见。
+- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **13** 款游戏（含 **Kayles** ✅）。
+- **MVP 范围**：13 款上线游戏（… + **Grundy's Game ✅** + **Kayles ✅**）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**613** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
-- **测试覆盖**：73 个测试文件，613 测试全过。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**644** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **测试覆盖**：76 个测试文件，644 测试全过。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace 含 `'minimax-tree'` 等。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
@@ -219,7 +219,12 @@
 - **Grundy's Game v1.0**（Hub #12）✅：
   - Task 1–5：多堆拆分规则、Sprague–Grundy `g(n)`/mex/XOR 求解、N/P 偏向生成器、点堆+拆分按钮 UI、`GrundyMexViz`、L2/L3 × zh/en、Hub 注册。
   - 文档：`docs/games/grundys-game.md`、`docs/superpowers/specs/2026-07-15-grundys-game-design.md`（已上线口径）；README/backlog 12 款。
-  - 验证：**613+** 测全过；审查修复（viz/a11y/P-Hint）已合入；**待本会话 commit/push**。
+  - 验证：**613+** 测全过；审查修复（viz/a11y/P-Hint）已合入；已 push（`e3e9f8e`）。
+
+- **Kayles v1.0**（Hub #13）✅：
+  - Task 1–5：单链 `alive[]`、A002186 求解、链长生成器、点选确认 UI、`KaylesMexViz`、L2/L3 × zh/en、Hub 注册。
+  - 文档：`docs/games/kayles.md`、spec/plan；README/backlog 13 款。
+  - 验证：**644+** 测全过；审查修复已合入；本提交上线（push 随本次）。
 
 ## 🚧 IN PROGRESS
 
@@ -227,7 +232,7 @@
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-1. Push 完成后：与用户确认 Hub #13 候选（见 backlog 组合博弈 / cut-the-knot 未做项），写 design spec 再开工。
+1. 从 backlog 与用户确认 Hub #14 下一款（写 spec 后再开工）。
 
 ## 🐛 KNOWN ISSUES
 
@@ -699,3 +704,7 @@
 - [2026-07-15] **Grundy's Game Task 4**：render（点堆+拆分）/ plugin / registry / entrySetup / GrundyMexViz / AI；Hub 可玩；load-smoke 含本游戏。
 - [2026-07-15] **Grundy's Game Task 5**：L2/L3 教学全文、开发者笔记、README/backlog/PROGRESS；Hub #12 DoD；**613** 测全过。
 - [2026-07-15] **Grundy's Game 审查修复**：viz 实时 nimbers、堆卡片去嵌套 button、P 局面 Hint 空序列、教学/manifest 对齐；grundys 58 测 + typecheck 绿。
+- [2026-07-15] **Grundy's Game push**：`e3e9f8e` → origin/master（Hub #12）。
+- [2026-07-15] **Kayles**：用户选 A/A/A（单链、n≤12、点选确认）；写入设计 spec 待审阅。
+- [2026-07-15] **Kayles Task 1–5**：完整 Hub #13 上线（规则/A002186/生成/UI/viz/教学/文档）；待 commit/push。
+- [2026-07-15] **Kayles 审查修复**：spec/plan 对齐 chain-length；确认钮 aria；chainLengths + winning-move 扫测；清理死代码。

@@ -251,6 +251,7 @@ const zhCN = {
     'generator.method.randomPiles': '随机堆布局',
     'generator.method.pPositionBias': 'P 位置偏向采样',
     'generator.method.nPositionBias': 'N 位置偏向采样',
+    'generator.method.chainLength': '按链长采样',
     'generator.method.classicSet': '经典关卡集',
     'generator.method.initialStateFallback': '默认初始局面',
 

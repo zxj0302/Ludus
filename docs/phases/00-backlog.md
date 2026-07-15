@@ -42,7 +42,7 @@
 - ✅ Euclid's Game 欧几里得博弈（减法倍数 / P / φ 败者态 + gcd / 可生成）★ cut-the-knot / GamesCrafters → **Hub 已上线 `euclids-game` ✅**
 - ✅ Grundy's Game（Sprague-Grundy 分裂堆 / P / mex + XOR / 可生成）★ cut-the-knot → **Hub 已上线 `grundys-game` ✅**
 - ⬜ Northcott's Game（棋盘位置博弈 / — / Nimber 映射 / 可生成）★ cut-the-knot
-- ⬜ Kayles（Octal games / P / Grundy 数列 / 可生成）
+- ✅ Kayles（Octal games / P / Grundy 数列 A002186 / 可生成）→ **Hub 已上线 `kayles` ✅**
 - ⬜ 翻硬币游戏（Mock Turtles 等 / — / Grundy / 可生成）
 - ⬜ Toads and Frogs（Winning Ways 经典 / — / 博弈树+Nimber 分析 / 可生成）★ cut-the-knot / GamesCrafters
 - ⬜ Dodgem（Winning Ways 经典推移 / — / 博弈搜索 / 可生成）★ GamesCrafters
