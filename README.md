@@ -8,7 +8,7 @@ Ludus 让玩家在玩经典小游戏时，非侵入地被引导思考「如何�
 
 ## 当前状态
 
-**v0.2.0+ — Hub 11 款游戏**。582 个测试全过，CI 含 `validate:shell`，桌面壳可开发与打包。
+**v0.2.0+ — Hub 12 款游戏**。CI 含 `validate:shell`，桌面壳可开发与打包。
 
 | 游戏 | 核心算法 | 复杂度 |
 |------|----------|--------|
@@ -23,6 +23,7 @@ Ludus 让玩家在玩经典小游戏时，非侵入地被引导思考「如何�
 | Peg Solitaire 孔明棋 | DFS + 对称约简 | — |
 | Connect Four 四子棋 | Alpha-Beta + 强解文献 | PSPACE / 7×6 已强解 |
 | Euclid's Game 欧几里得博弈 | φ 败者态 + gcd 结构 | P |
+| Grundy's Game | Sprague–Grundy / mex | P |
 
 每款游戏均包含：可玩实现 + 求解器 + 生成器（若适用）+ 难度度量 + 算法可视化 + 五段式教学（中英双语 L2/L3）。
 
@@ -46,7 +47,7 @@ pnpm install
 
 pnpm dev              # Web → http://127.0.0.1:5173
 pnpm dev:desktop      # Tauri 桌面开发壳
-pnpm test:run         # 582 测试
+pnpm test:run         # 全量单元测试
 pnpm validate:shell   # 套壳构建 + 契约验证
 pnpm typecheck
 pnpm build            # Web SPA
@@ -64,7 +65,7 @@ Ludus/
 │   └── mobile/        # Capacitor 配置
 ├── packages/
 │   ├── core/          # 框架无关类型、Worker 协议
-│   ├── games/         # 11 款游戏插件（自包含）
+│   ├── games/         # 12 款游戏插件（自包含）
 │   ├── education/     # 教学内容 Markdown
 │   └── ui/            # 共享 UI 组件
 └── docs/              # 设计文档、PROGRESS、ADR
@@ -89,7 +90,7 @@ Ludus/
 ## 路线图
 
 - [x] Phase 4：Lights Out 垂直切片
-- [x] Phase 5：11 款增量游戏（含孔明棋、四子棋、欧几里得博弈）
+- [x] Phase 5：12 款增量游戏（含孔明棋、四子棋、欧几里得博弈、Grundy's Game）
 - [x] Phase 6：Hub、进度、生成器 UI、Tauri/Capacitor 套壳
 - [x] Phase 7：CI ✅、首个 release ✅、v0.1.1 桌面修复 ✅、**v0.2.0 审计硬化版** ✅
 

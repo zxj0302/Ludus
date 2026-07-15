@@ -85,7 +85,7 @@ export interface Solution {
 }
 
 export interface SolverTrace {
-  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'wythoff-beatty' | 'a-star-search' | 'bfs-state-search' | 'escape-path' | 'minimax-tree' | 'euclid-phi' | 'custom';
+  type: 'search-tree' | 'matrix-transform' | 'constraint-propagation' | 'nim-xor' | 'wythoff-beatty' | 'a-star-search' | 'bfs-state-search' | 'escape-path' | 'minimax-tree' | 'euclid-phi' | 'grundy-mex' | 'custom';
   steps: TraceStep[];
   /** 附加的可视化数据，各游戏的 visualizationManifest 定义其格式 */
   visualizationData?: unknown;
@@ -168,7 +168,7 @@ export interface VisualizationManifest {
   /** 可视化组件名（用于动态选择 React Flow / D3 组件） */
   componentName: string;
   /** 使用的可视化库 */
-  library: 'react-flow' | 'd3' | 'both' | 'custom-svg';
+  library: 'react-flow' | 'd3' | 'both' | 'custom-svg' | 'dom';
 }
 
 // ============================================================

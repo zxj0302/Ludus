@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **11** 款游戏（含 **Euclid's Game 欧几里得博弈** ✅）。
-- **MVP 范围**：11 款上线游戏（… + **Euclid's Game ✅**）；`thief-siege` 包保留、Hub 不可见。
+- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **12** 款游戏（含 **Grundy's Game** ✅）。
+- **MVP 范围**：12 款上线游戏（… + **Euclid's Game ✅** + **Grundy's Game ✅**）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**582** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
-- **测试覆盖**：71 个测试文件，582 测试全过。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**613** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **测试覆盖**：73 个测试文件，613 测试全过。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace 含 `'minimax-tree'` 等。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
@@ -214,19 +214,20 @@
   - 验证：**554** 测全过；`pnpm typecheck` 绿；已 push。
 - **Euclid's Game 欧几里得博弈 v1.0**（Hub #11）✅：
   - Task 1–5 + 审查修复：φ 求解整局序列、`playerStarts`、Hub 插件、`EuclidPhiViz`、education L2/L3、generatedBy i18n。
-  - 文档：`docs/games/euclids-game.md`、`docs/superpowers/specs/2026-07-15-euclids-game-design.md`（已上线口径）；README/backlog 11 款。
-  - 验证：**582** 测全过；`pnpm typecheck` 绿（**未 push**）。
+  - 文档：`docs/games/euclids-game.md`、`docs/superpowers/specs/2026-07-15-euclids-game-design.md`（已上线口径）；README/backlog。
+  - 验证：**582** 测全过；`pnpm typecheck` 绿；已 push。
+- **Grundy's Game v1.0**（Hub #12）✅：
+  - Task 1–5：多堆拆分规则、Sprague–Grundy `g(n)`/mex/XOR 求解、N/P 偏向生成器、点堆+拆分按钮 UI、`GrundyMexViz`、L2/L3 × zh/en、Hub 注册。
+  - 文档：`docs/games/grundys-game.md`、`docs/superpowers/specs/2026-07-15-grundys-game-design.md`（已上线口径）；README/backlog 12 款。
+  - 验证：**613+** 测全过；审查修复（viz/a11y/P-Hint）已合入；**待本会话 commit/push**。
 
 ## 🚧 IN PROGRESS
 
-（无）
+- （无）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-1. **提交并 push** Euclid's Game 全量改动（`euclids-game` 模块 + education + PROGRESS/README/backlog）。
-2. 或从 backlog 选下一款 Hub 游戏（建议：Grundy's Game / Northcott / 数织 backlog 项等）。
-
-Spec 归档：`docs/superpowers/specs/2026-07-15-euclids-game-design.md`
+1. Push 完成后：与用户确认 Hub #13 候选（见 backlog 组合博弈 / cut-the-knot 未做项），写 design spec 再开工。
 
 ## 🐛 KNOWN ISSUES
 
@@ -691,3 +692,10 @@ Spec 归档：`docs/superpowers/specs/2026-07-15-euclids-game-design.md`
 - [2026-07-15] **Euclid's Game Task 4**：plugin/render/i18n/registry/entrySetup + EuclidPhiViz + AI；Hub #11 可玩；578 测全过。
 - [2026-07-15] **Euclid's Game 审查修复**：`playerStarts` + 整局求解序列、generatedBy i18n、trace 描述、L2/spec 勘误、viz i18n；582 测全过。
 - [2026-07-15] **Euclid's Game 文档增强**：spec 改为已上线口径；开发者笔记补胜负坑点/`playerStarts`/generatedBy；L2 增 P/N 双例题；L3 澄清终局≠Nim、整局求解与三博弈对照表。
+- [2026-07-15] **Grundy's Game**：用户选 A + 多堆开局；写入设计 spec 待确认。
+- [2026-07-15] **Grundy's Game Task 1**：types + rules（拆堆、终局≤2、Nim 式胜负）；rules 测试通过。
+- [2026-07-15] **Grundy's Game Task 2**：Sprague–Grundy `g(n)` + XOR 求解/整局序列；Core 增 `grundy-mex`；对照 A002188。
+- [2026-07-15] **Grundy's Game Task 3**：种子多堆生成器 + 难度；N/P 偏向；29 测通过。
+- [2026-07-15] **Grundy's Game Task 4**：render（点堆+拆分）/ plugin / registry / entrySetup / GrundyMexViz / AI；Hub 可玩；load-smoke 含本游戏。
+- [2026-07-15] **Grundy's Game Task 5**：L2/L3 教学全文、开发者笔记、README/backlog/PROGRESS；Hub #12 DoD；**613** 测全过。
+- [2026-07-15] **Grundy's Game 审查修复**：viz 实时 nimbers、堆卡片去嵌套 button、P 局面 Hint 空序列、教学/manifest 对齐；grundys 58 测 + typecheck 绿。
