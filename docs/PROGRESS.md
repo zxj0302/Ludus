@@ -5,11 +5,11 @@
 
 ## 📍 CURRENT STATE
 
-- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **10** 款游戏（含 **Connect Four 四子棋** 初版）。
-- **MVP 范围**：10 款上线游戏（… + **Connect Four ✅**）；`thief-siege` 包保留、Hub 不可见。
+- **当前阶段**：**阶段 7 — v0.2.0 发布后增量**；Hub 上线 **11** 款游戏（含 **Euclid's Game 欧几里得博弈** ✅）。
+- **MVP 范围**：11 款上线游戏（… + **Euclid's Game ✅**）；`thief-siege` 包保留、Hub 不可见。
 - **Backlog**：162 款游戏，覆盖 16 个原理领域 × 4 个参考平台。
-- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**554** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
-- **测试覆盖**：67 个测试文件，554 测试全过。
+- **代码库状态**：4 包 monorepo + apps/web/desktop/mobile，**582** 个测试（全过），CI 就绪（含 `validate:shell`），Release workflow 就绪。
+- **测试覆盖**：71 个测试文件，582 测试全过。
 - **Core**：10 文件（types/plugin + schemas + worker），零游戏专属代码。SolverTrace 含 `'minimax-tree'` 等。
 - **架构重构**：10 步全部完成。每游戏自包含（types/rules/solver/generator/difficulty/render/manifest/i18n）。GamePluginEntry 完整自描述（i18n/education/viz 已填充，不再空对象）。新增游戏 = 加目录 + registry 一行 + entrySetup.tsx 一个区块。
 - **审计修复第一批**：Sudoku 高级生成移除无效唯一解开关；高级数字参数拒绝 `NaN`；`lastGeneratedLevel` 在 reset/undo/redo 后清理；`prependHistory` 收回 store action 并走持久化路径。
@@ -212,18 +212,21 @@
   - Core：`SolverTrace` 新增 `'minimax-tree'`；`GamePlugin.ai.isPlayerVictory`；`MarkdownRenderer` EOF 表格 flush + 链接解析。
   - **审计/体验修复**：挡棋、normalizeState、胜负音效、选先后手 Worker 求解回放、侧边栏实时分析、难度档位 → `aiMaxDepth`（4/6/9）。
   - 验证：**554** 测全过；`pnpm typecheck` 绿；已 push。
+- **Euclid's Game 欧几里得博弈 v1.0**（Hub #11）✅：
+  - Task 1–5 + 审查修复：φ 求解整局序列、`playerStarts`、Hub 插件、`EuclidPhiViz`、education L2/L3、generatedBy i18n。
+  - 文档：`docs/games/euclids-game.md`、`docs/superpowers/specs/2026-07-15-euclids-game-design.md`（已上线口径）；README/backlog 11 款。
+  - 验证：**582** 测全过；`pnpm typecheck` 绿（**未 push**）。
 
 ## 🚧 IN PROGRESS
 
-- **Euclid's Game 欧几里得博弈**（阶段 5 增量 #11）：设计 spec 待写 → Task 1 types/rules。
+（无）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-1. 撰写并确认 `docs/superpowers/specs/2026-07-15-euclids-game-design.md`（减法/取模博弈、gcd 逆向分析、对标 Nim AI 模式）。
-2. 实现 Task 1：`packages/games/src/euclids-game/` — types + rules + rules.test.ts。
-3. 浏览器冒烟 Connect Four（可选）：选先后手、难度档位 AI 深度、求解回放、L3 文献表。
+1. **提交并 push** Euclid's Game 全量改动（`euclids-game` 模块 + education + PROGRESS/README/backlog）。
+2. 或从 backlog 选下一款 Hub 游戏（建议：Grundy's Game / Northcott / 数织 backlog 项等）。
 
-Spec（四子棋归档）：`docs/superpowers/specs/2026-07-14-connect-four-design.md`
+Spec 归档：`docs/superpowers/specs/2026-07-15-euclids-game-design.md`
 
 ## 🐛 KNOWN ISSUES
 
@@ -684,4 +687,7 @@ Spec（四子棋归档）：`docs/superpowers/specs/2026-07-14-connect-four-desi
 - [2026-07-14] **孔明棋全面审查**：核心规则/记号/合集小关可靠；P0=Hub 首进非经典 seed、Worker solve 超时仍 playback；P1=文档 ADR 冲突、optimalSteps 未入顶栏、大盘 5s DFS 难解；风格大体对齐 Sokoban。
 - [2026-07-14] **孔明棋审查修复落地**：Hub seed0+optimalSteps；Worker timeout 不 playback；isSolved 看 goal；大盘跳过后台搜；ADR-025 勘误；Collection 抽离；i18n/死代码清理；合集≤20 子验最优长。
 - [2026-07-14] **孔明棋 viz 回归**：后台求解始终跑以供采样树；合集最优不覆盖；超时仍挂 trace。
-- [2026-07-14] **Connect Four v1.1 打磨 + push**：Markdown 文献表 EOF；Worker 选先后手求解回放；难度→`aiMaxDepth`；`handleRequestSolveResult` 抽取；554 测全过。
+- [2026-07-15] **Euclid's Game Task 2–3**：φ 败者态求解器 + 种子生成器/难度；22 测通过。
+- [2026-07-15] **Euclid's Game Task 4**：plugin/render/i18n/registry/entrySetup + EuclidPhiViz + AI；Hub #11 可玩；578 测全过。
+- [2026-07-15] **Euclid's Game 审查修复**：`playerStarts` + 整局求解序列、generatedBy i18n、trace 描述、L2/spec 勘误、viz i18n；582 测全过。
+- [2026-07-15] **Euclid's Game 文档增强**：spec 改为已上线口径；开发者笔记补胜负坑点/`playerStarts`/generatedBy；L2 增 P/N 双例题；L3 澄清终局≠Nim、整局求解与三博弈对照表。

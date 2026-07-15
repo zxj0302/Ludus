@@ -249,6 +249,8 @@ const en = {
     'generator.method.generateWaterJugLevel': 'Capacity sampling + BFS check',
     'generator.method.randomWalk': 'Random walk scramble',
     'generator.method.randomPiles': 'Random pile layout',
+    'generator.method.pPositionBias': 'P-position biased sampling',
+    'generator.method.nPositionBias': 'N-position biased sampling',
     'generator.method.classicSet': 'Classic level set',
     'generator.method.initialStateFallback': 'Default initial state',
 

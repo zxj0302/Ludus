@@ -104,4 +104,64 @@ describe('gameStoreSolverRuntime', () => {
 
     vi.useRealTimers();
   });
+
+  it('handleRequestSolveResult recommends AI first for euclids P-position choosing', () => {
+    vi.useFakeTimers();
+
+    const choosingState = {
+      piles: [3, 2],
+      currentPlayer: 0,
+      phase: 'choosing',
+      initialPiles: [3, 2],
+    } as GameState;
+
+    const plugin = {
+      metadata: { id: 'euclids-game', isFastSolver: true },
+      ai: { isAITurn: () => false },
+    } as unknown as GamePlugin;
+
+    let store: SolverRuntimeStore = {
+      plugin,
+      gameId: 'euclids-game',
+      gameState: choosingState,
+      historyIndex: 0,
+      solution: null,
+      solvePlayback: false,
+      adversarialPlayback: false,
+      solveStepIndex: 0,
+      prePlaybackHistoryIndex: 0,
+      initialOptimalSteps: null,
+      currentOptimalSteps: null,
+      hintHighlight: null,
+      applyMove: vi.fn(),
+    };
+
+    const get = (() => store) as SolverStoreGet;
+    const set: SolverStoreSet = (partial) => {
+      store = { ...store, ...partial } as SolverRuntimeStore;
+    };
+
+    const solution: Solution = {
+      solvable: true,
+      moves: [{ multiple: 1 }],
+      stats: {
+        nodesExplored: 1,
+        timeMs: 1,
+        solutionLength: 1,
+        solverName: 'test',
+        terminated: 'solved',
+      },
+      trace: {
+        type: 'euclid-phi',
+        steps: [],
+        visualizationData: { playerStarts: false },
+      },
+    };
+
+    handleRequestSolveResult(get, set, choosingState, 'euclids-game', solution, vi.fn());
+
+    expect(store.hintHighlight).toEqual({ row: 0, col: 1 });
+
+    vi.useRealTimers();
+  });
 });

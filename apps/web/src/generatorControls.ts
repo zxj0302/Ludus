@@ -82,6 +82,8 @@ const GENERATED_BY_LABEL_KEYS: Record<string, string> = {
   'generateWaterJugLevel': 'generator.method.generateWaterJugLevel',
   'random-walk': 'generator.method.randomWalk',
   'random-piles': 'generator.method.randomPiles',
+  'p-position-bias': 'generator.method.pPositionBias',
+  'n-position-bias': 'generator.method.nPositionBias',
   'classic set': 'generator.method.classicSet',
   'classic-catalog': 'generator.method.classicSet',
   'initial-state-fallback': 'generator.method.initialStateFallback',

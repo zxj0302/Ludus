@@ -249,6 +249,8 @@ const zhCN = {
     'generator.method.generateWaterJugLevel': '容量采样 + BFS 可解校验',
     'generator.method.randomWalk': '随机走动打乱',
     'generator.method.randomPiles': '随机堆布局',
+    'generator.method.pPositionBias': 'P 位置偏向采样',
+    'generator.method.nPositionBias': 'N 位置偏向采样',
     'generator.method.classicSet': '经典关卡集',
     'generator.method.initialStateFallback': '默认初始局面',
 
