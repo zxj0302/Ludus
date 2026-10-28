@@ -58,11 +58,15 @@ export function applyMove(state: WythoffState, move: WythoffMove): WythoffState 
     newPiles[1]! -= move.removeCount;
   }
 
+  const mover: 0 | 1 = state.phase === 'choosing'
+    ? (!isWythoffPPosition(state.piles[0], state.piles[1]) ? 0 : 1)
+    : state.currentPlayer;
+
   return {
     piles: newPiles,
-    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
+    currentPlayer: mover === 0 ? 1 : 0,
     initialPiles: state.initialPiles,
-    phase: state.phase,
+    phase: 'playing',
   };
 }
 
@@ -71,7 +75,8 @@ export function isSolved(state: WythoffState): boolean {
 }
 
 export function getDifficulty(state: WythoffState): Difficulty {
-  const maxStone = Math.max(...state.piles);
+  const basePiles = state.initialPiles ?? state.piles;
+  const maxStone = Math.max(...basePiles);
   return computeWythoffDifficulty(maxStone);
 }
 

@@ -63,6 +63,7 @@ export const thiefSiegePlugin: GamePlugin<ThiefSiegeState, ThiefSiegeMove> = {
   visualizationManifest: thiefSiegeVisualizationManifest,
   ai: {
     isAITurn: (s) => s.status === 'playing' && s.phase === 'thief',
+    isPlayerVictory: (s) => s.status === 'cop-win',
     getAIMove: (s) => {
       const move = chooseBfsThiefStep(s);
       return move ? { move, delay: 450 } : null;

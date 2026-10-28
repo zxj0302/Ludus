@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Solution } from '@ludus/core';
 import type { SokobanState, SokobanMove } from '@ludus/games';
-import { expandState, stateHash, solveSokobanBFS, applyMoveSokoban as applyMove, isDeadlock, isSolvedSokoban as isSolved } from '@ludus/games';
-import { SOKOBAN_BFS_TIMEOUT_MS } from '@ludus/games';
+import { expandState, stateHash, sokobanPlugin, applyMoveSokoban as applyMove, isDeadlock, isSolvedSokoban as isSolved } from '@ludus/games';
+import { runSolverOffThread } from '../stores/gameStoreSolverRuntime';
 
 const ROW_H = 56;
 const NODE_W = 80;
@@ -154,11 +155,23 @@ function markOptimalPath(
   return next;
 }
 
+function isValidMovesForState(rootState: SokobanState, moves: SokobanMove[]): boolean {
+  if (moves.length === 0) return false;
+  let cur = rootState;
+  for (const move of moves) {
+    if (!move || typeof move.direction !== 'string') return false;
+    const next = applyMove(cur, move);
+    if (next === cur) return false;
+    cur = next;
+  }
+  return isSolved(cur);
+}
+
 // ═══════════════════════════════════════
 // 组件
 // ═══════════════════════════════════════
 
-export default function BFSTreeViz({ gameState }: { gameState: SokobanState }) {
+export default function BFSTreeViz({ gameState, solution }: { gameState: SokobanState; solution?: Solution | null }) {
   const { t } = useTranslation();
 
   // -- 内部状态 --
@@ -177,10 +190,18 @@ export default function BFSTreeViz({ gameState }: { gameState: SokobanState }) {
   // Ref 闭包
   const nodesRef = useRef(treeNodes);
   nodesRef.current = treeNodes;
+  const cancelRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => {
+    cancelRef.current?.();
+    cancelRef.current = null;
+  }, []);
 
   // ── 游戏状态变化 → 重置根并自动展开一层 ──
   const newHash = stateHash(gameState);
   useEffect(() => {
+    cancelRef.current?.();
+    cancelRef.current = null;
     const m = new Map<string, TreeNode>();
     const root = makeRoot(gameState);
     m.set(newHash, root);
@@ -211,11 +232,22 @@ export default function BFSTreeViz({ gameState }: { gameState: SokobanState }) {
     const root = nodes.get(newHash);
     if (!root) return;
 
+    const cachedMoves = (solution?.solvable ? solution.moves : []) as SokobanMove[];
+    if (isValidMovesForState(root.state, cachedMoves)) {
+      setTreeNodes(prev => markOptimalPath(prev, root.state, cachedMoves));
+      setBfsResult('solved');
+      setBfsPending(false);
+      return;
+    }
+
+    cancelRef.current?.();
     setBfsPending(true);
     setBfsResult('idle');
-    setTimeout(() => {
-      try {
-        const sol = solveSokobanBFS(root.state, SOKOBAN_BFS_TIMEOUT_MS);
+    cancelRef.current = runSolverOffThread(
+      sokobanPlugin,
+      root.state,
+      (sol) => {
+        cancelRef.current = null;
         if (sol.solvable && sol.moves.length > 0) {
           setTreeNodes(prev => markOptimalPath(prev, root.state, sol.moves as SokobanMove[]));
           setBfsResult('solved');
@@ -224,10 +256,15 @@ export default function BFSTreeViz({ gameState }: { gameState: SokobanState }) {
         } else {
           setBfsResult('unsolvable');
         }
-      } catch { setBfsResult('idle'); }
-      setBfsPending(false);
-    }, 50);
-  }, [newHash]);
+        setBfsPending(false);
+      },
+      () => {
+        cancelRef.current = null;
+        setBfsResult('idle');
+        setBfsPending(false);
+      },
+    ).cancel;
+  }, [newHash, solution]);
 
   // ── 手动展开更深层 ──
   const expandNode = useCallback((nodeId: string) => {

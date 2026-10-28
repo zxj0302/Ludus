@@ -182,4 +182,28 @@ describe('solveSudokuState', () => {
     expect(result.solvable).toBe(false);
     expect(result.moves).toEqual([]);
   });
+
+  it('resolves immediately (< 50ms) via cleanGrid fallback when user enters a direct conflict', () => {
+    const easyPuzzle = [
+      5,3,0, 0,7,0, 0,0,0,
+      6,0,0, 1,9,5, 0,0,0,
+      0,9,8, 0,0,0, 0,6,0,
+      8,0,0, 0,6,0, 0,0,3,
+      4,0,0, 8,0,3, 0,0,1,
+      7,0,0, 0,2,0, 0,0,6,
+      0,6,0, 0,0,0, 2,8,0,
+      0,0,0, 4,1,9, 0,0,5,
+      0,0,0, 0,8,0, 0,7,9,
+    ];
+    const givenMask = easyPuzzle.map(v => v !== 0);
+    const gridWithConflict = [...easyPuzzle];
+    gridWithConflict[2] = 5; // Direct row 0 conflict with given 5 at (0,0)
+    const s = makeState(gridWithConflict, givenMask);
+    const t0 = performance.now();
+    const result = solveSudokuState(s);
+    const elapsed = performance.now() - t0;
+    expect(result.solvable).toBe(true);
+    expect(elapsed).toBeLessThan(50);
+    expect(result.moves).toContainEqual({ row: 0, col: 2, value: 4 });
+  });
 });

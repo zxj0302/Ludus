@@ -48,6 +48,10 @@ export function FifteenBoard({ state, onMove, disabled, highlightCell }: Props) 
   // Keyboard support
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (disabled || isWin) return;
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+      return;
+    }
     const emptyIdx = grid.indexOf(0);
     const row = Math.floor(emptyIdx / SIZE);
     const col = emptyIdx % SIZE;

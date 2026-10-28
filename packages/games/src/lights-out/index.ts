@@ -29,7 +29,7 @@ const metadata = {
         generator: 'full' as const,
         education: 'full' as const,
         visualization: 'full' as const,
-        webWorker: true,
+        webWorker: false,
       },
     },
     {
@@ -40,7 +40,7 @@ const metadata = {
         generator: 'full' as const,
         education: 'full' as const,
         visualization: 'full' as const,
-        webWorker: true,
+        webWorker: false,
       },
     },
     {
@@ -51,7 +51,7 @@ const metadata = {
         generator: 'full' as const,
         education: 'full' as const,
         visualization: 'full' as const,
-        webWorker: true,
+        webWorker: false,
       },
     },
   ],
@@ -119,7 +119,7 @@ export const lightsOutEntry: GamePluginEntry<LightsOutState, LightsOutMove> = {
   BoardComponent: LightsOutBoard,
   isOwnState: (state): state is LightsOutState =>
     state != null && 'grid' in state && 'n' in state && Array.isArray((state as LightsOutState).grid),
-  moveToHighlight: (move) => ({ row: move.row, col: move.col }),
+  moveToHighlight: (move) => (move ? { row: move.row, col: move.col } : null),
   i18n: { namespace: 'lights-out', zhCN: lightsOutI18n.zhCN, en: lightsOutI18n.en },
   formatEducationMove: formatLightsOutMove,
   ui: { statusCard: LightsOutStatusCard },

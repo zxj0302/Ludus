@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GamePlugin, GameState, Solution } from '@ludus/core';
 import {
+  cancelActiveSolve,
   clearPlaybackStateFields,
+  clearSolverRuntimeTimers,
   handleRequestSolveResult,
+  runSolverOffThread,
+  setActiveSolveCancel,
   usesDeferredSidebarSolve,
 } from './gameStoreSolverRuntime';
 import type { SolverStoreGet, SolverStoreSet, SolverRuntimeStore } from './gameStoreSolverRuntime';
+
 describe('gameStoreSolverRuntime', () => {
   it('clearPlaybackStateFields resets playback flags', () => {
     expect(clearPlaybackStateFields()).toEqual({
@@ -163,5 +168,78 @@ describe('gameStoreSolverRuntime', () => {
     expect(store.hintHighlight).toEqual({ row: 0, col: 1 });
 
     vi.useRealTimers();
+  });
+
+  it('handleRequestSolveResult does not mutate store state or call finishSolve when state has changed', () => {
+    const initialState = { id: 1 } as unknown as GameState;
+    const switchedState = { id: 2 } as unknown as GameState;
+
+    const plugin = {
+      metadata: { id: 'test-game', isFastSolver: true },
+    } as unknown as GamePlugin;
+
+    let store: SolverRuntimeStore & { solverStatus: string } = {
+      plugin,
+      gameId: 'test-game',
+      gameState: switchedState,
+      solution: null,
+      solverStatus: 'running',
+      solvePlayback: false,
+      adversarialPlayback: false,
+      solveStepIndex: 0,
+      prePlaybackHistoryIndex: 0,
+      initialOptimalSteps: null,
+      currentOptimalSteps: null,
+      applyMove: vi.fn(),
+    } as unknown as SolverRuntimeStore & { solverStatus: string };
+
+    const get = (() => store) as SolverStoreGet;
+    const set = vi.fn((partial) => {
+      store = { ...store, ...partial };
+    });
+    const finishSolve = vi.fn();
+
+    const solution: Solution = {
+      solvable: true,
+      moves: [],
+      stats: { nodesExplored: 1, timeMs: 1, solutionLength: 0, solverName: 'test', terminated: 'solved' },
+    };
+
+    handleRequestSolveResult(get, set, initialState, 'test-game', solution, finishSolve);
+
+    expect(finishSolve).not.toHaveBeenCalled();
+    expect(set).not.toHaveBeenCalled();
+    expect(store.solverStatus).toBe('running');
+  });
+
+  it('cancelActiveSolve and clearSolverRuntimeTimers invokes activeSolveCancel', () => {
+    const cancelFn1 = vi.fn();
+    setActiveSolveCancel(cancelFn1);
+    cancelActiveSolve();
+    expect(cancelFn1).toHaveBeenCalledTimes(1);
+
+    const cancelFn2 = vi.fn();
+    setActiveSolveCancel(cancelFn2);
+    clearSolverRuntimeTimers();
+    expect(cancelFn2).toHaveBeenCalledTimes(1);
+  });
+
+  it('runSolverOffThread synchronous fallback calls onError when plugin.solve throws', async () => {
+    const throwingPlugin = {
+      metadata: { id: 'throw-game', platformSupport: [] },
+      solve: () => {
+        throw new Error('Solver crashed');
+      },
+    } as unknown as GamePlugin;
+
+    const onResult = vi.fn();
+    const onError = vi.fn();
+
+    runSolverOffThread(throwingPlugin, {} as GameState, onResult, onError);
+
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    expect(onResult).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith('Solver crashed');
   });
 });

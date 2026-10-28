@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAllGames, getGameEntry } from './registry';
+import { getAllGames, getGame, getGameEntry } from './registry';
 
 describe('game load smoke', () => {
   it('does not register parked thief-siege in the Hub registry', () => {
@@ -8,6 +8,14 @@ describe('game load smoke', () => {
 
   it('registers peg-solitaire in the Hub registry', () => {
     expect(getAllGames().map(plugin => plugin.metadata.id)).toContain('peg-solitaire');
+  });
+
+  it('registers thief-siege in getGame and getGameEntry for direct routes', () => {
+    const plugin = getGame('thief-siege');
+    const entry = getGameEntry('thief-siege');
+    expect(plugin).toBeDefined();
+    expect(entry).toBeDefined();
+    expect(entry!.isOwnState(plugin!.initialState())).toBe(true);
   });
 
   for (const plugin of getAllGames()) {

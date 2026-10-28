@@ -1,4 +1,5 @@
 import type { Level, LevelConfig } from '@ludus/core';
+import { mulberry32, resolveSeed } from '../generator-config';
 import type { WaterJugState } from './types';
 import { createInitialState, isSolvable, gcd } from './rules';
 import { solveWaterJug } from './solver';
@@ -7,8 +8,8 @@ import { computeWaterJugDifficulty } from './difficulty';
 /**
  * Generate a random integer in [min, max].
  */
-function randInt(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min + 1));
+function randInt(rng: () => number, min: number, max: number): number {
+  return min + Math.floor(rng() * (max - min + 1));
 }
 
 /**
@@ -58,28 +59,13 @@ function pickTargetsByDifficulty(capacities: number[]): number[] {
 
 /**
  * Generate a water jug puzzle level with rejection sampling.
- *
- * The generator tries random (capacities, target) combos and only accepts
- * ones whose actual BFS depth produces a difficulty score within the
- * requested `difficultyRange`.
- *
- * Capacity ranges by target difficulty tier:
- *   Easy   (score 1–33):  small capacities (2–5),  2 jugs
- *   Medium (score 34–66): medium capacities (5–8),  2–3 jugs
- *   Hard   (score 67–100): large capacities (8–12), 2–3 jugs
- *
- * All modes pick from the harder half of achievable targets;
- * difficulty differentiation comes from capacity ranges,
- * not from deliberately picking trivial targets.
- *
- * Rejection sampling (100 attempts) ensures the actual BFS depth score
- * matches the requested range. Puzzles with optimal steps < 3 are rejected
- * as too trivial (e.g. target = capacity → 1 fill).
  */
 export function generateWaterJugLevel(config: LevelConfig): Level {
+  const seed = resolveSeed(config);
+  const rng = mulberry32(seed);
   const [rangeLo, rangeHi] = config.difficultyRange ?? [1, 100];
-  // Target score we aim for (midpoint of requested range)
-  const targetScore = rangeLo + (rangeHi - rangeLo) * Math.random();
+  // Target score we aim for (sampled within requested range)
+  const targetScore = rangeLo + (rangeHi - rangeLo) * rng();
 
   let capMin: number;
   let capMax: number;
@@ -88,9 +74,9 @@ export function generateWaterJugLevel(config: LevelConfig): Level {
   if (targetScore <= 33) {
     capMin = 2; capMax = 5; numJugs = 2;
   } else if (targetScore <= 66) {
-    capMin = 5; capMax = 8; numJugs = randInt(2, 3);
+    capMin = 5; capMax = 8; numJugs = randInt(rng, 2, 3);
   } else {
-    capMin = 8; capMax = 12; numJugs = randInt(2, 3);
+    capMin = 8; capMax = 12; numJugs = randInt(rng, 2, 3);
   }
 
   let bestResult: { state: WaterJugState; optimalSteps: number; difficulty: ReturnType<typeof computeWaterJugDifficulty> } | null = null;
@@ -102,24 +88,22 @@ export function generateWaterJugLevel(config: LevelConfig): Level {
     // Generate random capacities
     const capacities: number[] = [];
     for (let i = 0; i < numJugs; i++) {
-      capacities.push(randInt(capMin, capMax));
+      capacities.push(randInt(rng, capMin, capMax));
     }
     // Ensure at least two different capacities (for 2+ jugs)
     if (numJugs >= 2 && capacities[0] === capacities[1]) {
-      capacities[1] = randInt(capMin, capMax);
+      capacities[1] = randInt(rng, capMin, capMax);
     }
     // For 3 jugs, ensure diverse capacities
     if (numJugs >= 3 && capacities.every(c => c === capacities[0])) {
-      capacities[1] = randInt(capMin, capMax);
-      capacities[2] = randInt(capMin, capMax);
+      capacities[1] = randInt(rng, capMin, capMax);
+      capacities[2] = randInt(rng, capMin, capMax);
     }
 
     // Pick target from harder half of candidates.
-    // Difficulty difference comes from capacity ranges (2-5 vs 8-12),
-    // not from deliberately picking trivial targets.
     const candidates = pickTargetsByDifficulty(capacities);
     const hardCount = Math.max(1, Math.ceil(candidates.length / 2));
-    const target = candidates[randInt(0, hardCount - 1)]!;
+    const target = candidates[randInt(rng, 0, hardCount - 1)]!;
 
     if (target === 0 || !isSolvable(capacities, target)) continue;
 
@@ -140,7 +124,7 @@ export function generateWaterJugLevel(config: LevelConfig): Level {
       return {
         schemaVersion: 1,
         gameId: 'water-jug',
-        levelId: `wj-${capacities.join('-')}-${target}`,
+        levelId: `wj-${seed}-${capacities.join('-')}-${target}`,
         initialState: state,
         difficulty,
         optimalSteps,
@@ -163,7 +147,7 @@ export function generateWaterJugLevel(config: LevelConfig): Level {
     return {
       schemaVersion: 1,
       gameId: 'water-jug',
-      levelId: `wj-${bestResult.state.capacities.join('-')}-${bestResult.state.target}`,
+      levelId: `wj-${seed}-${bestResult.state.capacities.join('-')}-${bestResult.state.target}`,
       initialState: bestResult.state,
       difficulty: bestResult.difficulty,
       optimalSteps: bestResult.optimalSteps,
@@ -179,7 +163,7 @@ export function generateWaterJugLevel(config: LevelConfig): Level {
   return {
     schemaVersion: 1,
     gameId: 'water-jug',
-    levelId: 'wj-3-5-4',
+    levelId: `wj-${seed}-3-5-4`,
     initialState: fallbackState,
     difficulty: computeWaterJugDifficulty(fallbackState, fallbackSolution.stats.solutionLength),
     optimalSteps: fallbackSolution.stats.solutionLength,

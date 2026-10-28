@@ -64,8 +64,19 @@ export function GameToolbar({
       <Btn onClick={onUndo} disabled={!canUndo}>↩ {t('game.toolbar.undo')}</Btn>
       <Btn onClick={onRedo} disabled={!canRedo}>↪ {t('game.toolbar.redo')}</Btn>
       <Btn onClick={onReset}>⟳ {t('game.toolbar.reset')}</Btn>
-      <div className="w-px h-5 bg-warm-stone-200 mx-1" />
-      {newLevelSlot ?? <Btn onClick={onNewLevel}>+ {t('game.toolbar.new')}</Btn>}
+      {newLevelSlot !== undefined ? (
+        newLevelSlot ? (
+          <>
+            <div className="w-px h-5 bg-warm-stone-200 mx-1" />
+            {newLevelSlot}
+          </>
+        ) : null
+      ) : (
+        <>
+          <div className="w-px h-5 bg-warm-stone-200 mx-1" />
+          <Btn onClick={onNewLevel}>+ {t('game.toolbar.new')}</Btn>
+        </>
+      )}
 
       <div className="w-px h-5 bg-warm-stone-200 mx-1" />
 

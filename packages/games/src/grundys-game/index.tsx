@@ -14,7 +14,7 @@ import {
 } from './rules';
 import type { GrundysGameState, GrundysGameMove } from './types';
 import { grundysGameEducationManifest, grundysGameVisualizationManifest } from './manifest';
-import { findWinningMove } from './solver';
+import { computeGrundyXor, findWinningMove } from './solver';
 
 import type { BoardProps, GamePluginEntry } from '../types';
 import { GrundysGameBoard } from './render';
@@ -107,7 +107,11 @@ export const grundysGameEntry: GamePluginEntry<GrundysGameState, GrundysGameMove
   plugin: grundysGamePlugin,
   BoardComponent: GrundysGameBoardEntry,
   isOwnState,
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = computeGrundyXor(state.piles) !== 0;
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     return { row: move.pileIndex, col: move.left, value: move.left };
   },

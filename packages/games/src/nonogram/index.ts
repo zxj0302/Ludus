@@ -8,6 +8,7 @@ import { NonogramBoard } from './render';
 import { nonogramI18n } from './i18n';
 import { formatNonogramMove, NonogramStatusCard, NonogramSolutionPreview } from './education-ui';
 import { nonogramGeneratorControls } from './generator-controls';
+import { FILLED } from './types';
 import type { NonogramState, NonogramMove } from './types';
 
 export { solveNonogram, nonogramI18n, countSolutions, computeClues };
@@ -67,13 +68,18 @@ export const nonogramPlugin: GamePlugin<NonogramState, NonogramMove> = {
   applyMove,
   isSolved,
   solve: (state: NonogramState): Solution => {
-    const result = solveNonogram(state);
-    // Build moves from the solution grid — only fill cells (empty cells stay empty)
+    const cleanState = createInitialState(state.width, state.height, state.rowClues, state.colClues);
+    const result = solveNonogram(cleanState);
+    // Build moves relative to current state:
+    // - If cell should be filled and isn't FILLED yet, emit 'fill' (EMPTY/CROSS -> FILLED)
+    // - If cell should not be filled and is currently FILLED, emit 'fill' to toggle it back to EMPTY
     const moves: NonogramMove[] = [];
     if (result.solvable && result.solution) {
       for (let r = 0; r < state.height; r++) {
         for (let c = 0; c < state.width; c++) {
-          if (result.solution[r]![c]) {
+          const wantFilled = result.solution[r]![c]!;
+          const current = state.grid[r]![c]!;
+          if ((wantFilled && current !== FILLED) || (!wantFilled && current === FILLED)) {
             moves.push({ row: r, col: c, action: 'fill' });
           }
         }

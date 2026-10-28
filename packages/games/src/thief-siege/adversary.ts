@@ -1,13 +1,17 @@
 import {
   applyMove,
   legalMoves,
+  neighbors4,
   normalizeTerminalState,
 } from './rules';
+import type { ThiefSiegeMove, ThiefSiegeState } from './types';
 import {
   isWalkable,
+  posKey,
+  samePos,
   shortestEscapePath,
-} from './solver';
-import type { ThiefSiegeMove, ThiefSiegeState } from './types';
+  type Pos,
+} from './pathfinding';
 
 export type AdversaryTier = 'perfect' | 'bounded' | 'bfs';
 
@@ -40,22 +44,12 @@ interface SearchOutcome {
   winner?: Winner;
 }
 
-type Pos = { row: number; col: number };
-
 const THIEF_WIN_SCORE = 10_000;
 const COP_WIN_SCORE = -10_000;
 const NO_ESCAPE_SCORE = -5_000;
 
 function nowMs(): number {
   return performance.now();
-}
-
-function samePos(a: Pos, b: Pos): boolean {
-  return a.row === b.row && a.col === b.col;
-}
-
-function posKey(pos: Pos): string {
-  return `${pos.row},${pos.col}`;
 }
 
 function stateKey(state: ThiefSiegeState): string {
@@ -119,11 +113,26 @@ export function evaluateState(state: ThiefSiegeState): number {
 }
 
 function orderMoves(state: ThiefSiegeState, moves: ThiefSiegeMove[], maxPlaceBranch?: number): ThiefSiegeMove[] {
-  if (state.phase !== 'cop') return moves;
-
   const path = shortestEscapePath(state) ?? [];
+  if (state.phase !== 'cop') {
+    if (path.length <= 1) return moves;
+    const nextStep = path[1]!;
+    return [...moves].sort((a, b) => {
+      const aOnPath = samePos(a, nextStep) ? 0 : 1;
+      const bOnPath = samePos(b, nextStep) ? 0 : 1;
+      return aOnPath - bOnPath;
+    });
+  }
+
   const pathRank = new Map<string, number>();
-  path.slice(1).forEach((pos, index) => pathRank.set(posKey(pos), index));
+  const pathSteps = path.slice(1);
+  if (pathSteps.length > 0) {
+    pathRank.set(posKey(pathSteps[pathSteps.length - 1]!), 0);
+    pathSteps.forEach((pos, index) => {
+      const key = posKey(pos);
+      if (!pathRank.has(key)) pathRank.set(key, index + 1);
+    });
+  }
 
   const ordered = [...moves].sort((a, b) => {
     const rankA = pathRank.get(posKey(a)) ?? Number.POSITIVE_INFINITY;
@@ -283,7 +292,7 @@ export function searchAdversary(
     score: bestOutcome.score,
     nodesExplored: ctx.nodesExplored,
     timeMs: Math.round(nowMs() - start),
-    copWinning: rootWinner === 'cop',
+    copWinning: rootWinner == null ? undefined : rootWinner === 'cop',
   };
 }
 

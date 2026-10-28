@@ -22,11 +22,20 @@ export function resolveConnectFourAiOptions(state: ConnectFourState): { maxDepth
   return { maxDepth, timeMs: maxDepthToTimeMs(maxDepth) };
 }
 
+function depthToBaseScore(maxDepth: number): number {
+  if (maxDepth <= 4) return 20;
+  if (maxDepth <= 6) return 50;
+  return 85;
+}
+
 export function computeConnectFourDifficulty(state: ConnectFourState): Difficulty {
   const pieces = countPieces(state.board);
   const fillRatio = pieces / (ROWS * COLS);
   const midgame = pieces >= 8 && pieces <= 30;
-  const score = Math.round(fillRatio * 55 + (midgame ? 25 : 0));
+  const boardScore = Math.round(fillRatio * 55 + (midgame ? 25 : 0));
+  const score = state.aiMaxDepth != null
+    ? Math.max(depthToBaseScore(state.aiMaxDepth), boardScore)
+    : boardScore;
   const clamped = Math.max(0, Math.min(100, score));
 
   let labelKey: string;
@@ -36,7 +45,11 @@ export function computeConnectFourDifficulty(state: ConnectFourState): Difficult
 
   return {
     score: clamped,
-    factors: { pieces, fillRatio },
+    factors: {
+      pieces,
+      fillRatio,
+      ...(state.aiMaxDepth != null ? { aiMaxDepth: state.aiMaxDepth } : {}),
+    },
     labelKey,
   };
 }

@@ -89,7 +89,16 @@ export function getDifficulty(state: SudokuState): Difficulty {
 
 /** Solve using DLX, convert result to Solution */
 export function solveSudokuState(state: SudokuState): Solution {
-  const dlxResult = dlxSolve(state.grid);
+  let dlxResult = dlxSolve(state.grid);
+
+  // If the user entered a wrong digit into a non-given cell, fall back to solving from givens
+  if (!dlxResult.solvable || !dlxResult.grid) {
+    const hasUserEdits = state.grid.some((v, idx) => v !== 0 && !state.givenMask[idx]);
+    if (hasUserEdits && state.givenMask.some(Boolean)) {
+      const cleanGrid = state.grid.map((v, idx) => (state.givenMask[idx] ? v : 0));
+      dlxResult = dlxSolve(cleanGrid);
+    }
+  }
 
   if (!dlxResult.solvable || !dlxResult.grid) {
     return {
@@ -100,12 +109,12 @@ export function solveSudokuState(state: SudokuState): Solution {
     };
   }
 
-  // Convert solved grid to move sequence
+  // Convert solved grid to move sequence (correcting wrong user-entered cells and filling empty cells)
   const moves: SudokuMove[] = [];
   for (let r = 0; r < state.n; r++) {
     for (let c = 0; c < state.n; c++) {
       const idx = r * state.n + c;
-      if (state.grid[idx] === 0) {
+      if (state.grid[idx] !== dlxResult.grid[idx]) {
         moves.push({ row: r, col: c, value: dlxResult.grid[idx]! });
       }
     }
@@ -115,6 +124,9 @@ export function solveSudokuState(state: SudokuState): Solution {
     solvable: true,
     moves,
     trace: dlxResult.trace,
-    stats: dlxResult.stats,
+    stats: {
+      ...dlxResult.stats,
+      solutionLength: moves.length,
+    },
   };
 }

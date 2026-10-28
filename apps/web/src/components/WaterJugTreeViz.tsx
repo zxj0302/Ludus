@@ -31,29 +31,19 @@ export function WaterJugTreeViz({ trace, solution }: Props) {
   for (let i = 0; i < pathStates.length - 1; i++) {
     const prev = pathStates[i]!;
     const next = pathStates[i + 1]!;
-    let desc = '';
+    let incIdx = -1;
+    let decIdx = -1;
     for (let j = 0; j < prev.jugs.length; j++) {
-      if (next.jugs[j] === next.capacities[j] && prev.jugs[j] !== next.capacities[j]) {
-        desc = `Fill ${j + 1}`;
-        break;
-      }
-      if (next.jugs[j] === 0 && prev.jugs[j] !== 0) {
-        desc = `Empty ${j + 1}`;
-        break;
-      }
+      if (next.jugs[j]! > prev.jugs[j]!) incIdx = j;
+      else if (next.jugs[j]! < prev.jugs[j]!) decIdx = j;
     }
-    if (!desc) {
-      for (let j = 0; j < prev.jugs.length; j++) {
-        if (next.jugs[j]! > prev.jugs[j]!) {
-          for (let k = 0; k < prev.jugs.length; k++) {
-            if (next.jugs[k]! < prev.jugs[k]!) {
-              desc = `Pour ${k + 1} → ${j + 1}`;
-              break;
-            }
-          }
-          break;
-        }
-      }
+    let desc = '';
+    if (incIdx !== -1 && decIdx !== -1) {
+      desc = t('waterJug.movePour', { from: decIdx + 1, to: incIdx + 1 });
+    } else if (incIdx !== -1) {
+      desc = t('waterJug.moveFill', { jug: incIdx + 1 });
+    } else if (decIdx !== -1) {
+      desc = t('waterJug.moveEmpty', { jug: decIdx + 1 });
     }
     pathMoves.push(desc || '?');
   }

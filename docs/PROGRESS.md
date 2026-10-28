@@ -226,13 +226,17 @@
   - 文档：`docs/games/kayles.md`、spec/plan；README/backlog 13 款。
   - 验证：**644+** 测全过；审查修复已合入；本提交上线（push 随本次）。
 
+- **CHI Demo 舞台化** ✅：`/demo` 左右分屏 Stage R（`DemoVizPane`）；`GameShell variant="demo"`；Skip to viz；无侧栏 Markdown。
+
 ## 🚧 IN PROGRESS
 
-- （无）
+- （无阻塞半成品）
 
 ## 🔖 NEXT ACTION（下一次会话第一步）
 
-1. 从 backlog 与用户确认 Hub #14 下一款（写 spec 后再开工）。
+1. 本地 `/demo` Act 1：solve/reveal 后点右侧金色 ●，确认棋盘同步翻转；回放中不可点。  
+2. 走查 Nim/Sokoban 舞台是否仍「缝合感」重；再决定是否做时间轴同步或下一款双向。  
+3. 之后 C2：展台触控 / 离线 release。
 
 ## 🐛 KNOWN ISSUES
 
@@ -707,4 +711,11 @@
 - [2026-07-15] **Grundy's Game push**：`e3e9f8e` → origin/master（Hub #12）。
 - [2026-07-15] **Kayles**：用户选 A/A/A（单链、n≤12、点选确认）；写入设计 spec 待审阅。
 - [2026-07-15] **Kayles Task 1–5**：完整 Hub #13 上线（规则/A002186/生成/UI/viz/教学/文档）；待 commit/push。
-- [2026-07-15] **Kayles 审查修复**：spec/plan 对齐 chain-length；确认钮 aria；chainLengths + winning-move 扫测；清理死代码。
+- [2026-07-15] **Kayles push**：`35cf83e` → origin/master（Hub #13）。
+- [2026-07-15] **CHI Demo**：用户确认优先 CHI；写入 `docs/publishing/chi-demo-roadmap.md`、submission checklist、Demo Mode design spec（待确认三幕）。
+- [2026-07-15] **CHI Demo C1**：确认 Lights Out→Nim→Sokoban + `/demo`；落地 DemoPlaylist schema、chi-core.json、DemoPage、`loadDemoAct`。
+- [2026-07-15] **CHI Demo UX**：Next 软门槛（play/skip、hint/solve 锁）、solve 开侧栏+preferViz、教学正文折叠、Nim 补 solve 拍；`demoAdvanceGate` 单测。
+- [2026-07-15] **CHI Demo 舞台化**：用户确认仅 `/demo` + 左右分屏第二舞台；写入 `docs/superpowers/specs/2026-07-15-chi-demo-stage-design.md` 待审。
+- [2026-07-15] **CHI Demo 舞台化审阅**：对照 roadmap/父 spec/ADR-003 修订 spec（覆盖 §4、play 全收 Stage R、Skip to viz、L1–L3 映射、回放时长验收）。
+- [2026-07-15] **CHI Demo 舞台化落地**：`GameShell variant="demo"`、`DemoVizPane`、分屏布局、Skip to viz；计划 `docs/superpowers/plans/2026-07-15-chi-demo-stage.md`。
+- [2026-07-15] **LO 双向 viz**：Solution 网格可点反控棋盘（`MatrixViz` + `LightsOutMatrixViz`）；spec `2026-07-15-lights-out-bidirectional-viz-design.md`。

@@ -27,3 +27,18 @@ describe('getDifficulty', () => {
     expect(d.factors.boxCount).toBeGreaterThan(0);
   });
 });
+
+import { sokobanEntry } from './index';
+
+describe('sokobanEntry', () => {
+  it('moveToHighlight handles null and undefined safely', () => {
+    const state = getLevel(0);
+    expect(sokobanEntry.moveToHighlight?.(null as never, state)).toBeNull();
+    expect(sokobanEntry.moveToHighlight?.(undefined as never, state)).toBeNull();
+    expect(sokobanEntry.moveToHighlight?.({ direction: 'up' }, undefined as never)).toBeNull();
+    expect(sokobanEntry.moveToHighlight?.({ direction: 'up' }, state)).toEqual({
+      row: state.player.row - 1,
+      col: state.player.col,
+    });
+  });
+});

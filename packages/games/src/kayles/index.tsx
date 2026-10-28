@@ -11,6 +11,7 @@ import {
   solveKaylesState,
   chooseHand,
   isOwnState,
+  isKaylesPPosition,
 } from './rules';
 import type { KaylesState, KaylesMove } from './types';
 import { kaylesEducationManifest, kaylesVisualizationManifest } from './manifest';
@@ -112,7 +113,11 @@ export const kaylesEntry: GamePluginEntry<KaylesState, KaylesMove> = {
   plugin: kaylesPlugin,
   BoardComponent: KaylesBoardEntry,
   isOwnState,
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = !isKaylesPPosition(state.alive);
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     return { row: 0, col: move.index, value: move.count };
   },

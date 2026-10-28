@@ -11,10 +11,11 @@ import {
   solveEuclidsGameState,
   chooseHand,
   isOwnState,
+  isPPosition,
 } from './rules';
 import type { EuclidsGameState, EuclidsGameMove } from './types';
 import { euclidsGameEducationManifest, euclidsGameVisualizationManifest } from './manifest';
-import { findWinningMove } from './solver';
+import { findWinningMove, PHI } from './solver';
 
 import type { BoardProps, GamePluginEntry } from '../types';
 import { EuclidsGameBoard } from './render';
@@ -107,7 +108,11 @@ export const euclidsGameEntry: GamePluginEntry<EuclidsGameState, EuclidsGameMove
   plugin: euclidsGamePlugin,
   BoardComponent: EuclidsGameBoardEntry,
   isOwnState,
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = !isPPosition(state.piles);
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     return { row: 0, col: move.multiple - 1 };
   },

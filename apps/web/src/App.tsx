@@ -39,6 +39,16 @@ export function App() {
             >
               {t('app.nav.hub')}
             </Link>
+            <Link
+              to="/demo"
+              className={`text-sm font-medium transition-colors ${
+                location.pathname.startsWith('/demo')
+                  ? 'text-logic-indigo-700'
+                  : 'text-warm-stone-600 hover:text-warm-stone-800'
+              }`}
+            >
+              {t('app.nav.demo')}
+            </Link>
             <SoundToggle />
             <LanguageSwitcher />
           </nav>

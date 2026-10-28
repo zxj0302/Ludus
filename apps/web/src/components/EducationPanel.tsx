@@ -101,12 +101,18 @@ export function EducationPanel({
   const contentRef = useRef<HTMLDivElement>(null);
   const stepsContainerRef = useRef<HTMLDivElement>(null);
   const currentStepRef = useRef<HTMLDivElement>(null);
+  const educationPreferViz = useGameStore(s => s.educationPreferViz);
   const [highlightedTab, setHighlightedTab] = useState<Stage>('think');
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
+  const [teachingExpanded, setTeachingExpanded] = useState(false);
 
   useEffect(() => {
     if (open) setHasBeenOpened(true);
   }, [open]);
+
+  useEffect(() => {
+    if (educationPreferViz) setTeachingExpanded(false);
+  }, [educationPreferViz, gameId, disclosureLevel]);
 
   useEffect(() => {
     if (solvePlayback && currentStepRef.current) {
@@ -133,18 +139,22 @@ export function EducationPanel({
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  useEffect(() => {
-    if (solvePlayback) {
-      setHighlightedTab('solve');
-      const vizEl = document.getElementById('solver-viz-top');
-      const scrollParent = vizEl?.closest('.overflow-y-auto') as HTMLElement | null;
-      if (scrollParent && vizEl) {
-        scrollParent.scrollTo({ top: vizEl.offsetTop - scrollParent.offsetTop - 20, behavior: 'smooth' });
-      } else {
-        contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+  const scrollToViz = useCallback(() => {
+    setHighlightedTab('solve');
+    const vizEl = document.getElementById('solver-viz-top');
+    const scrollParent = vizEl?.closest('.overflow-y-auto') as HTMLElement | null;
+    if (scrollParent && vizEl) {
+      scrollParent.scrollTo({ top: vizEl.offsetTop - scrollParent.offsetTop - 20, behavior: 'smooth' });
+    } else {
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [solvePlayback]);
+  }, []);
+
+  useEffect(() => {
+    if (solvePlayback || (open && educationPreferViz)) {
+      scrollToViz();
+    }
+  }, [solvePlayback, open, educationPreferViz, scrollToViz]);
 
   const handleTabClick = useCallback((stage: Stage) => {
     setHighlightedTab(stage);
@@ -322,7 +332,30 @@ export function EducationPanel({
           </motion.div>
         )}
 
-        {sections.length > 0 ? (
+        {educationPreferViz && (sections.length > 0 || rawMd) ? (
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => setTeachingExpanded(v => !v)}
+              className="w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-left
+                         bg-warm-stone-50 border border-warm-stone-200 text-warm-stone-700
+                         hover:bg-warm-stone-100"
+            >
+              {teachingExpanded ? t('education.hideTeaching') : t('education.showTeaching')}
+            </button>
+            {teachingExpanded && (
+              sections.length > 0 ? (
+                <div className="space-y-3">
+                  {sections.map(section => (
+                    <SectionCard key={section.key} section={section} language={language} />
+                  ))}
+                </div>
+              ) : (
+                <MarkdownRenderer content={rawMd} />
+              )
+            )}
+          </div>
+        ) : sections.length > 0 ? (
           <div className="space-y-3">
             {sections.map(section => (
               <SectionCard key={section.key} section={section} language={language} />

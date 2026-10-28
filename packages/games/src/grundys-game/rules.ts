@@ -71,7 +71,7 @@ export function legalMovesForPlayer(state: GrundysGameState, player: 0 | 1): Gru
  * Always toggles `currentPlayer` (Nim-style: player facing a terminal position loses).
  */
 export function applyMove(state: GrundysGameState, move: GrundysGameMove): GrundysGameState {
-  if (state.phase !== 'playing' || isTerminalPiles(state.piles)) return state;
+  if (isTerminalPiles(state.piles)) return state;
 
   const { pileIndex, left } = move;
   const n = state.piles[pileIndex];
@@ -80,6 +80,11 @@ export function applyMove(state: GrundysGameState, move: GrundysGameMove): Grund
 
   const right = move.right ?? n - left;
   if (right !== n - left) return state;
+
+  const mover: 0 | 1 = state.phase === 'choosing'
+    ? (computeGrundyXor(state.piles) !== 0 ? 0 : 1)
+    : state.currentPlayer;
+
   const newPiles = [
     ...state.piles.slice(0, pileIndex),
     left,
@@ -90,7 +95,8 @@ export function applyMove(state: GrundysGameState, move: GrundysGameMove): Grund
   return {
     ...state,
     piles: newPiles,
-    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
+    currentPlayer: mover === 0 ? 1 : 0,
+    phase: 'playing',
   };
 }
 

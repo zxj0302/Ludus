@@ -1,5 +1,8 @@
 export const connectFourI18n = {
   zhCN: {
+    'game.connectFour.name': '四子棋',
+    'game.connectFour.description': '经典 Connect Four — Alpha-Beta 博弈树对战 AI',
+    'education.connectFourMove': '落第 {{column}} 列',
     'connectFour.chooseHand': '选择先后手',
     'connectFour.playFirst': '我先下',
     'connectFour.aiFirst': 'AI 先下',
@@ -30,6 +33,9 @@ export const connectFourI18n = {
     'connectFour.viz.empty': '选先后手或落子后显示搜索轨迹',
   },
   en: {
+    'game.connectFour.name': 'Connect Four',
+    'game.connectFour.description': 'Classic Connect Four — Alpha-Beta game tree vs AI',
+    'education.connectFourMove': 'Drop in column {{column}}',
     'connectFour.chooseHand': 'Choose who moves first',
     'connectFour.playFirst': 'I go first',
     'connectFour.aiFirst': 'AI goes first',

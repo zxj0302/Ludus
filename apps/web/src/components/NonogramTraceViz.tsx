@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SolverTrace, Solution } from '@ludus/core';
 
@@ -378,9 +378,14 @@ export function NonogramTraceViz({ trace, solution }: Props) {
   const [selected, setSelected] = useState(0);
   const [tab, setTab] = useState<'line' | 'backtrack'>('line');
 
+  useEffect(() => {
+    setSelected(0);
+  }, [trace]);
+
   const data = trace.visualizationData as NonogramVizData | undefined;
   const algo = data?.algorithmTrace;
   const steps = algo?.lineSteps ?? [];
+  const safeSelected = Math.min(selected, Math.max(0, steps.length - 1));
   const searchTree = algo?.searchTree ?? [];
   const nodesExplored = data?.nodesExplored ?? solution.stats.nodesExplored;
   const backtracks = data?.backtracks ?? 0;
@@ -453,7 +458,7 @@ export function NonogramTraceViz({ trace, solution }: Props) {
                     type="button"
                     onClick={() => setSelected(i)}
                     className={`px-2 py-1 rounded text-[10px] font-medium transition-all
-                      ${i === selected ? 'bg-logic-indigo-600 text-white' : 'bg-warm-stone-100 text-warm-stone-600 hover:bg-warm-stone-200'}`}
+                      ${i === safeSelected ? 'bg-logic-indigo-600 text-white' : 'bg-warm-stone-100 text-warm-stone-600 hover:bg-warm-stone-200'}`}
                     title={t('nonogram.lineStepTooltip', {
                       type: t(s.lineType === 'row' ? 'nonogram.row' : 'nonogram.col'),
                       index: s.lineIndex + 1,
@@ -466,7 +471,7 @@ export function NonogramTraceViz({ trace, solution }: Props) {
               </div>
 
               {/* Step detail */}
-              <StepDetail step={steps[selected]!} />
+              <StepDetail step={steps[safeSelected]!} />
             </>
           )}
         </>

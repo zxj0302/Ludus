@@ -6,56 +6,69 @@ interface Props {
   content: string;
 }
 
-/** 将 LaTeX 公式渲染为 HTML */
-function renderMath(text: string): string {
-  // $$...$$ or \[...\] block math
-  let html = text.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
-    try {
-      return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
-    } catch { return `<code>${escapeHtml(formula)}</code>`; }
-  });
-  html = html.replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
-    try {
-      return katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false });
-    } catch { return `<code>${escapeHtml(formula)}</code>`; }
-  });
-  // $...$ inline math (single line, not followed by another $)
-  html = html.replace(/\$(.+?)\$/g, (_, formula) => {
-    if (/^\d+(\.\d+)?$/.test(formula.trim())) return `$${formula}$`;
-    try {
-      return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
-    } catch { return `<code>${escapeHtml(formula)}</code>`; }
-  });
-  // \(...\) inline math (common in LaTeX-authored markdown)
-  html = html.replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
-    try {
-      return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
-    } catch { return `<code>${escapeHtml(formula)}</code>`; }
-  });
-  return html;
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** 拆分 table 行，保护 $...$ 内的 | 不被当作列分隔符 */
-function splitTableCells(row: string): string[] {
+/** 保护 LaTeX 公式，避免被 Markdown/HTML 解析或 table 拆分破坏 */
+function protectMath(text: string): { text: string; mathSpans: string[] } {
   const mathSpans: string[] = [];
-  // 保护 $$...$$ 和 $...$，避免内部 | 被拆分
-  let protectedRow = row.replace(/\$\$[\s\S]*?\$\$/g, (m) => {
-    mathSpans.push(m);
-    return `\x00M${mathSpans.length - 1}\x00`;
+
+  // 1. 保护代码块和行内代码，防止代码中的 $ 被当作公式
+  const codeBlocks: string[] = [];
+  let protectedText = text.replace(/(```[\s\S]*?```|`[^`\n]+`)/g, (m) => {
+    codeBlocks.push(m);
+    return `\x00CODE${codeBlocks.length - 1}\x00`;
   });
-  protectedRow = protectedRow.replace(/\$(.+?)\$/g, (m) => {
-    mathSpans.push(m);
-    return `\x00M${mathSpans.length - 1}\x00`;
+
+  const render = (formula: string, displayMode: boolean) => {
+    try {
+      return katex.renderToString(formula.trim(), { displayMode, throwOnError: false });
+    } catch {
+      return `<code>${escapeHtml(formula)}</code>`;
+    }
+  };
+
+  // 2. 块级公式 $$...$$ 与 \[...\]
+  protectedText = protectedText.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+    mathSpans.push(render(formula, true));
+    return `\x00MATH${mathSpans.length - 1}\x00`;
   });
-  const cells = protectedRow.split('|').map(c => c.trim());
-  // 还原 math span
-  return cells.map(c => c.replace(/\x00M(\d+)\x00/g, (_, i) => mathSpans[parseInt(i)] ?? ''));
+  protectedText = protectedText.replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
+    mathSpans.push(render(formula, true));
+    return `\x00MATH${mathSpans.length - 1}\x00`;
+  });
+
+  // 3. 行内公式 $...$（排除金额如 $100）与 \(...\)
+  protectedText = protectedText.replace(/\$([^\$\n]+?)\$/g, (m, formula) => {
+    if (/^\d+(\.\d+)?$/.test(formula.trim())) return m;
+    mathSpans.push(render(formula, false));
+    return `\x00MATH${mathSpans.length - 1}\x00`;
+  });
+  protectedText = protectedText.replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
+    mathSpans.push(render(formula, false));
+    return `\x00MATH${mathSpans.length - 1}\x00`;
+  });
+
+  // 4. 还原代码块
+  protectedText = protectedText.replace(/\x00CODE(\d+)\x00/g, (_, i) => codeBlocks[parseInt(i)] ?? '');
+
+  return { text: protectedText, mathSpans };
+}
+
+/** 拆分 table 行，剥离外层边框管道符，保留内部故意为空的列 */
+function splitTableCells(row: string): string[] {
+  let trimmed = row.trim();
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+  return trimmed.split('|').map(c => c.trim());
 }
 
 /** 简易 Markdown → HTML（导出供单测） */
 export function mdToHtml(md: string): string {
+  const { text, mathSpans } = protectMath(md);
   let html = '';
-  const lines = md.split('\n');
+  const lines = text.split('\n');
   let inCodeBlock = false;
   let codeLang = '';
   let codeContent = '';
@@ -66,10 +79,10 @@ export function mdToHtml(md: string): string {
   const flushTable = () => {
     if (!inTable || tableRows.length === 0) return;
     html += '<div class="overflow-x-auto my-3"><table class="w-full text-xs border-collapse"><thead>';
-    const headerCells = splitTableCells(tableRows[0]!).filter(c => c);
+    const headerCells = splitTableCells(tableRows[0]!);
     html += '<tr>' + headerCells.map(c => `<th class="border border-warm-stone-300 px-2 py-1 bg-warm-stone-100 text-left font-semibold">${inlineFormat(c)}</th>`).join('') + '</tr></thead><tbody>';
     for (let r = 1; r < tableRows.length; r++) {
-      const cells = splitTableCells(tableRows[r]!).filter(c => c);
+      const cells = splitTableCells(tableRows[r]!);
       html += '<tr>' + cells.map(c => `<td class="border border-warm-stone-200 px-2 py-1">${inlineFormat(c)}</td>`).join('') + '</tr>';
     }
     html += '</tbody></table></div>';
@@ -172,7 +185,6 @@ export function mdToHtml(md: string): string {
     if (numMatch) {
       if (inList !== 'ol') {
         if (inList === 'ul') html += '</ul>';
-        else if (inList === 'ol') html += '</ol>';
         html += '<ol class="list-decimal pl-5 text-xs text-warm-stone-700 space-y-0.5 my-2">';
         inList = 'ol';
       }
@@ -184,7 +196,6 @@ export function mdToHtml(md: string): string {
     if (line.startsWith('- ') || line.startsWith('* ')) {
       if (inList !== 'ul') {
         if (inList === 'ol') html += '</ol>';
-        else if (inList === 'ul') html += '</ul>';
         html += '<ul class="list-disc pl-5 text-xs text-warm-stone-700 space-y-0.5 my-2">';
         inList = 'ul';
       }
@@ -203,13 +214,16 @@ export function mdToHtml(md: string): string {
   if (inList) html += inList === 'ul' ? '</ul>' : '</ol>';
   flushTable();
 
+  // 还原 LaTeX 公式 HTML
+  html = html.replace(/\x00MATH(\d+)\x00/g, (_, i) => mathSpans[parseInt(i)] ?? '');
+
   return html;
 }
 
 function inlineFormat(text: string): string {
   // 保护已有的 HTML tags，避免被 markdown 格式化破坏
   const htmlBlocks: string[] = [];
-  const protected1 = text.replace(/<[^>]+>/g, (m) => {
+  const protected1 = text.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (m) => {
     htmlBlocks.push(m);
     return `\x00HTML${htmlBlocks.length - 1}\x00`;
   });
@@ -229,16 +243,8 @@ function inlineFormat(text: string): string {
   return result;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 export function MarkdownRenderer({ content }: Props) {
-  const html = useMemo(() => {
-    // 先解析 markdown 结构，再在文本内容中渲染 LaTeX
-    const markdownHtml = mdToHtml(content);
-    return renderMath(markdownHtml);
-  }, [content]);
+  const html = useMemo(() => mdToHtml(content), [content]);
 
   return (
     <div

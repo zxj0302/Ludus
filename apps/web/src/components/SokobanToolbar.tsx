@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { SokobanState } from '@ludus/games';
 import { stateHash } from '@ludus/games';
 import { useSokobanLevels } from '../hooks/useSokobanLevels';
@@ -11,7 +10,6 @@ interface Props {
 }
 
 export function SokobanToolbar({ onNewLevel: _onNewLevel }: Props) {
-  const { t } = useTranslation();
   const collections = useSokobanLevels(true);
   const [selectedCollection, setSelectedCollection] = useState('builtin');
   const [selectedLevelIdx, setSelectedLevelIdx] = useState(0);

@@ -57,6 +57,7 @@ export function findTacticalMove(state: ConnectFourState, player: 0 | 1): Connec
 function alphaBeta(
   state: ConnectFourState,
   depth: number,
+  rootDepth: number,
   alpha: number,
   beta: number,
   maximizingPlayer: 0 | 1,
@@ -65,7 +66,7 @@ function alphaBeta(
   stats: { nodes: number; depthFromRoot: number },
 ): number {
   stats.nodes += 1;
-  stats.depthFromRoot = Math.max(stats.depthFromRoot, depth);
+  stats.depthFromRoot = Math.max(stats.depthFromRoot, rootDepth - depth);
 
   if (performance.now() >= deadline) return evaluateTerminal(state, rootPlayer);
   if (state.winner !== null) return evaluateTerminal(state, rootPlayer);
@@ -83,7 +84,7 @@ function alphaBeta(
       const child = applyMove({ ...state, currentPlayer: player }, move);
       value = Math.max(
         value,
-        alphaBeta(child, depth - 1, alpha, beta, opponent(player), rootPlayer, deadline, stats),
+        alphaBeta(child, depth - 1, rootDepth, alpha, beta, opponent(player), rootPlayer, deadline, stats),
       );
       alpha = Math.max(alpha, value);
       if (beta <= alpha) break;
@@ -96,7 +97,7 @@ function alphaBeta(
     const child = applyMove({ ...state, currentPlayer: player }, move);
     value = Math.min(
       value,
-      alphaBeta(child, depth - 1, alpha, beta, opponent(player), rootPlayer, deadline, stats),
+      alphaBeta(child, depth - 1, rootDepth, alpha, beta, opponent(player), rootPlayer, deadline, stats),
     );
     beta = Math.min(beta, value);
     if (beta <= alpha) break;
@@ -147,6 +148,7 @@ function searchBestMove(
     const score = alphaBeta(
       child,
       maxDepth - 1,
+      maxDepth,
       -Infinity,
       Infinity,
       opponent(player),
@@ -178,7 +180,10 @@ export function findBestMove(
 }
 
 function recommendPlayerStarts(state: ConnectFourState, options?: AlphaBetaOptions): boolean {
-  const shallow = { maxDepth: 4, timeMs: 600, ...options };
+  const shallow = {
+    maxDepth: Math.min(options?.maxDepth ?? 4, 4),
+    timeMs: Math.min(options?.timeMs ?? 200, 200),
+  };
   const asFirst = searchBestMove(
     { ...state, phase: 'playing', currentPlayer: 0, winner: null },
     0,
@@ -194,6 +199,10 @@ function recommendPlayerStarts(state: ConnectFourState, options?: AlphaBetaOptio
 
 export function solveConnectFour(state: ConnectFourState, options?: AlphaBetaOptions): Solution {
   const startedAt = performance.now();
+  const totalBudgetMs = options?.timeMs ?? DEFAULT_TIME_MS;
+  const totalDeadline = startedAt + totalBudgetMs;
+  const rootMaxDepth = Math.min(options?.maxDepth ?? 6, 6);
+  const rolloutMaxDepth = Math.min(options?.maxDepth ?? 4, 4);
   const normalized = normalizeState(state);
 
   let playerStarts: boolean;
@@ -223,8 +232,23 @@ export function solveConnectFour(state: ConnectFourState, options?: AlphaBetaOpt
   let maxDepthReached = 0;
 
   while (sim.winner === null) {
+    const remainingMs = totalDeadline - performance.now();
+    if (remainingMs <= 0 && moves.length > 0) {
+      terminated = 'timeout';
+      break;
+    }
     const actor = sim.currentPlayer;
-    const result = searchBestMove(sim, actor, options);
+    const isRootPly = moves.length === 0;
+    const plyOptions: AlphaBetaOptions = isRootPly
+      ? {
+        maxDepth: rootMaxDepth,
+        timeMs: Math.min(600, Math.max(20, remainingMs)),
+      }
+      : {
+        maxDepth: rolloutMaxDepth,
+        timeMs: Math.min(60, Math.max(10, remainingMs)),
+      };
+    const result = searchBestMove(sim, actor, plyOptions);
     totalNodes += result.nodesExplored;
     maxDepthReached = Math.max(maxDepthReached, result.maxDepthReached);
     if (result.terminated === 'timeout') terminated = 'timeout';

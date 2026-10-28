@@ -285,6 +285,29 @@ function buildGridFromRows(rows: number[], initialGrid?: number[]): number[] {
  */
 export function solveSudoku(grid: number[]): SudokuSolution {
   const startTime = performance.now();
+  if (!validateSudoku(grid)) {
+    return {
+      solvable: false,
+      grid: null,
+      trace: {
+        type: 'constraint-propagation',
+        steps: [],
+        visualizationData: {
+          matrixDesc: '729 rows × 324 columns (81 cell + 81 row-val + 81 col-val + 81 box-val)',
+          totalRows: 729,
+          totalCols: 324,
+        },
+      },
+      stats: {
+        nodesExplored: 0,
+        timeMs: 0,
+        solutionLength: -1,
+        solverName: 'DLX (Algorithm X)',
+        terminated: 'exhausted',
+      },
+    };
+  }
+
   const matrix = buildMatrix();
   applyPreFilledRows(matrix, grid);
 
@@ -321,7 +344,7 @@ export function solveSudoku(grid: number[]): SudokuSolution {
       timeMs,
       solutionLength: solvable ? countEmpty(grid) : -1,
       solverName: 'DLX (Algorithm X)',
-      terminated: solvable ? 'solved' : 'exhausted',
+      terminated: solvable ? 'solved' : state.timedOut ? 'timeout' : 'exhausted',
     },
   };
 }
@@ -333,6 +356,8 @@ export function solveSudoku(grid: number[]): SudokuSolution {
  * @returns number of solutions found (capped at limit), or -1 on timeout
  */
 export function countSudokuSolutions(grid: number[], limit: number = 2): number {
+  if (!validateSudoku(grid)) return 0;
+
   const matrix = buildMatrix();
   applyPreFilledRows(matrix, grid);
 

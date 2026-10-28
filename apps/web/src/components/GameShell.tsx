@@ -12,9 +12,14 @@ import { EducationPanel } from './EducationPanel';
 import { useSound } from '../hooks/useSound';
 import { shouldPlaySolveErrorSound, shouldRunGenericPlayback } from './playbackMode';
 
-interface Props { gameId: string }
+interface Props {
+  gameId: string;
+  /** CHI Demo: hide education sidebar, generator, and compact chrome. */
+  variant?: 'default' | 'demo';
+}
 
-export function GameShell({ gameId }: Props) {
+export function GameShell({ gameId, variant = 'default' }: Props) {
+  const isDemo = variant === 'demo';
   const { t } = useTranslation();
   const { playToggle, playWin, playSolve, playError, playStep, vibrate } = useSound();
 
@@ -44,7 +49,8 @@ export function GameShell({ gameId }: Props) {
     historyIndex, history, startTime, elapsed, tick,
   } = store;
 
-  const stepCount = historyIndex;
+  const hasHandSelectionPrefix = (history[0] as Record<string, unknown> | undefined)?.phase === 'choosing';
+  const stepCount = Math.max(0, historyIndex - (hasHandSelectionPrefix ? 1 : 0));
   const optimalSteps = initialOptimalSteps;
   const remainingSteps = currentOptimalSteps;
 
@@ -58,7 +64,7 @@ export function GameShell({ gameId }: Props) {
 
   const isWin: boolean =
     stateMatchesPlugin && !solvePlayback && plugin && gameState
-      ? (plugin.ai?.isPlayerVictory?.(gameState) ?? isGameOver)
+      ? (plugin.ai ? (plugin.ai.isPlayerVictory?.(gameState) ?? false) : isGameOver)
       : false;
 
   useEffect(() => {
@@ -83,6 +89,11 @@ export function GameShell({ gameId }: Props) {
     const timer = setInterval(() => { playStep(); nextPlaybackStep(); }, 600);
     return () => clearInterval(timer);
   }, [solvePlayback, adversarialPlayback, nextPlaybackStep, playStep]);
+
+  // Demo must never leave education sidebar open from a prior session / beat.
+  useEffect(() => {
+    if (isDemo && educationOpen) setEducationOpen(false);
+  }, [isDemo, educationOpen, setEducationOpen]);
 
   const handleMove = useCallback((move: Move) => {
     if (isGameOver || solvePlayback || solverStatus === 'running') return;
@@ -109,6 +120,7 @@ export function GameShell({ gameId }: Props) {
   const leftColumnRef = useRef<HTMLDivElement>(null);
   const [leftColumnHeight, setLeftColumnHeight] = useState<number | null>(null);
   useEffect(() => {
+    if (isDemo) return;
     const el = leftColumnRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
@@ -117,7 +129,7 @@ export function GameShell({ gameId }: Props) {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [isDemo]);
 
   if (!plugin || !gameState || !stateMatchesPlugin) {
     return (
@@ -140,40 +152,53 @@ export function GameShell({ gameId }: Props) {
     highlightCell = entry.moveToHighlight?.(store.hintMove, gameState) ?? null;
   }
 
+  const showEducation = !isDemo && educationOpen;
+
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-6 relative">
-      {/* 书签式侧边栏开关 — 固定在窗口右侧中部 */}
-      <button
-        type="button"
-        onClick={() => {
-          if (!educationOpen) setDisclosureLevel(2);
-          setEducationOpen(!educationOpen);
-        }}
-        className={`
-          fixed right-0 top-1/2 -translate-y-1/2 z-30
-          flex items-center gap-1.5
-          py-3 pl-3 pr-2
-          rounded-l-xl shadow-lg
-          text-xs font-semibold
-          transition-all duration-300 ease-in-out
-          ${educationOpen
-            ? 'bg-warm-stone-200 text-warm-stone-600 hover:bg-warm-stone-300'
-            : 'bg-logic-indigo-600 text-white hover:bg-logic-indigo-700'}
-        `}
-        style={{ writingMode: 'vertical-rl' }}
-        title={educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
-        aria-label={educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
-      >
-        {educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
-      </button>
+    <div className={isDemo ? 'relative w-full' : 'max-w-[1400px] mx-auto px-4 py-6 relative'}>
+      {!isDemo && (
+        <button
+          type="button"
+          onClick={() => {
+            if (!educationOpen) setDisclosureLevel(2);
+            setEducationOpen(!educationOpen);
+          }}
+          className={`
+            fixed right-0 top-1/2 -translate-y-1/2 z-30
+            flex items-center gap-1.5
+            py-3 pl-3 pr-2
+            rounded-l-xl shadow-lg
+            text-xs font-semibold
+            transition-all duration-300 ease-in-out
+            ${educationOpen
+              ? 'bg-warm-stone-200 text-warm-stone-600 hover:bg-warm-stone-300'
+              : 'bg-logic-indigo-600 text-white hover:bg-logic-indigo-700'}
+          `}
+          style={{ writingMode: 'vertical-rl' }}
+          title={educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
+          aria-label={educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
+        >
+          {educationOpen ? t('game.toolbar.sidebarClose') : t('game.toolbar.sidebar')}
+        </button>
+      )}
 
       <div className="flex justify-center items-start">
-        {/* 游戏主区域 */}
-        <div ref={leftColumnRef} className={`space-y-4 shrink-0 ${educationOpen ? 'lg:w-[55%]' : 'w-full max-w-2xl'}`}>
-          <div className="bento-card p-6 text-center">
-            <h1 className="text-2xl font-bold text-warm-stone-800">{t(plugin.metadata.nameKey)}</h1>
-            <p className="text-sm text-warm-stone-500 mt-1">{t(plugin.metadata.descriptionKey)}</p>
-          </div>
+        <div
+          ref={leftColumnRef}
+          className={`space-y-4 shrink-0 ${
+            isDemo
+              ? 'w-full'
+              : showEducation
+                ? 'lg:w-[55%]'
+                : 'w-full max-w-2xl'
+          }`}
+        >
+          {!isDemo && (
+            <div className="bento-card p-6 text-center">
+              <h1 className="text-2xl font-bold text-warm-stone-800">{t(plugin.metadata.nameKey)}</h1>
+              <p className="text-sm text-warm-stone-500 mt-1">{t(plugin.metadata.descriptionKey)}</p>
+            </div>
+          )}
 
           <GameStatusBar
             stepCount={stepCount} isSolved={isWin} isSolving={solverStatus === 'running'}
@@ -193,17 +218,17 @@ export function GameShell({ gameId }: Props) {
             isSolving={solverStatus === 'running'} isSolved={isWin}
             solvePlayback={solvePlayback}
             adversarialPlayback={adversarialPlayback}
-            hasHint={!!hintMove}
+            hasHint={!!(hintMove || hintHighlight)}
             newLevelSlot={
-              entry?.ui?.toolbarSlot ? (
-                <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} />
-              ) : (
-                <GeneratorToolbar onNewLevel={newLevel} />
-              )
+              isDemo
+                ? null
+                : entry?.ui?.toolbarSlot
+                  ? <entry.ui.toolbarSlot onNewLevel={newLevel} dispatch={handleDispatch} />
+                  : <GeneratorToolbar onNewLevel={newLevel} />
             }
           />
 
-          <div className="bento-card p-6 flex justify-center min-h-[420px]">
+          <div className={`bento-card p-6 flex justify-center ${isDemo ? 'min-h-[360px]' : 'min-h-[420px]'}`}>
             <ErrorBoundary>
               {entry && gameState ? (
                 <entry.BoardComponent
@@ -220,8 +245,7 @@ export function GameShell({ gameId }: Props) {
           </div>
         </div>
 
-        {/* 侧边栏 — 单实例 EducationPanel，响应式定位 */}
-        {educationOpen && (
+        {showEducation && (
           <div
             className="fixed inset-0 top-16 z-20 bg-white overflow-y-auto lg:static lg:inset-auto lg:z-auto lg:bg-transparent lg:shrink-0 lg:w-[40%] lg:flex lg:flex-col lg:min-h-0"
             style={{
@@ -234,15 +258,17 @@ export function GameShell({ gameId }: Props) {
               transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1.0] }}
               className="flex-1 min-h-0 overflow-y-auto lg:ml-6"
             >
-              <EducationPanel
-                gameId={gameId} open={educationOpen}
-                onClose={() => setEducationOpen(false)}
-                disclosureLevel={disclosureLevel}
-                onChangeDisclosureLevel={setDisclosureLevel}
-                solution={solution}
-                solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
-                gameState={gameState}
-              />
+              <ErrorBoundary>
+                <EducationPanel
+                  gameId={gameId} open={educationOpen}
+                  onClose={() => setEducationOpen(false)}
+                  disclosureLevel={disclosureLevel}
+                  onChangeDisclosureLevel={setDisclosureLevel}
+                  solution={solution}
+                  solvePlayback={solvePlayback} solveStepIndex={solveStepIndex}
+                  gameState={gameState}
+                />
+              </ErrorBoundary>
             </motion.div>
           </div>
         )}

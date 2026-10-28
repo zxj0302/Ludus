@@ -41,14 +41,18 @@ export function applyMove(state: NimState, move: NimMove): NimState {
   if (idx < 0 || idx >= piles.length) return state;
   if (move.removeCount < 1 || move.removeCount > piles[idx]!) return state;
 
+  const mover: 0 | 1 = state.phase === 'choosing'
+    ? (computeNimSum(piles) !== 0 ? 0 : 1)
+    : state.currentPlayer;
+
   const newPiles = [...piles];
   newPiles[idx]! -= move.removeCount;
 
   return {
     piles: newPiles,
-    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
+    currentPlayer: mover === 0 ? 1 : 0,
     initialPiles: state.initialPiles,
-    phase: state.phase,
+    phase: 'playing',
   };
 }
 
@@ -57,8 +61,9 @@ export function isSolved(state: NimState): boolean {
 }
 
 export function getDifficulty(state: NimState): Difficulty {
-  const pileCount = state.piles.length;
-  const maxStones = Math.max(...state.piles);
+  const basePiles = state.initialPiles?.length ? state.initialPiles : state.piles;
+  const pileCount = basePiles.length;
+  const maxStones = Math.max(...basePiles);
   return computeNimDifficulty(pileCount, maxStones);
 }
 

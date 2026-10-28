@@ -65,15 +65,20 @@ export function applyMove(state: WaterJugState, move: WaterJugMove): WaterJugSta
   const newJugs = [...state.jugs];
 
   if (move.type === 'fill') {
-    newJugs[move.jugIndex] = state.capacities[move.jugIndex]!;
+    const cap = state.capacities[move.jugIndex];
+    if (cap === undefined || newJugs[move.jugIndex] === cap) return state;
+    newJugs[move.jugIndex] = cap;
   } else if (move.type === 'empty') {
+    if (newJugs[move.jugIndex] === undefined || newJugs[move.jugIndex] === 0) return state;
     newJugs[move.jugIndex] = 0;
   } else if (move.type === 'pour') {
     const { from, to } = move;
+    if (from === to || newJugs[from] === undefined || newJugs[to] === undefined) return state;
     const amount = Math.min(
       newJugs[from]!,
       state.capacities[to]! - newJugs[to]!,
     );
+    if (amount <= 0) return state;
     newJugs[from] = newJugs[from]! - amount;
     newJugs[to] = newJugs[to]! + amount;
   }

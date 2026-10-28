@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "chi-core",
+  "titleKey": "demo.playlist.chiCore",
+  "defaultLocale": "en",
+  "acts": [
+    {
+      "id": "lights-out",
+      "gameId": "lights-out",
+      "titleKey": "demo.act.lightsOut",
+      "level": { "seed": 42, "difficultyRange": [1, 40] },
+      "beats": [
+        { "type": "speak", "narrationKey": "demo.lo.intro" },
+        { "type": "play", "narrationKey": "demo.lo.play", "durationHintSec": 45 },
+        { "type": "hint", "narrationKey": "demo.lo.hint" },
+        { "type": "solve", "narrationKey": "demo.lo.solve" },
+        { "type": "reveal", "narrationKey": "demo.lo.reveal", "depth": "L2" }
+      ]
+    },
+    {
+      "id": "nim",
+      "gameId": "nim",
+      "titleKey": "demo.act.nim",
+      "level": { "seed": 7, "difficultyRange": [1, 50] },
+      "beats": [
+        { "type": "speak", "narrationKey": "demo.nim.intro" },
+        { "type": "play", "narrationKey": "demo.nim.play" },
+        { "type": "hint", "narrationKey": "demo.nim.hint" },
+        { "type": "solve", "narrationKey": "demo.nim.solve" },
+        { "type": "reveal", "narrationKey": "demo.nim.reveal", "depth": "L2" }
+      ]
+    },
+    {
+      "id": "sokoban",
+      "gameId": "sokoban",
+      "titleKey": "demo.act.sokoban",
+      "level": { "seed": 0, "difficultyRange": [1, 25] },
+      "beats": [
+        { "type": "speak", "narrationKey": "demo.sk.intro" },
+        { "type": "play", "narrationKey": "demo.sk.play" },
+        { "type": "solve", "narrationKey": "demo.sk.solve" },
+        { "type": "reveal", "narrationKey": "demo.sk.reveal", "depth": "L2" }
+      ]
+    }
+  ]
+}

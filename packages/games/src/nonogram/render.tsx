@@ -288,6 +288,10 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
     schedulePaint();
   }, [grid, hoverCell, cursor, highlightCell, disabled, schedulePaint]);
 
+  useEffect(() => {
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
   // ═══════════════════════════════════════════════════════════════
   // Mouse interaction — uses stable refs, no re-creation on render
   // ═══════════════════════════════════════════════════════════════
@@ -333,27 +337,47 @@ export function NonogramBoard({ state, onMove, disabled, highlightCell }: Props)
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (disabledRef.current) return;
     const s = stateRef.current;
-    setCursor(prev => {
-      const cur = prev ?? { row: 0, col: 0 };
-      let { row, col } = cur;
-      switch (e.key) {
-        case 'ArrowUp': row = Math.max(0, row - 1); break;
-        case 'ArrowDown': row = Math.min(s.height - 1, row + 1); break;
-        case 'ArrowLeft': col = Math.max(0, col - 1); break;
-        case 'ArrowRight': col = Math.min(s.width - 1, col + 1); break;
-        case ' ':
-        case 'Enter':
-          onMoveRef.current({ row, col, action: 'fill' });
-          return { row, col };
-        case 'x':
-        case 'X':
-          onMoveRef.current({ row, col, action: 'cross' });
-          return { row, col };
-        default:
-          return prev;
-      }
-      return { row, col };
-    });
+    const cur = cursorRef.current ?? { row: 0, col: 0 };
+    let { row, col } = cur;
+    let action: 'fill' | 'cross' | null = null;
+
+    switch (e.key) {
+      case 'ArrowUp':
+        e.preventDefault();
+        row = Math.max(0, row - 1);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        row = Math.min(s.height - 1, row + 1);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        col = Math.max(0, col - 1);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        col = Math.min(s.width - 1, col + 1);
+        break;
+      case ' ':
+      case 'Enter':
+        e.preventDefault();
+        action = 'fill';
+        break;
+      case 'x':
+      case 'X':
+        e.preventDefault();
+        action = 'cross';
+        break;
+      default:
+        return;
+    }
+
+    const nextCursor = { row, col };
+    cursorRef.current = nextCursor;
+    setCursor(nextCursor);
+    if (action) {
+      onMoveRef.current({ row, col, action });
+    }
   }, []);
 
   // ═══════════════════════════════════════════════════════════════

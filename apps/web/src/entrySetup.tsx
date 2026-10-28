@@ -7,12 +7,12 @@
 //   - ui.toolbarSlot：Sokoban toolbar 依赖 web 专属 hook
 
 import { lazy, Suspense, type ComponentType } from 'react';
-import type { Solution, GameState, SolverTrace } from '@ludus/core';
+import type { SolverTrace } from '@ludus/core';
 import type { VisualizationProps } from '@ludus/games';
 import {
-  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry, kaylesEntry,
+  lightsOutEntry, sokobanEntry, sudokuEntry, nimEntry, wythoffEntry, fifteenEntry, waterJugEntry, nonogramEntry, pegSolitaireEntry, connectFourEntry, euclidsGameEntry, grundysGameEntry, kaylesEntry, thiefSiegeEntry,
 } from '@ludus/games';
-
+import { useGameStore } from './stores/gameStore';
 // ═══════════════════════════════════════════════════════════════
 // 1. Education content — .md 文件（?raw import，仅 Vite 支持）
 // ═══════════════════════════════════════════════════════════════
@@ -82,6 +82,11 @@ import l2enKY from '@ludus/education/src/content/kayles/l2.en.md?raw';
 import l3zhKY from '@ludus/education/src/content/kayles/l3.zh-CN.md?raw';
 import l3enKY from '@ludus/education/src/content/kayles/l3.en.md?raw';
 
+import l2zhTS from '@ludus/education/src/content/thief-siege/l2.zh-CN.md?raw';
+import l2enTS from '@ludus/education/src/content/thief-siege/l2.en.md?raw';
+import l3zhTS from '@ludus/education/src/content/thief-siege/l3.zh-CN.md?raw';
+import l3enTS from '@ludus/education/src/content/thief-siege/l3.en.md?raw';
+
 // Declarative entry setup — add new games here only
 const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'lights-out': { 'L2.zh-CN': l2zhLO, 'L2.en': l2enLO, 'L3.zh-CN': l3zhLO, 'L3.en': l3enLO },
@@ -97,6 +102,7 @@ const EDUCATION_CONTENT: Record<string, Record<string, string>> = {
   'euclids-game': { 'L2.zh-CN': l2zhEG, 'L2.en': l2enEG, 'L3.zh-CN': l3zhEG, 'L3.en': l3enEG },
   'grundys-game': { 'L2.zh-CN': l2zhGG, 'L2.en': l2enGG, 'L3.zh-CN': l3zhGG, 'L3.en': l3enGG },
   'kayles': { 'L2.zh-CN': l2zhKY, 'L2.en': l2enKY, 'L3.zh-CN': l3zhKY, 'L3.en': l3enKY },
+  'thief-siege': { 'L2.zh-CN': l2zhTS, 'L2.en': l2enTS, 'L3.zh-CN': l3zhTS, 'L3.en': l3enTS },
 };
 
 const ENTRY_MAP = {
@@ -113,6 +119,7 @@ const ENTRY_MAP = {
   'euclids-game': euclidsGameEntry,
   'grundys-game': grundysGameEntry,
   'kayles': kaylesEntry,
+  'thief-siege': thiefSiegeEntry,
 } as const;
 
 for (const [gameId, entry] of Object.entries(ENTRY_MAP)) {
@@ -136,6 +143,7 @@ const ConnectFourTreeViz = lazy(() => import('./components/ConnectFourTreeViz').
 const EuclidPhiViz = lazy(() => import('./components/EuclidPhiViz').then(m => ({ default: m.EuclidPhiViz })));
 const GrundyMexViz = lazy(() => import('./components/GrundyMexViz').then(m => ({ default: m.GrundyMexViz })));
 const KaylesMexViz = lazy(() => import('./components/KaylesMexViz').then(m => ({ default: m.KaylesMexViz })));
+const EscapePathViz = lazy(() => import('./components/EscapePathViz').then(m => ({ default: m.EscapePathViz })));
 
 const Fallback = ({ height = 'h-48' }: { height?: string }) => (
   <div className={`${height} rounded-card bg-warm-stone-100 animate-pulse`} />
@@ -143,20 +151,36 @@ const Fallback = ({ height = 'h-48' }: { height?: string }) => (
 
 lightsOutEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'matrix-transform',
-  Component: (({ solution, solveStepIndex, gameState }: VisualizationProps) => (
+  Component: ((props: VisualizationProps) => (
     <Suspense fallback={<Fallback />}>
-      {lightsOutEntry.isOwnState(gameState) && (
-        <MatrixViz solution={solution} solveStepIndex={solveStepIndex} gameState={gameState} />
-      )}
+      <LightsOutMatrixViz {...props} />
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
 
+function LightsOutMatrixViz({
+  solution, solveStepIndex, gameState, solvePlayback,
+}: VisualizationProps) {
+  const applyMove = useGameStore(s => s.applyMove);
+  const solverStatus = useGameStore(s => s.solverStatus);
+  if (!lightsOutEntry.isOwnState(gameState)) return null;
+  const canPress = !solvePlayback && solverStatus !== 'running';
+  return (
+    <MatrixViz
+      solution={solution}
+      solveStepIndex={solveStepIndex}
+      gameState={gameState}
+      solvePlayback={solvePlayback}
+      onPressCell={canPress ? (row, col) => applyMove({ row, col }) : undefined}
+    />
+  );
+}
+
 sokobanEntry.visualization = {
   matchTrace: (trace: SolverTrace) => trace.type === 'search-tree',
-  Component: (({ gameState }: VisualizationProps) => (
+  Component: (({ gameState, solution }: VisualizationProps) => (
     <Suspense fallback={<Fallback height="h-80" />}>
-      {gameState && sokobanEntry.isOwnState(gameState) && <BFSTreeViz gameState={gameState} />}
+      {gameState && sokobanEntry.isOwnState(gameState) && <BFSTreeViz gameState={gameState} solution={solution} />}
     </Suspense>
   )) as ComponentType<VisualizationProps>,
 };
@@ -267,6 +291,17 @@ kaylesEntry.visualization = {
     <Suspense fallback={<Fallback />}>
       {gameState && kaylesEntry.isOwnState(gameState) && (
         <KaylesMexViz key={gameState.alive.map(a => (a ? '1' : '0')).join('')} trace={trace} state={gameState} />
+      )}
+    </Suspense>
+  )) as ComponentType<VisualizationProps>,
+};
+
+thiefSiegeEntry.visualization = {
+  matchTrace: (trace: SolverTrace) => trace.type === 'escape-path',
+  Component: (({ trace, solution, gameState }: VisualizationProps) => (
+    <Suspense fallback={<Fallback height="h-80" />}>
+      {gameState && thiefSiegeEntry.isOwnState(gameState) && (
+        <EscapePathViz trace={trace} solution={solution} gameState={gameState} />
       )}
     </Suspense>
   )) as ComponentType<VisualizationProps>,

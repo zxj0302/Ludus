@@ -98,6 +98,7 @@ const ConnectFourBoardEntry = (props: BoardProps<ConnectFourState, ConnectFourMo
     onChooseHand={(playerFirst: boolean) => {
       const newState = chooseHand(props.state, playerFirst);
       props.dispatch?.({ type: 'loadState', payload: newState });
+      props.dispatch?.({ type: 'prependHistory', payload: props.state });
     }}
   />
 );
@@ -106,7 +107,11 @@ export const connectFourEntry: GamePluginEntry<ConnectFourState, ConnectFourMove
   plugin: connectFourPlugin,
   BoardComponent: ConnectFourBoardEntry,
   isOwnState,
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = state.playerStarts ?? true;
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     return { row: 0, col: move.column };
   },

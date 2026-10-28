@@ -84,7 +84,11 @@ class MinHeap {
   }
 }
 
-export function solveFifteen(state: FifteenState): Solution {
+export function solveFifteen(
+  state: FifteenState,
+  timeLimitMs = 5000,
+  maxNodes = 200_000,
+): Solution {
   const startTime = performance.now();
   const startGrid = state.grid;
 
@@ -99,6 +103,24 @@ export function solveFifteen(state: FifteenState): Solution {
   const goalKey = GOAL_GRID.join(',');
 
   while (openSet.size > 0) {
+    if (
+      nodesExplored >= maxNodes
+      || ((nodesExplored & 1023) === 0 && performance.now() - startTime > timeLimitMs)
+    ) {
+      const timeMs = Math.round(performance.now() - startTime);
+      return {
+        solvable: false,
+        moves: [],
+        stats: {
+          nodesExplored,
+          timeMs,
+          solutionLength: 0,
+          solverName: 'A* (Manhattan distance)',
+          terminated: 'timeout',
+        },
+      };
+    }
+
     const current = openSet.pop()!;
 
     const key = current.grid.join(',');

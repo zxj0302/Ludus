@@ -19,17 +19,15 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
     return highlightCell.row === jugIndex;
   }, [highlightCell]);
 
-  const clearSelection = useCallback(() => {
-    setSelectedJug(null);
-  }, []);
-
   // --- Jug click: fill (if no selection), pour target (if selection active), or select ---
   const handleJugClick = useCallback((jugIndex: number) => {
     if (disabled) return;
 
     if (selectedJug !== null && selectedJug !== jugIndex) {
-      // Second jug clicked → pour from selected to this one
-      onMove({ type: 'pour', from: selectedJug, to: jugIndex });
+      // Second jug clicked → pour from selected to this one if legal
+      if (state.jugs[selectedJug]! > 0 && state.jugs[jugIndex]! < state.capacities[jugIndex]!) {
+        onMove({ type: 'pour', from: selectedJug, to: jugIndex });
+      }
       setSelectedJug(null);
       return;
     }
@@ -40,9 +38,13 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
       return;
     }
 
-    // No selection → select this jug for potential pour
+    // No selection → fill if empty, otherwise select this jug for potential pour
+    if (state.jugs[jugIndex] === 0) {
+      onMove({ type: 'fill', jugIndex });
+      return;
+    }
     setSelectedJug(jugIndex);
-  }, [disabled, selectedJug, onMove]);
+  }, [disabled, selectedJug, state.jugs, state.capacities, onMove]);
 
   // --- Double-click: empty the jug ---
   const handleJugDoubleClick = useCallback((jugIndex: number) => {
@@ -74,6 +76,10 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (disabled) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        return;
+      }
       const n = state.jugs.length;
 
       // Number keys: select jug N or pour if already selected
@@ -81,7 +87,9 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
         const idx = parseInt(e.key) - 1;
         if (idx >= n) return;
         if (selectedJug !== null && selectedJug !== idx) {
-          onMove({ type: 'pour', from: selectedJug, to: idx });
+          if (state.jugs[selectedJug]! > 0 && state.jugs[idx]! < state.capacities[idx]!) {
+            onMove({ type: 'pour', from: selectedJug, to: idx });
+          }
           setSelectedJug(null);
         } else if (selectedJug === idx) {
           setSelectedJug(null);
@@ -134,7 +142,6 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
     }
   }, [selectedJug]);
 
-  const maxCapacity = Math.max(...state.capacities);
   const solved = state.jugs.some(amt => amt === state.target);
 
   return (
@@ -163,7 +170,7 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
           const isSelected = selectedJug === i;
           const isFull = amount === capacity;
           const isEmpty = amount === 0;
-          const canReceive = selectedJug !== null && selectedJug !== i && !isFull;
+          const canReceive = selectedJug !== null && selectedJug !== i && !isFull && state.jugs[selectedJug]! > 0;
 
           return (
             <div key={i} className="flex flex-col items-center gap-3">
@@ -298,7 +305,7 @@ export function WaterJugBoard({ state, onMove, disabled, highlightCell }: BoardP
         ))}
         <span><kbd className="px-1 py-0.5 bg-warm-stone-100 rounded text-[10px] font-mono">F</kbd> {t('waterJug.fill')}</span>
         <span><kbd className="px-1 py-0.5 bg-warm-stone-100 rounded text-[10px] font-mono">E</kbd> {t('waterJug.empty')}</span>
-        <span><kbd className="px-1 py-0.5 bg-warm-stone-100 rounded text-[10px] font-mono">Esc</kbd> Cancel</span>
+        <span><kbd className="px-1 py-0.5 bg-warm-stone-100 rounded text-[10px] font-mono">Esc</kbd> {t('waterJug.cancel')}</span>
       </div>
     </div>
   );

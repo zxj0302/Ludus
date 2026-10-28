@@ -101,6 +101,7 @@ function layoutDagre(nodes: TreeNodeData[], edges: { from: number; to: number; l
         fontSize: '11px',
         fontFamily: 'JetBrains Mono, monospace',
         textAlign: 'center',
+        whiteSpace: 'pre-line',
       },
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,

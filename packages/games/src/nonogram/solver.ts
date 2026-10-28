@@ -426,6 +426,10 @@ function backtrackSolve(
   guessCell?: { row: number; col: number },
   guessValue?: 'fill' | 'cross',
 ): { result: 'solved' | 'contradiction' } {
+  if (solutions.length >= limit) {
+    return { result: 'solved' };
+  }
+
   // Dynamic cap: scales with grid size (prevents runaway on pathological puzzles)
   const maxSearchNodes = s.width * s.height * 50;
   if (stats.searchTree.length >= maxSearchNodes) {
@@ -496,7 +500,11 @@ function backtrackSolve(
     anySolved = true;
   }
 
-  // Branch 2: Cross — always explore (never skip for early exit)
+  if (solutions.length >= limit) {
+    return { result: 'solved' };
+  }
+
+  // Branch 2: Cross — explore unless solution limit already reached
   const s2 = cloneInternal(s);
   s2.cells[cell.row * s.width + cell.col] = CROSS;
   if (backtrackSolve(s2, limit, depth + 1, stats, solutions, nodeId, cell, 'cross').result === 'solved') {

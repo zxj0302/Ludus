@@ -1,6 +1,7 @@
 // Web Worker — 在独立线程中运行求解/生成任务，避免阻塞 UI
 // ⚠️ 直接从 solver 源文件 import，绕过 barrel(index.ts) —— barrel 引用了 React/framer-motion 等浏览器依赖，Worker 环境无 window
-import { solveGF2, buildLightsOutMatrix, optimalSolution } from '@ludus/games/src/lights-out/solver';
+import { solveLightsOut } from '@ludus/games/src/lights-out/rules';
+import type { LightsOutState } from '@ludus/games/src/lights-out/types';
 import { solveFifteen } from '@ludus/games/src/fifteen/solver';
 import { solveSokobanBFS } from '@ludus/games/src/sokoban/solver';
 import { solvePegSolitaire } from '@ludus/games/src/peg-solitaire/solver';
@@ -23,49 +24,13 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
 
       if (gameId === 'lights-out') {
         const t0 = performance.now();
-        const n = state.n as number;
-        const grid = state.grid as number[];
-        const A = buildLightsOutMatrix(n);
-        const sol = solveGF2(A, grid);
-        const optimal = optimalSolution(sol);
-        const elapsed = Math.round(performance.now() - t0);
-
-        const moves: { row: number; col: number }[] = [];
-        if (optimal) {
-          for (let i = 0; i < optimal.length; i++) {
-            if (optimal[i] === 1) {
-              moves.push({ row: Math.floor(i / n), col: i % n });
-            }
-          }
-        }
+        const result = solveLightsOut(state as unknown as LightsOutState);
+        result.stats.timeMs = Math.round(performance.now() - t0);
 
         const response: WorkerResponse = {
           id,
           type: 'solve',
-          result: {
-            solvable: sol.particular !== null,
-            moves,
-            stats: {
-              nodesExplored: 1,
-              timeMs: elapsed,
-              solutionLength: moves.length,
-              solverName: 'GF(2) Gaussian Elimination (Worker)',
-            },
-            trace: {
-              type: 'matrix-transform',
-              steps: [
-                {
-                  description: `GF(2) elimination complete — ${n}×${n}, rank=${sol.rank}, nullity=${sol.nullity}`,
-                  data: { rank: sol.rank, nullity: sol.nullity },
-                },
-              ],
-              visualizationData: {
-                rank: sol.rank,
-                nullity: sol.nullity,
-                solution: optimal,
-              },
-            },
-          },
+          result,
         };
 
         self.postMessage(response);
@@ -108,7 +73,7 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
         try {
           const solution = solveConnectFour(
             state as unknown as import('@ludus/games/src/connect-four/types').ConnectFourState,
-            { maxDepth: 12, timeMs: 12_000 },
+            { maxDepth: 6, timeMs: 2_500 },
           );
           self.postMessage({ id, type: 'solve', result: solution });
         } catch (err) {

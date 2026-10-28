@@ -2,6 +2,8 @@ export const nonogramI18n = {
   zhCN: {
     'game.nonogram.name': '图形填空',
     'game.nonogram.description': '根据数字线索填充网格，揭示隐藏图案 — 约束满足 × 回溯搜索',
+    'education.nonogramFill': '填充第 {{row}} 行第 {{col}} 列',
+    'education.nonogramCross': '标记第 {{row}} 行第 {{col}} 列为空',
     'nonogram.rowClues': '行线索',
     'nonogram.colClues': '列线索',
     'nonogram.fill': '填充',
@@ -55,6 +57,8 @@ export const nonogramI18n = {
   en: {
     'game.nonogram.name': 'Nonogram',
     'game.nonogram.description': 'Fill grid cells using number clues to reveal a hidden picture — CSP × Backtracking',
+    'education.nonogramFill': 'Fill row {{row}} col {{col}}',
+    'education.nonogramCross': 'Mark row {{row}} col {{col}} as empty',
     'nonogram.rowClues': 'Row Clues',
     'nonogram.colClues': 'Col Clues',
     'nonogram.fill': 'Fill',

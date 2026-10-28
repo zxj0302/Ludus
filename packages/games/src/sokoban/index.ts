@@ -97,7 +97,7 @@ export const sokobanEntry: GamePluginEntry<SokobanState, SokobanMove> = {
   isOwnState: (state): state is SokobanState =>
     state != null && 'walls' in state && 'player' in state && 'boxes' in state,
   moveToHighlight: (move, state) => {
-    if (move.direction && state) {
+    if (move?.direction && state) {
       const d = DIRECTION_DELTA[move.direction];
       if (d) return { row: state.player.row + d.dr, col: state.player.col + d.dc };
     }

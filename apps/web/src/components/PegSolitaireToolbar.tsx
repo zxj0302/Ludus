@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   catalogByGoal,
   entryToState,
+  popcount,
   type PegCatalogEntry,
   type PegGoal,
   type PegSolitaireState,
@@ -18,11 +19,7 @@ interface Props {
 function optimalForEntry(entry: PegCatalogEntry): number {
   // Singleton goals: every complete single-jump solution has length popcount - 1.
   if (entry.knownSolutionLength != null) return entry.knownSolutionLength;
-  let n = 0;
-  for (let h = 0; h < 33; h += 1) {
-    if ((entry.pegs & (2 ** h)) !== 0) n += 1;
-  }
-  return Math.max(0, n - 1);
+  return Math.max(0, popcount(entry.pegs) - 1);
 }
 
 export function PegSolitaireToolbar({ onNewLevel: _onNewLevel }: Props) {

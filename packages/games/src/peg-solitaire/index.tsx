@@ -1,7 +1,7 @@
 import type { GamePlugin, Level, LevelConfig, Solution } from '@ludus/core';
 import type { GamePluginEntry } from '../types';
 import { generatePegSolitaireLevel } from './generator';
-import { createClassicState, legalMoves, applyMove, isSolved, isOwnState } from './rules';
+import { createClassicState, legalMoves, applyMove, isSolved, isOwnState, popcount } from './rules';
 import { getDifficulty } from './difficulty';
 import { solvePegSolitaire, sampleSolutionTree } from './solver';
 import { pegSolitaireEducationManifest, pegSolitaireVisualizationManifest } from './manifest';
@@ -12,7 +12,7 @@ import type { PegSolitaireMove, PegSolitaireState } from './types';
 import { HOLE_COORDS } from './geometry';
 import { PEG_CATALOG } from './puzzles';
 
-export { solvePegSolitaire, sampleSolutionTree, pegSolitaireI18n };
+export { solvePegSolitaire, sampleSolutionTree, pegSolitaireI18n, popcount };
 export type { PegTreeNode } from './solver';
 export { PEG_CATALOG, CLASSIC_CENTER_EMPTY, catalogByGoal, entryToState } from './puzzles';
 export type { PegCatalogEntry } from './puzzles';

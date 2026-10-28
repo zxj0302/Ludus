@@ -20,3 +20,21 @@ export type { EducationContent } from './education';
 
 export { migrateData } from './migrator';
 export type { SchemaMigrator } from './migrator';
+
+export {
+  DemoPlaylistSchema,
+  DemoPlaylistSchemaV1,
+  DemoBeatSchema,
+  DemoActSchema,
+  DemoLevelSchema,
+  DEMO_PLAYLIST_SCHEMA_VERSION,
+  parseDemoPlaylist,
+  isDemoLevelSeed,
+} from './demo-playlist';
+export type {
+  DemoBeat,
+  DemoLevel,
+  DemoAct,
+  DemoPlaylistV1,
+  DemoPlaylist,
+} from './demo-playlist';

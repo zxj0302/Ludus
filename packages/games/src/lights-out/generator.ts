@@ -4,6 +4,24 @@ import type { Level, LevelConfig } from '@ludus/core';
 import type { LightsOutState, LightsOutMove } from './types';
 import { mulberry32, readBoolParam, readNumParam, resolveSeed } from '../generator-config';
 
+function deriveDefaultMoveBounds(range: [number, number] | undefined, n: number): [number, number] {
+  const maxBoardMoves = Math.max(5, Math.min(20, n * n - 3));
+  if (!range) return [3, Math.min(15, maxBoardMoves)];
+  const [lo, hi] = range;
+  if (hi <= 33) {
+    return [2, Math.min(4, maxBoardMoves)];
+  }
+  if (lo >= 67) {
+    const minHard = Math.min(12, maxBoardMoves);
+    return [minHard, Math.max(minHard, Math.min(16, maxBoardMoves))];
+  }
+  if (lo >= 34 && hi <= 66) {
+    const minMed = Math.min(6, maxBoardMoves);
+    return [minMed, Math.max(minMed, Math.min(10, maxBoardMoves))];
+  }
+  return [3, Math.min(15, maxBoardMoves)];
+}
+
 /**
  * 反向求解生成器：
  * 1. 从零状态（全灭/已解）开始
@@ -18,8 +36,9 @@ export function generateLightsOutLevel(config: LevelConfig & {
   requireOptimal?: boolean;
 }): Level {
   const n = config.size ?? config.n ?? 5;
-  const minMoves = Math.max(1, readNumParam(config, 'minMoves', config.minMoves ?? 3)!);
-  const maxMoves = Math.max(minMoves, readNumParam(config, 'maxMoves', config.maxMoves ?? 15)!);
+  const [defaultMinMoves, defaultMaxMoves] = deriveDefaultMoveBounds(config.difficultyRange, n);
+  const minMoves = Math.max(1, readNumParam(config, 'minMoves', config.minMoves ?? defaultMinMoves)!);
+  const maxMoves = Math.max(minMoves, readNumParam(config, 'maxMoves', config.maxMoves ?? defaultMaxMoves)!);
   let requireUnique = readBoolParam(config, 'requireUniqueSolution', config.requireUniqueSolution ?? config.requireUnique ?? true)!;
   const requireOptimal = readBoolParam(config, 'requireKnownOptimal', config.requireKnownOptimal ?? config.requireOptimal ?? true)!;
   const seed = resolveSeed(config);

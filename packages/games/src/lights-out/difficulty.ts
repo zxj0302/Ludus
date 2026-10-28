@@ -6,7 +6,7 @@ import { buildLightsOutMatrix, solveGF2, optimalSolution, hammingWeight } from '
  * Compute Lights Out difficulty from a game state.
  * Single source of truth — used by both `getDifficulty` (rules) and generator.
  *
- * Formula: size × 25% + optimalSteps × 50% + uniqueness × 25%
+ * Formula: size × 20% + optimalSteps × 80% (+ non-unique penalty)
  * Non-unique puzzles get a penalty (+10) since multiple solutions
  * make the puzzle harder to reason about.
  */
@@ -21,13 +21,14 @@ export function getDifficulty(state: LightsOutState): Difficulty {
   }
 
   // Size factor: 3×3 = 0, 10×10 = 1
-  const sizeFactor = (state.n - 3) / 7;
-  // Move factor: optimalSteps / 30, capped at 1
-  const moveFactor = optimalSteps != null ? Math.min(optimalSteps / 30, 1) : 0.5;
+  const sizeFactor = Math.max(0, (state.n - 3) / 7);
+  // Move factor scaled to board capacity so a 5×5 board can span Easy / Medium / Hard
+  const maxExpectedMoves = Math.max(5, Math.round(state.n * state.n * 0.6));
+  const moveFactor = optimalSteps != null ? Math.min(optimalSteps / maxExpectedMoves, 1) : 0.5;
   // Non-unique penalty: harder puzzles when multiple solutions exist
   const nonUniquePenalty = sol.nullity > 0 ? 10 : 0;
 
-  const score = Math.round(sizeFactor * 25 + moveFactor * 50 + nonUniquePenalty);
+  const score = Math.round(sizeFactor * 20 + moveFactor * 80 + nonUniquePenalty);
   const clamped = Math.max(0, Math.min(100, score));
 
   const labelKey = clamped <= 33 ? 'difficulty.easy'

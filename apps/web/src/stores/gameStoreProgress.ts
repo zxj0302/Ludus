@@ -31,7 +31,9 @@ export function persistGameSession({
   useProgressStore.getState().saveSession({
     gameId,
     snapshot: buildProgressSnapshot(gameId, gameState, history, historyIndex),
-    isSolved: plugin.isSolved(gameState),
+    isSolved: plugin.ai
+      ? (plugin.ai.isPlayerVictory?.(gameState) ?? false)
+      : plugin.isSolved(gameState),
     optimalSteps,
     elapsedMs,
     wonJustNow,

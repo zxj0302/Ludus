@@ -115,18 +115,26 @@ export function legalMovesForPlayer(state: ConnectFourState, player: 0 | 1): Con
 
 export function applyMove(state: ConnectFourState, move: ConnectFourMove): ConnectFourState {
   if (state.winner !== null) return state;
-  if (state.phase !== 'playing') return state;
   if (move.column < 0 || move.column >= COLS) return state;
 
-  const dropped = dropDisc(state.board, move.column, state.currentPlayer);
+  const activeState: ConnectFourState = state.phase === 'choosing'
+    ? {
+      ...state,
+      phase: 'playing',
+      currentPlayer: state.playerStarts === false ? 1 : 0,
+      playerStarts: state.playerStarts ?? true,
+    }
+    : state;
+
+  const dropped = dropDisc(activeState.board, move.column, activeState.currentPlayer);
   if (!dropped) return state;
 
   const winner = resolveWinner(dropped.board, dropped.row, move.column);
 
   return normalizeState({
-    ...state,
+    ...activeState,
     board: dropped.board,
-    currentPlayer: winner !== null ? state.currentPlayer : (state.currentPlayer === 0 ? 1 : 0),
+    currentPlayer: winner !== null ? activeState.currentPlayer : (activeState.currentPlayer === 0 ? 1 : 0),
     winner,
     lastColumn: move.column,
   });
@@ -141,5 +149,5 @@ export function getDifficulty(state: ConnectFourState): Difficulty {
 }
 
 export function solveConnectFourState(state: ConnectFourState): Solution {
-  return solveConnectFour(normalizeState(state), { maxDepth: 10, timeMs: 8_000 });
+  return solveConnectFour(normalizeState(state), { maxDepth: 6, timeMs: 1_500 });
 }

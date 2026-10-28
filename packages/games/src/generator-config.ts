@@ -23,6 +23,6 @@ export function readBoolParam(config: LevelConfig, key: string, fallback?: boole
   return fallback ?? null;
 }
 
-export function resolveSeed(config: LevelConfig): number {
-  return config.seed ?? Date.now();
+export function resolveSeed(config?: LevelConfig): number {
+  return config?.seed ?? Math.floor(Math.random() * 0x7fffffff);
 }

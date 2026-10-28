@@ -104,11 +104,37 @@ function copPlaceMoves(state: ThiefSiegeState): ThiefSiegeMove[] {
   return moves;
 }
 
+function hasReachableExit(state: ThiefSiegeState): boolean {
+  const start = state.thief;
+  if (!isWalkableCell(state, start.row, start.col)) return false;
+
+  const queue: { row: number; col: number }[] = [start];
+  const visited = new Set<number>([cellIndex(state.width, start.row, start.col)]);
+  let head = 0;
+
+  while (head < queue.length) {
+    const cur = queue[head++]!;
+    if (getCell(state, cur.row, cur.col) === 'exit') return true;
+
+    for (const next of neighbors4(state.width, state.height, cur.row, cur.col)) {
+      if (!isWalkableCell(state, next.row, next.col)) continue;
+      const idx = cellIndex(state.width, next.row, next.col);
+      if (visited.has(idx)) continue;
+      visited.add(idx);
+      queue.push(next);
+    }
+  }
+
+  return false;
+}
+
 export function normalizeTerminalState(state: ThiefSiegeState): ThiefSiegeState {
   if (state.status !== 'playing') return state;
 
   const steps = thiefStepMoves(state);
-  if (steps.length === 0) return { ...state, status: 'cop-win' };
+  if (steps.length === 0 || !hasReachableExit(state)) {
+    return { ...state, status: 'cop-win' };
+  }
 
   if (state.phase === 'cop' && copPlaceMoves(state).length === 0) {
     return { ...state, phase: 'thief', currentPlayer: 1 };

@@ -72,6 +72,7 @@ export const wythoffPlugin: GamePlugin<WythoffState, WythoffMove> = {
   visualizationManifest: wythoffVisualizationManifest,
   ai: {
     isAITurn: (state) => state.currentPlayer === 1 && state.phase === 'playing' && !(state.piles[0] === 0 && state.piles[1] === 0),
+    isPlayerVictory: (state) => isSolved(state) && state.currentPlayer === 1,
     getAIMove: (state) => {
       const wm = findWythoffWinningMove(state);
       if (wm) return { move: wm, delay: 600 };
@@ -106,7 +107,11 @@ export const wythoffEntry: GamePluginEntry<WythoffState, WythoffMove> = {
   BoardComponent: WythoffBoardEntry,
   isOwnState: (state): state is WythoffState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as WythoffState).piles),
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = !isWythoffPPosition(state.piles[0], state.piles[1]);
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
     if (move.type === 'both') return { row: 0, col: 2, value: move.removeCount };

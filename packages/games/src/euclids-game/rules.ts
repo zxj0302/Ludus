@@ -60,14 +60,19 @@ export function applyMultiple(piles: EuclidPiles, multiple: number): EuclidPiles
 }
 
 export function applyMove(state: EuclidsGameState, move: EuclidsGameMove): EuclidsGameState {
-  if (state.phase !== 'playing' || isTerminalPiles(state.piles)) return state;
+  if (isTerminalPiles(state.piles)) return state;
+
+  const mover: 0 | 1 = state.phase === 'choosing'
+    ? (!isPPosition(state.piles) ? 0 : 1)
+    : state.currentPlayer;
 
   const result = applyMultiple(state.piles, move.multiple);
   if (result === 'win') {
     return {
       ...state,
       piles: [0, state.piles[1]],
-      currentPlayer: state.currentPlayer,
+      currentPlayer: mover,
+      phase: 'playing',
     };
   }
   if (result === state.piles) return state;
@@ -75,7 +80,8 @@ export function applyMove(state: EuclidsGameState, move: EuclidsGameMove): Eucli
   return {
     ...state,
     piles: result,
-    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
+    currentPlayer: mover === 0 ? 1 : 0,
+    phase: 'playing',
   };
 }
 
@@ -108,8 +114,9 @@ export function legalMovesForPlayer(state: EuclidsGameState, player: 0 | 1): Euc
 }
 
 export function getDifficulty(state: EuclidsGameState): Difficulty {
-  const firstPlayerIsN = !isPPosition(state.piles);
-  return computeEuclidsDifficulty(state.piles, firstPlayerIsN);
+  const basePiles = state.initialPiles ?? state.piles;
+  const firstPlayerIsN = !isPPosition(basePiles);
+  return computeEuclidsDifficulty(basePiles, firstPlayerIsN);
 }
 
 export function solveEuclidsGameState(state: EuclidsGameState): Solution {

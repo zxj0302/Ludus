@@ -1,55 +1,105 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Solution, SolverTrace } from '@ludus/core'; import type { EliminationStep } from '@ludus/games';
 import { KnowledgeCard } from './KnowledgeCard';
 import type { LightsOutState } from '@ludus/games';
+import { useGameStore } from '../stores/gameStore';
 
 interface Props {
   solution: Solution;
   solveStepIndex: number;
   gameState: LightsOutState | null;
+  /** When set, solution cells (value 1) apply this press on the board. */
+  onPressCell?: (row: number, col: number) => void;
+  solvePlayback?: boolean;
 }
 
 type ViewMode = 'solution' | 'matrix' | 'elimination' | 'stats';
 
-export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
+export function MatrixViz({
+  solution,
+  solveStepIndex,
+  gameState,
+  onPressCell,
+  solvePlayback = false,
+}: Props) {
   const { t } = useTranslation();
+  const solverStatus = useGameStore(s => s.solverStatus);
   const [viewMode, setViewMode] = useState<ViewMode>('solution');
+  const [elimStepIdx, setElimStepIdx] = useState(0);
+  /** Odd toggles from viz clicks (GF(2)); used for ✓ when not in playback. */
+  const [vizPressed, setVizPressed] = useState<Set<number>>(() => new Set());
+  const internalPressRef = useRef(false);
 
   const trace = solution.trace as SolverTrace | undefined;
   const vizData = trace?.visualizationData as Record<string, unknown> | undefined;
-  if (!vizData) return null;
 
-  const rank = vizData.rank as number;
-  const nullity = vizData.nullity as number;
-  const solutionVec = vizData.solution as number[] | null;
-  const matrix = vizData.matrix as number[][] | undefined;
+  const rank = vizData?.rank as number | undefined;
+  const nullity = (vizData?.nullity as number | undefined) ?? 0;
+  const solutionVec = vizData?.solution as number[] | null | undefined;
+  const [baselineSolutionVec, setBaselineSolutionVec] = useState<number[] | null | undefined>(solutionVec);
+  const matrix = vizData?.matrix as number[][] | undefined;
   const liveVector = gameState?.grid as number[] | undefined;
-  const vector = liveVector ?? (vizData.vector as number[] | undefined);
+  const vector = liveVector ?? (vizData?.vector as number[] | undefined);
   const N = solutionVec?.length ?? 0;
-  const gridSize = Math.round(Math.sqrt(N));
+  const gridSize = Math.round(Math.sqrt(N)) || 1;
 
-  const eliminationSteps = vizData.eliminationSteps as EliminationStep[] | undefined;
-  const [elimStepIdx, setElimStepIdx] = useState(0);
+  const eliminationSteps = vizData?.eliminationSteps as EliminationStep[] | undefined;
 
-  // 新解到达时重置消元步骤索引
   useEffect(() => {
+    if (internalPressRef.current) {
+      internalPressRef.current = false;
+      return;
+    }
     setElimStepIdx(0);
-  }, [eliminationSteps]);
+    setVizPressed(new Set());
+    setBaselineSolutionVec(solutionVec);
+  }, [eliminationSteps, solutionVec]);
 
-  // 播放进度
-  const executedIndices = new Set<number>();
-  if (solveStepIndex > 0 && solution.moves) {
+  const activeSolutionVec = (!solvePlayback && baselineSolutionVec && baselineSolutionVec.length === N)
+    ? baselineSolutionVec
+    : solutionVec;
+
+  const playbackExecuted = new Set<number>();
+  if (solvePlayback && solveStepIndex > 0 && solution.moves) {
     for (let i = 0; i < solveStepIndex; i++) {
       const m = solution.moves[i] as { row: number; col: number } | undefined;
-      if (m) executedIndices.add(m.row * gridSize + m.col);
+      if (m) playbackExecuted.add(m.row * gridSize + m.col);
     }
   }
-  const currentMove = solveStepIndex < solution.moves.length
+  const boardCleared = !!liveVector && liveVector.length > 0 && liveVector.every(v => v === 0);
+  const allSolutionPressed = new Set<number>();
+  if (boardCleared && activeSolutionVec) {
+    activeSolutionVec.forEach((v, i) => { if (v === 1) allSolutionPressed.add(i); });
+  }
+  const executedIndices = new Set<number>([
+    ...playbackExecuted,
+    ...(solvePlayback ? [] : vizPressed),
+    ...allSolutionPressed,
+  ]);
+  const currentMove = solvePlayback && solveStepIndex < solution.moves.length
     ? solution.moves[solveStepIndex] as { row: number; col: number } | undefined
     : null;
   const currentIdx = currentMove ? currentMove.row * gridSize + currentMove.col : -1;
+
+  // Cleared board: no more presses (applyMove would no-op when solved anyway).
+  const effectiveOnPressCell = (solvePlayback || solverStatus === 'running') ? undefined : onPressCell;
+  const interactive = !!effectiveOnPressCell && !solvePlayback && solverStatus !== 'running' && !boardCleared;
+
+  const handleCellPress = (row: number, col: number, idx: number, val: number) => {
+    if (!interactive || val !== 1 || !effectiveOnPressCell) return;
+    internalPressRef.current = true;
+    setVizPressed(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+    effectiveOnPressCell(row, col);
+  };
+
+  if (!vizData) return null;
 
   // 当前消元步骤
   const currentElimStep = eliminationSteps?.[elimStepIdx];
@@ -82,12 +132,13 @@ export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
 
       <AnimatePresence mode="sync">
         {/* Solution grid */}
-        {viewMode === 'solution' && solutionVec && (
+        {viewMode === 'solution' && activeSolutionVec && (
           <motion.div key="solution" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <KnowledgeCard title={t('matrix.solution')} icon="💡">
               <p className="text-[11px] text-warm-stone-500 mb-3">
                 {nullity === 0 ? t('matrix.unique') : t('matrix.multiple', { count: 1 << nullity })}
-                {' — '}{t('matrix.solutionHint')}
+                {' — '}
+                {interactive ? t('matrix.solutionHintInteractive') : t('matrix.solutionHint')}
               </p>
               <div className="flex justify-center">
                 <div>
@@ -101,20 +152,38 @@ export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
                       <div className="w-5 text-right text-[9px] text-warm-stone-400 mr-1">{r + 1}</div>
                       {Array.from({ length: gridSize }, (_, c) => {
                         const idx = r * gridSize + c;
-                        const val = solutionVec[idx]!;
+                        const val = activeSolutionVec[idx]!;
                         const isExecuted = executedIndices.has(idx);
                         const isCurrent = idx === currentIdx;
-                        return (
-                          <motion.div key={c} initial={{ scale: 0 }}
-                            animate={{ scale: isCurrent ? 1.15 : 1, opacity: isExecuted && !isCurrent ? 0.4 : 1 }}
-                            transition={{ duration: 0.15 }}
-                            className={`w-10 h-9 flex items-center justify-center text-xs font-mono font-bold border-2 transition-colors duration-150
+                        const canPress = interactive && val === 1;
+                        const cellClass = `w-10 h-9 flex items-center justify-center text-xs font-mono font-bold border-2 transition-colors duration-150
                               ${isCurrent ? 'border-logic-indigo-500 bg-logic-indigo-100 text-logic-indigo-700 shadow-md'
                                 : isExecuted ? 'border-clarity-teal-light bg-clarity-teal-light/30 text-clarity-teal-dark'
                                 : val === 1 ? 'border-game-amber-400 bg-game-amber-400 text-game-amber-800'
-                                : 'border-warm-stone-200 bg-warm-stone-50 text-warm-stone-300'}`}
+                                : 'border-warm-stone-200 bg-warm-stone-50 text-warm-stone-300'}
+                              ${canPress ? 'cursor-pointer hover:ring-2 hover:ring-logic-indigo-400 hover:ring-offset-1' : ''}`;
+                        const label = val === 1 ? (isExecuted ? '✓' : '●') : '·';
+                        return (
+                          <motion.div
+                            key={c}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: isCurrent ? 1.15 : 1, opacity: isExecuted && !isCurrent ? 0.4 : 1 }}
+                            transition={{ duration: 0.15 }}
                           >
-                            {val === 1 ? (isExecuted ? '✓' : '●') : '·'}
+                            {canPress ? (
+                              <button
+                                type="button"
+                                className={cellClass}
+                                onClick={() => handleCellPress(r, c, idx, val)}
+                                aria-label={t('matrix.pressCell', { row: r + 1, col: c + 1 })}
+                              >
+                                {label}
+                              </button>
+                            ) : (
+                              <div className={cellClass} aria-hidden={val === 0}>
+                                {label}
+                              </div>
+                            )}
                           </motion.div>
                         );
                       })}
@@ -123,9 +192,9 @@ export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
                 </div>
               </div>
               <p className="text-[10px] text-warm-stone-400 mt-2 text-center">
-                {solveStepIndex > 0
-                  ? t('matrix.legend.completed', { done: executedIndices.size, total: solutionVec.filter(v => v === 1).length })
-                  : t('matrix.legend.pending', { total: solutionVec.filter(v => v === 1).length })}
+                {solveStepIndex > 0 || executedIndices.size > 0
+                  ? t('matrix.legend.completed', { done: executedIndices.size, total: activeSolutionVec.filter(v => v === 1).length })
+                  : t('matrix.legend.pending', { total: activeSolutionVec.filter(v => v === 1).length })}
               </p>
             </KnowledgeCard>
           </motion.div>
@@ -269,7 +338,7 @@ export function MatrixViz({ solution, solveStepIndex, gameState }: Props) {
                         )}
                       </div>
                     ))}
-                    {matrix.length > 30 && <div className="text-[10px] text-warm-stone-400 mt-1">… 省略 {matrix.length - 30} 行</div>}
+                    {matrix.length > 30 && <div className="text-[10px] text-warm-stone-400 mt-1">{t('matrix.moreRows', { count: matrix.length - 30 })}</div>}
                   </div>
                 </div>
               )}

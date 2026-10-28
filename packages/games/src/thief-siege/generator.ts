@@ -12,6 +12,15 @@ function randInt(rand: () => number, min: number, max: number): number {
   return min + Math.floor(rand() * (max - min + 1));
 }
 
+function shuffleWithRand<T>(items: readonly T[], rand: () => number): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+  }
+  return copy;
+}
+
 const ALLOWED_SIZES = [11, 15, 19] as const;
 
 function normalizeSize(raw: number): number {
@@ -67,27 +76,29 @@ function buildIrregularCells(rand: () => number, size: number, targetScore: numb
     }
   }
   const exitBudget = targetScore <= 33 ? 1 : targetScore <= 66 ? 2 : 3;
-  const shuffledExits = [...exitCandidates].sort(() => rand() - 0.5);
-  const keptExits = new Set(shuffledExits.slice(0, Math.min(exitBudget, shuffledExits.length)).map(pos => cellIndex(size, pos.row, pos.col)));
+  const shuffledExits = shuffleWithRand(exitCandidates, rand);
+  const keptExits = new Set(
+    shuffledExits
+      .slice(0, targetScore <= 33 ? 0 : Math.min(exitBudget, shuffledExits.length))
+      .map(pos => cellIndex(size, pos.row, pos.col)),
+  );
   for (const pos of exitCandidates) {
     const idx = cellIndex(size, pos.row, pos.col);
     if (!keptExits.has(idx)) cells[idx] = 'floor';
   }
   const direction = randInt(rand, 0, 3);
-  const primaryExit = direction === 0
-    ? { row: 0, col: center }
-    : direction === 1
-      ? { row: size - 1, col: center }
-      : direction === 2
-        ? { row: center, col: 0 }
-        : { row: center, col: size - 1 };
-  const gate = direction === 0
-    ? { row: center - 1, col: center }
-    : direction === 1
-      ? { row: center + 1, col: center }
-      : direction === 2
-        ? { row: center, col: center - 1 }
-        : { row: center, col: center + 1 };
+  const secondaryDirection = (direction + 2) % 4;
+  const exitForDirection = (dir: number): Pos => (
+    dir === 0
+      ? { row: 0, col: center }
+      : dir === 1
+        ? { row: size - 1, col: center }
+        : dir === 2
+          ? { row: center, col: 0 }
+          : { row: center, col: size - 1 }
+  );
+  const primaryExit = exitForDirection(direction);
+  const secondaryExit = exitForDirection(secondaryDirection);
 
   const obstacleRate = targetScore <= 33 ? 0.22 : targetScore <= 66 ? 0.16 : 0.1;
   const centerSafeRadius = targetScore <= 33 ? 1 : 2;
@@ -101,22 +112,22 @@ function buildIrregularCells(rand: () => number, size: number, targetScore: numb
     }
   }
 
-  if (primaryExit.row === center) {
-    const lo = Math.min(primaryExit.col, center);
-    const hi = Math.max(primaryExit.col, center);
-    for (let col = lo; col <= hi; col++) cells[cellIndex(size, center, col)] = 'floor';
-  } else {
-    const lo = Math.min(primaryExit.row, center);
-    const hi = Math.max(primaryExit.row, center);
-    for (let row = lo; row <= hi; row++) cells[cellIndex(size, row, center)] = 'floor';
+  for (const targetExit of [primaryExit, secondaryExit]) {
+    if (targetExit.row === center) {
+      const lo = Math.min(targetExit.col, center);
+      const hi = Math.max(targetExit.col, center);
+      for (let col = lo; col <= hi; col++) cells[cellIndex(size, center, col)] = 'floor';
+    } else {
+      const lo = Math.min(targetExit.row, center);
+      const hi = Math.max(targetExit.row, center);
+      for (let row = lo; row <= hi; row++) cells[cellIndex(size, row, center)] = 'floor';
+    }
+    cells[cellIndex(size, targetExit.row, targetExit.col)] = 'exit';
   }
-  cells[cellIndex(size, primaryExit.row, primaryExit.col)] = 'exit';
   cells[cellIndex(size, center, center)] = 'floor';
   for (const neighbor of neighbors4(size, size, center, center)) {
-    if (neighbor.row === gate.row && neighbor.col === gate.col) continue;
-    cells[cellIndex(size, neighbor.row, neighbor.col)] = 'obstacle';
+    cells[cellIndex(size, neighbor.row, neighbor.col)] = 'floor';
   }
-  cells[cellIndex(size, gate.row, gate.col)] = 'floor';
 
   return cells;
 }
@@ -125,6 +136,7 @@ function buildBottleneckWinCells(rand: () => number, size: number): { cells: Cel
   const cells: CellKind[] = new Array(size * size).fill('obstacle');
   const center = (size - 1) / 2;
   const direction = randInt(rand, 0, 3);
+  const secondaryDirection = (direction + 2) % 4;
   const thief = { row: center, col: center };
   cells[cellIndex(size, thief.row, thief.col)] = 'floor';
 
@@ -132,14 +144,20 @@ function buildBottleneckWinCells(rand: () => number, size: number): { cells: Cel
     cells[cellIndex(size, row, col)] = kind;
   };
 
-  if (direction === 0) {
-    for (let row = center - 1; row >= 0; row--) carve(row, center, row === 0 ? 'exit' : 'floor');
-  } else if (direction === 1) {
-    for (let row = center + 1; row < size; row++) carve(row, center, row === size - 1 ? 'exit' : 'floor');
-  } else if (direction === 2) {
-    for (let col = center - 1; col >= 0; col--) carve(center, col, col === 0 ? 'exit' : 'floor');
-  } else {
-    for (let col = center + 1; col < size; col++) carve(center, col, col === size - 1 ? 'exit' : 'floor');
+  for (const neighbor of neighbors4(size, size, center, center)) {
+    carve(neighbor.row, neighbor.col, 'floor');
+  }
+
+  for (const dir of [direction, secondaryDirection]) {
+    if (dir === 0) {
+      for (let row = center - 1; row >= 0; row--) carve(row, center, row === 0 ? 'exit' : 'floor');
+    } else if (dir === 1) {
+      for (let row = center + 1; row < size; row++) carve(row, center, row === size - 1 ? 'exit' : 'floor');
+    } else if (dir === 2) {
+      for (let col = center - 1; col >= 0; col--) carve(center, col, col === 0 ? 'exit' : 'floor');
+    } else {
+      for (let col = center + 1; col < size; col++) carve(center, col, col === size - 1 ? 'exit' : 'floor');
+    }
   }
 
   return { cells, thief };
@@ -190,6 +208,9 @@ function isPlaceablePathCell(state: ThiefSiegeState, pos: Pos): boolean {
 function passesWinGate(state: ThiefSiegeState, targetScore: number): boolean {
   const path = shortestEscapePath(state);
   if (path == null) return false;
+
+  const exitCount = state.cells.reduce((acc, cell) => acc + (cell === 'exit' ? 1 : 0), 0);
+  if (exitCount < 2) return false;
 
   if (targetScore <= 33) {
     return copHasWinningStrategy(state, {

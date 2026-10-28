@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 describe('cross-platform shell packaging', () => {
-  it('release package versions are synced to v0.1.1', () => {
+  it('release package versions are synced to v0.2.0', () => {
     const expectedVersion = '0.2.0';
     const packagePaths = [
       'apps/web/package.json',
@@ -25,8 +25,10 @@ describe('cross-platform shell packaging', () => {
 
     const tauriConf = JSON.parse(readFileSync(resolve(root, 'apps/desktop/src-tauri/tauri.conf.json'), 'utf8')) as {
       version: string;
+      identifier: string;
     };
     expect(tauriConf.version).toBe(expectedVersion);
+    expect(tauriConf.identifier).toBe('com.ludus.desktop');
 
     const cargoToml = readFileSync(resolve(root, 'apps/desktop/src-tauri/Cargo.toml'), 'utf8');
     expect(cargoToml).toContain(`version = "${expectedVersion}"`);

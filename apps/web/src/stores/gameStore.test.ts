@@ -272,4 +272,83 @@ describe('gameStore peg-solitaire smoke', () => {
 
     vi.useRealTimers();
   });
+
+  it('undo and redo step by two plies in adversarial games to stay on player turn', () => {
+    const store = useGameStore.getState();
+    store.loadGame('nim');
+
+    // Setup history with player turn (0), AI turn (1), player turn (2)
+    const s0 = { piles: [3, 4], currentPlayer: 0, phase: 'playing', initialPiles: [3, 4] } as GameState;
+    const s1 = { piles: [2, 4], currentPlayer: 1, phase: 'playing', initialPiles: [3, 4] } as GameState;
+    const s2 = { piles: [2, 2], currentPlayer: 0, phase: 'playing', initialPiles: [3, 4] } as GameState;
+
+    useGameStore.setState({
+      history: [s0, s1, s2],
+      historyIndex: 2,
+      gameState: s2,
+    });
+
+    useGameStore.getState().undo();
+
+    // From index 2, undo should skip index 1 (AI turn) and land on index 0
+    expect(useGameStore.getState().historyIndex).toBe(0);
+    expect(useGameStore.getState().gameState).toEqual(s0);
+
+    useGameStore.getState().redo();
+
+    // From index 0, redo should skip index 1 (AI turn) and land on index 2
+    expect(useGameStore.getState().historyIndex).toBe(2);
+    expect(useGameStore.getState().gameState).toEqual(s2);
+  });
+
+  it('does not celebrate or persist a win when AI makes the winning move in nim', () => {
+    const store = useGameStore.getState();
+    store.loadGame('nim');
+
+    // One stone left, it is AI's turn (currentPlayer: 1)
+    const stateBeforeAi = {
+      piles: [1],
+      currentPlayer: 1 as const,
+      phase: 'playing' as const,
+      initialPiles: [1],
+    };
+
+    useGameStore.setState({
+      history: [stateBeforeAi as unknown as GameState],
+      historyIndex: 0,
+      gameState: stateBeforeAi as unknown as GameState,
+    });
+
+    // AI takes the last stone: removeCount: 1 from pile 0
+    store.applyMove({ pileIndex: 0, removeCount: 1 });
+
+    const finalState = useGameStore.getState().gameState as { piles: number[]; currentPlayer: number };
+    expect(finalState.piles).toEqual([0]);
+    // mover was 1, so currentPlayer is toggled to 0
+    expect(finalState.currentPlayer).toBe(0);
+
+    // AI victory means isPlayerVictory is false
+    const plugin = useGameStore.getState().plugin;
+    expect(plugin?.ai?.isPlayerVictory?.(finalState as unknown as GameState)).toBe(false);
+
+    // Progress record must NOT mark nim as solved or completed
+    const record = useProgressStore.getState().getRecord('nim');
+    expect(record?.isSolved).toBeFalsy();
+  });
+
+  it('handles invalid gameId gracefully without leaving stale state', () => {
+    const store = useGameStore.getState();
+    store.loadGame('nim');
+    expect(useGameStore.getState().gameId).toBe('nim');
+    expect(useGameStore.getState().gameState).not.toBeNull();
+
+    store.loadGame('non-existent-game-id');
+    const state = useGameStore.getState();
+    expect(state.gameId).toBeNull();
+    expect(state.plugin).toBeNull();
+    expect(state.gameState).toBeNull();
+    expect(state.history).toEqual([]);
+    expect(state.historyIndex).toBe(-1);
+    expect(state.solution).toBeNull();
+  });
 });

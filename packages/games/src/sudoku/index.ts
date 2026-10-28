@@ -74,7 +74,7 @@ export const sudokuEntry: GamePluginEntry<SudokuState, SudokuMove> = {
   BoardComponent: SudokuBoard,
   isOwnState: (state): state is SudokuState =>
     state != null && 'grid' in state && 'givenMask' in state && 'n' in state && (state as SudokuState).n === 9,
-  moveToHighlight: (move) => ({ row: move.row, col: move.col, value: move.value }),
+  moveToHighlight: (move) => (move ? { row: move.row, col: move.col, value: move.value } : null),
   i18n: { namespace: 'sudoku', zhCN: sudokuI18n.zhCN, en: sudokuI18n.en },
   formatEducationMove: formatSudokuMove,
   ui: { statusCard: SudokuStatusCard },

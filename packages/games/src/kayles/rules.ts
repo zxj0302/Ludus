@@ -1,7 +1,7 @@
 import type { Difficulty } from '@ludus/core';
 import type { KaylesMove, KaylesState } from './types';
 import { computeKaylesDifficulty } from './difficulty';
-import { solveKayles } from './solver';
+import { isKaylesPPosition, solveKayles } from './solver';
 
 export type { KaylesMove, KaylesState };
 export { findKaylesWinningMove, isKaylesPPosition, computeKaylesGrundy, chainXor } from './solver';
@@ -76,7 +76,7 @@ export function legalMovesForPlayer(state: KaylesState, player: 0 | 1): KaylesMo
 }
 
 export function applyMove(state: KaylesState, move: KaylesMove): KaylesState {
-  if (state.phase !== 'playing' || isTerminalAlive(state.alive)) return state;
+  if (isTerminalAlive(state.alive)) return state;
 
   const { index, count } = move;
   if (count !== 1 && count !== 2) return state;
@@ -86,6 +86,10 @@ export function applyMove(state: KaylesState, move: KaylesMove): KaylesState {
     if (index + 1 >= state.alive.length || !state.alive[index + 1]) return state;
   }
 
+  const mover: 0 | 1 = state.phase === 'choosing'
+    ? (!isKaylesPPosition(state.alive) ? 0 : 1)
+    : state.currentPlayer;
+
   const alive = [...state.alive];
   alive[index] = false;
   if (count === 2) alive[index + 1] = false;
@@ -93,7 +97,8 @@ export function applyMove(state: KaylesState, move: KaylesMove): KaylesState {
   return {
     ...state,
     alive,
-    currentPlayer: state.currentPlayer === 0 ? 1 : 0,
+    currentPlayer: mover === 0 ? 1 : 0,
+    phase: 'playing',
   };
 }
 

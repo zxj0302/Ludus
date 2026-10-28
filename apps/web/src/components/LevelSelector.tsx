@@ -38,11 +38,10 @@ export function LevelSelector({
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handleSelect = useCallback((coll: string, idx: number) => {
-    if (coll !== selectedCollection) onCollectionChange(coll);
+  const handleSelect = useCallback((idx: number) => {
     onLevelSelect(idx);
     setOpen(false);
-  }, [selectedCollection, onCollectionChange, onLevelSelect]);
+  }, [onLevelSelect]);
 
   const currentColl = collections.find(c => c.name === selectedCollection);
   const collShort = currentColl?.shortLabel ?? currentColl?.label ?? '';
@@ -89,7 +88,7 @@ export function LevelSelector({
             >◀</button>
             <select
               value={selectedLevelIdx}
-              onChange={e => handleSelect(selectedCollection, Number(e.target.value))}
+              onChange={e => handleSelect(Number(e.target.value))}
               className="flex-1 px-2 py-1 rounded text-xs font-medium bg-warm-stone-100 text-warm-stone-700 border border-warm-stone-300 cursor-pointer"
             >
               {Array.from({ length: totalInCollection }, (_, i) => (

@@ -38,7 +38,7 @@ export function applyMove(state: FifteenState, move: FifteenMove): FifteenState 
   const newGrid = [...state.grid];
   newGrid[emptyIdx] = newGrid[tileIndex]!;
   newGrid[tileIndex] = 0;
-  return { grid: newGrid };
+  return { ...state, grid: newGrid };
 }
 
 export function isSolved(state: FifteenState): boolean {

@@ -129,14 +129,7 @@ function runsMatchClues(filled: boolean[], clues: number[]): boolean {
 export function isSolved(state: NonogramState): boolean {
   const { grid, rowClues, colClues, width, height } = state;
 
-  // All cells must be determined (no EMPTY remaining)
-  for (let r = 0; r < height; r++) {
-    for (let c = 0; c < width; c++) {
-      if (grid[r]![c] === EMPTY) return false;
-    }
-  }
-
-  // Validate against row/column clues (not hidden solution pattern)
+  // Validate against row/column clues (CROSS marks are optional helper annotations)
   for (let r = 0; r < height; r++) {
     const line = Array.from({ length: width }, (_, c) => grid[r]![c] === FILLED);
     if (!runsMatchClues(line, rowClues[r]!)) return false;

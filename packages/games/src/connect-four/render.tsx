@@ -61,6 +61,10 @@ export function ConnectFourBoard({
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!canDrop) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        return;
+      }
       const digit = Number.parseInt(e.key, 10);
       if (digit >= 1 && digit <= COLS) {
         e.preventDefault();

@@ -11,7 +11,7 @@ import {
 } from './rules';
 import type { NimState, NimMove } from './types';
 import { nimEducationManifest, nimVisualizationManifest } from './manifest';
-import { findWinningMove } from './solver';
+import { computeNimSum, findWinningMove } from './solver';
 
 import type { BoardProps, GamePluginEntry } from '../types';
 import { NimBoard } from './render';
@@ -72,6 +72,7 @@ export const nimPlugin: GamePlugin<NimState, NimMove> = {
   visualizationManifest: nimVisualizationManifest,
   ai: {
     isAITurn: (state) => state.currentPlayer === 1 && state.phase === 'playing' && !state.piles.every(v => v === 0),
+    isPlayerVictory: (state) => isSolved(state) && state.currentPlayer === 1,
     getAIMove: (state) => {
       const wm = findWinningMove(state.piles);
       if (wm) return { move: wm, delay: 600 };
@@ -107,7 +108,11 @@ export const nimEntry: GamePluginEntry<NimState, NimMove> = {
   BoardComponent: NimBoardEntry,
   isOwnState: (state): state is NimState =>
     state != null && 'piles' in state && 'phase' in state && Array.isArray((state as NimState).piles),
-  moveToHighlight: (move) => {
+  moveToHighlight: (move, state) => {
+    if (state?.phase === 'choosing') {
+      const playerFirst = computeNimSum(state.piles) !== 0;
+      return { row: 0, col: playerFirst ? 0 : 1 };
+    }
     if (!move) return null;
     if (move.pileIndex === -1) return { row: 0, col: move.removeCount };
     if (move.pileIndex != null) return { row: move.pileIndex, col: 0, value: move.removeCount };
