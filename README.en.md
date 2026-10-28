@@ -174,3 +174,4 @@ This project is licensed under the [MIT License](LICENSE).
 <div align="center">
   <sub>Built with ❤️ by passionate computer science & mathematics educators.</sub>
 </div>
+
